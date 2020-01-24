@@ -12,18 +12,18 @@ function [Signal] = process_signal(tt,xx,Fc,tintp,IOFreq)
 %
 
 % Get signal attributes
-Signal.Time = tt(:);
-Signal.X(:,1) = xx(:);
+tt = tt(:);
+xx = xx(:);
 tintp = tintp(:);
 
 % If interpolation is specified, replace signal & time with interpolated results
 if ~isempty(tintp)
     Signal.isinterpolated = true;
-    if min(tintp)<min(Signal.Time) || max(tintp)>max(Signal.Time)
+    if min(tintp)<min(tt) || max(tintp)>max(tt)
        warning('Interpolation time outside of range')
     end
     
-    Signal.X(:,1) = interp1(Signal.Time, Signal.X(:,1), tintp, ...
+    Signal.X(:,1) = interp1(tt, xx, tintp, ...
                             'linear','extrap'); % interpolate signal to new time
     Signal.Time = tintp(:);
 else

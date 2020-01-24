@@ -10,10 +10,10 @@ function [] = MakeData_Ramp_HeadFree_Sacd(wave,match,Fc)
 %
 wave = 30;
 match = 0;
-Fc = 30;
+Fc = 40;
 
 % Data location
-rootdir = ['H:\EXPERIMENTS\Experiment_Asymmetry_Control_Verification\HighContrast\' num2str(wave)];
+rootdir = ['H:\EXPERIMENTS\RIGID\Experiment_Asymmetry_Control_Verification\HighContrast\' num2str(wave)];
 
 % What saccades we will get
 if      match==0
@@ -53,26 +53,38 @@ PATH.ang = fullfile(PATH.daq,'\Vid\tracked'); % tracked kinematic data location
 % SACD.Stimulus.Saccade.Head = cell(N{1,3},1);
 % SACD.Stimulus.Interval.Head = cell(N{1,3},1);
 % badtrial = {};
-
+clc
+close all
 Vel = U.vel{1};
-tt = (0:(1/200):10)';
-Stim = (Vel*tt')';
+tintp = (0:(1/200):(10 - 1/200))';
+Stim = (Vel*tintp')';
 % bad = 1;
 for kk = 1:N.file
     % disp(kk)
+    % disp(basename{kk})
+    
     % Load HEAD & DAQ data
+	load(fullfile(PATH.daq, [basename{kk} '.mat']),'data','t_p'); % load head angles % time arrays
     load(fullfile(PATH.vid, [basename{kk} '.mat']),'t_v'); % load head angles % time arrays
     benifly = ImportBenifly(fullfile(PATH.ang, FILES{kk}));
-    disp(basename{kk})
+    
+    % Sync video with trigger & pattern
+    Trig.raw_time   = t_p; % DAQ raw times for trigger
+    Trig.pos        = round(data(:,1)); % trigger values
+    Trig.diff       = diff(Trig.pos); % trigger derivative (rising edge triggers frame)
+    [~,Trig.locs] = findpeaks(Trig.diff); % where each frame starts
+    Trig.time       = [0;Trig.raw_time(Trig.locs+1)]; % where each frame starts
    	
     % Get head data
-    Head = process_signal(t_v, rad2deg(benifly.Head), Fc, [], [8 16 32]);
-    
+    benifly.Head(1) = benifly.Head(2);
+    Head = process_signal(Trig.time, rad2deg(benifly.Head), Fc, tintp, [4 8 16 32 64]);
+ 	test = saccade(Head.X(:,1),Head.Time,3.5,true);
+
     % Get Saccade Stats   
-    [head.SACD,head.thresh,head.count,head.rate,head.SACDRmv] = SacdDetect(Head.X(:,1),Head.Time,400,true);
+    [head.SACD,head.thresh,head.count,head.rate,head.SACDRmv] = sacddetect(Head.X(:,1),Head.Time,400,true);
     
-%     HeadRmv = Fly(head.SACDRmv,Head.Time,[],[],tt);
-%     WingRmv = Fly(wing.SACDRmv,Wing.Time,[],[],tt);
+    % HeadRmv = Fly(head.SACDRmv,Head.Time,[],[],tt);
+    % WingRmv = Fly(wing.SACDRmv,Wing.Time,[],[],tt);
     
     head.match = table(head.SACD.Direction*sign(D.vel(kk)));
     mIdx = 1:head.count;
