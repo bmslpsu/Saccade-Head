@@ -1,4 +1,4 @@
-function [Saccade,Interval,Stimulus,Error,IntError,matchFlag] = SaccdInter(xx,tt,SACD,match,STIM,debug)
+function [Saccade,Interval,Stimulus,Error,IntError,matchFlag] = saccdinter(xx,tt,SACD,match,STIM,debug)
 %% SaccdInter: extracts saccade & inter-saccade intervals
 %   INPUTS:
 %       xx          :   position
@@ -114,7 +114,7 @@ end
 TimeNorm = cellfun(@(x) x - x(1), Time, 'UniformOutput', false); % normalized times
 TimePeak = cellfun(@(x,y) x - y, Time(:,1), PeakTime, 'UniformOutput', false); % aligned to peak times of saccades
 % TimeEnd = cellfun(@(x,y) x - y, Time(:,2), StartTime, ... % aligned to end time of inter-saccde intervals (saccde start)
-%     'UniformOutput', false); 
+%     'UniformOutput', false);
 
 [Saccade.Time,~,~,~,dR,~] = nancat_center(TimePeak,0,1);
 

@@ -57,9 +57,9 @@ clc
 close all
 Vel = U.vel{1};
 tintp = (0:(1/200):(10 - 1/200))';
+for kk = 1:N.file
 Stim = (Vel*tintp')';
 % bad = 1;
-for kk = 1:N.file
     % disp(kk)
     % disp(basename{kk})
     
@@ -78,7 +78,7 @@ for kk = 1:N.file
     % Get head data
     benifly.Head(1) = benifly.Head(2);
     Head = process_signal(Trig.time, rad2deg(benifly.Head), Fc, tintp, [4 8 16 32 64]);
- 	test = saccade(Head.X(:,1),Head.Time,3.5,true);
+ 	test = saccade(Head.X(:,1),Head.Time,3.5,-1,true);
 
     % Get Saccade Stats   
     [head.SACD,head.thresh,head.count,head.rate,head.SACDRmv] = sacddetect(Head.X(:,1),Head.Time,400,true);
