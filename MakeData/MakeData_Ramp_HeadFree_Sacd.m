@@ -31,7 +31,7 @@ else
 end
 
 % Output file name
-filename = ['Ramp_HeadFree_SACCD_' clss '_filt=' num2str(Fc) '_Wave=' num2str(wave)];
+filename = ['NewRamp_HeadFree_SACCD_' clss '_filt=' num2str(Fc) '_Wave=' num2str(wave)];
 
 % Setup Directories 
 PATH.daq = rootdir; % DAQ data location
@@ -43,157 +43,60 @@ PATH.ang = fullfile(PATH.daq,'\Vid\tracked'); % tracked kinematic data location
 
 %% Get Data %%
 % disp('Loading...')
-% TRIAL = cell(N{1,1},N{1,3});
-
-% clear SACD
-% SACD.Head = [];
-% SACD.Wing = [];
-% SACD.Saccade.Head = cell(N{1,3},1);
-% SACD.Interval.Head = cell(N{1,3},1);
-% SACD.Stimulus.Saccade.Head = cell(N{1,3},1);
-% SACD.Stimulus.Interval.Head = cell(N{1,3},1);
-% badtrial = {};
 clc
 close all
-Vel = U.vel{1};
+showplot = false;
 tintp = (0:(1/200):(10 - 1/200))';
-for kk = 1:N.file
+Vel = U.vel{1};
 Stim = (Vel*tintp')';
-% bad = 1;
-    % disp(kk)
-    % disp(basename{kk})
-    
+SACCADE = [I , table(num2cell(zeros(N.file,1)))]; % store saccade objects
+SACCADE_STATS = []; % store saccade stats
+for kk = 1:N.file
+    disp(kk)   
     % Load HEAD & DAQ data
 	load(fullfile(PATH.daq, [basename{kk} '.mat']),'data','t_p'); % load head angles % time arrays
-    load(fullfile(PATH.vid, [basename{kk} '.mat']),'t_v'); % load head angles % time arrays
+    % load(fullfile(PATH.vid, [basename{kk} '.mat']),'t_v'); % load head angles % time arrays
     benifly = ImportBenifly(fullfile(PATH.ang, FILES{kk}));
     
     % Sync video with trigger & pattern
-    Trig.raw_time   = t_p; % DAQ raw times for trigger
-    Trig.pos        = round(data(:,1)); % trigger values
-    Trig.diff       = diff(Trig.pos); % trigger derivative (rising edge triggers frame)
-    [~,Trig.locs] = findpeaks(Trig.diff); % where each frame starts
-    Trig.time       = [0;Trig.raw_time(Trig.locs+1)]; % where each frame starts
+    trig.raw_time   = t_p; % DAQ raw times for trigger
+    trig.pos        = round(data(:,1)); % trigger values
+    trig.diff       = diff(trig.pos); % trigger derivative (rising edge triggers frame)
+    [~,trig.locs]   = findpeaks(trig.diff); % where each frame starts
+    trig.time       = [0;trig.raw_time(trig.locs+1)]; % where each frame starts
    	
     % Get head data
     benifly.Head(1) = benifly.Head(2);
-    Head = process_signal(Trig.time, rad2deg(benifly.Head), Fc, tintp, [4 8 16 32 64]);
- 	test = saccade(Head.X(:,1),Head.Time,3.5,-1,true);
-
-    % Get Saccade Stats   
-    [head.SACD,head.thresh,head.count,head.rate,head.SACDRmv] = sacddetect(Head.X(:,1),Head.Time,400,true);
+    Head = process_signal(trig.time, rad2deg(benifly.Head), Fc, tintp, [4 8 16 32 64]);
     
-    % HeadRmv = Fly(head.SACDRmv,Head.Time,[],[],tt);
-    % WingRmv = Fly(wing.SACDRmv,Wing.Time,[],[],tt);
+    % Get Saccade Stats
+    peaks = [];
+    direction = -sign(D.vel(kk)); % only get saccades in the opposite direction of visual motion
+    head_saccade = saccade(Head.X(:,1), Head.Time, 3.5, direction, peaks,  showplot);
+    head_saccade = stimSaccade(head_saccade, Stim(:,I.vel(kk)), showplot);
     
-    head.match = table(head.SACD.Direction*sign(D.vel(kk)));
-    mIdx = 1:head.count;
-    if ~isnan(match)
-        mIdx = mIdx([head.match{:,1}]==match);
-    end
-    head.match.Properties.VariableNames = {'Match'};
-  	wing.match = table(wing.SACD.Direction*sign(D.vel(kk)));
-    wing.match.Properties.VariableNames = {'Match'};
+    SACCADE{kk,5} = {head_saccade};
     
-    if isnan(head.count)
-        head.Rate = table(0);
-        wing.Rate = table(0);
+    if isnan(head_saccade.count)
+        rep = 1;
     else
-        head.Rate = table(nan(head.count,1));
-        head.Rate{1,1} = head.rate;
-    	wing.Rate = table(nan(wing.count,1));
-        wing.Rate{1,1} = wing.rate;
+        rep = head_saccade.count;
     end
-    head.Rate.Properties.VariableNames = {'Rate'};
-  	wing.Rate.Properties.VariableNames = {'Rate'};
+    ITable = repmat(I(kk,:),rep,1);
+    SACCADE_STATS = [SACCADE_STATS ; [ITable , head_saccade.SACD]];
     
-    head.SACD = [head.SACD , head.match];
-    wing.SACD = [wing.SACD , wing.match];
-     
-   	Dir = table(sign(D{kk,3}),'VariableNames',{'Dir'});
-    I_table = [I(kk,1:3) , rowfun(@(x) abs(x), D(kk,3)), Dir];
-    I_table.Properties.VariableNames{3} = 'velIdx';
-    I_table.Properties.VariableNames{4} = 'speed';
-    
-    [Saccade,Interval,Stimulus,Error,IntError,matchFlag] = SaccdInter(Head.X(:,1),Head.Time,head.SACD, ...
-                                                                    match, Stim(:,I{kk,3}), false);
-    
-    var1 = {Saccade.Time, Saccade.Pos,Saccade.Vel, Error.Saccade.Pos, Error.Saccade.Vel,...
-                IntError.Saccade.Pos, IntError.Saccade.Vel, Stimulus.Saccade.Pos , Stimulus.Saccade.Vel};
-            
-    var2 = {Interval.Time, Interval.Pos, Interval.Vel, Error.Interval.Pos, Error.Interval.Vel,...
-                IntError.Interval.Pos, IntError.Interval.Vel, Stimulus.Interval.Pos , Stimulus.Interval.Vel};
-    
-    if isnan(head.count)
-        Err_table = nan(1,5);
-        loop = [];
-        emptyFlag = true;
-    else
-        Err_table = nan(head.count,5);
-        loop = size(Error.Interval.Pos,2);
-       	if matchFlag
-            emptyFlag = true;
-        else
-            emptyFlag = false;
-        end
-    end
-    
-    for jj = 1:loop
-        pos_err = Error.Interval.Pos(:,jj);
-        pos_err = pos_err(~isnan(pos_err));
-     	vel_err = Error.Interval.Vel(:,jj);
-        vel_err = vel_err(~isnan(vel_err));
-        
-        pos_int_err = IntError.Interval.Pos(:,jj);
-        pos_int_err = pos_int_err(~isnan(pos_int_err));
-      	vel_int_err = IntError.Interval.Vel(:,jj);
-        vel_int_err = vel_int_err(~isnan(vel_int_err));
-        
-        stim_pos = Stimulus.Interval.Pos(:,jj);
-     	stim_pos = stim_pos(~isnan(stim_pos));
-        if ~isempty(pos_err)
-            Err_table(mIdx(jj),1) = nanmean(pos_err(end-5:end),1);
-            Err_table(mIdx(jj),2) = nanmean(vel_err(end-5:end),1);
-            Err_table(mIdx(jj),3) = pos_int_err(end);
-            Err_table(mIdx(jj),4) = vel_int_err(end);
-            Err_table(mIdx(jj),5) = stim_pos(end);
-        end
-    end
-    Err_table = splitvars(table(Err_table));
-    Err_table.Properties.VariableNames = {'Position_Error','Velocity_Error','Position_IntError',...
-                                                'Velocity_IntError','Stimulus_Position'};
-    if isnan(head.count)
-        head.I_table = I_table;
-    else
-        head.I_table = repmat(I_table,head.count,1);
-        head.Rate{1,1} = head.Rate{1,1}*(size(Error.Interval.Pos,2)/head.count);
-  	end
-    head.SACD = [head.SACD , head.Rate];
-    
-    if isnan(wing.count)
-        wing.I_table = I_table;
-    else
-        wing.I_table = repmat(I_table,wing.count,1);
-    end
-    
-	head.SACD = [head.I_table , [head.SACD , Err_table]];
-  	wing.SACD = [wing.I_table , wing.SACD];
-    
-    SACD.Head = [SACD.Head ; head.SACD];
-    SACD.Wing = [SACD.Wing ; wing.SACD];
-    
-    if ~emptyFlag
-        SACD.Saccade.Head{I{kk,3},1}  = [SACD.Saccade.Head{I{kk,3},1}  ; var1];
-        SACD.Interval.Head{I{kk,3},1} = [SACD.Interval.Head{I{kk,3},1} ; var2];
-    end
-    
-    % pause()
-    close all
-    % clc
 end
 
-clear jj ii kk pp qq ww n a b  t_v hAngles data head wing pat tt I_table Dir loop Saccade Interval Stimulus Error IntError...
-    Head Pat Wing  vars PATH t_p var1 var2 Err_table pos_err vel_err pos_int_err vel_int_err stim_pos matchFlag emptyFlag
+%%
+
+% test = cellfun(@(x) x.SACD, SACCADE.Var1, 'UniformOutput',false);
+% test = cat(1,test{:});
+% test = [SACCADE,test];
+
+test = cellfun(@(x) x.normpeak_saccade, SACCADE.Var1, 'UniformOutput',false);
+
+% test = cellfun(@(x) x.time, cellfun(@(x) x.normpeak_saccade, SACCADE.Var1, ...
+%     'UniformOutput',false),'UniformOutput',false);
 
 %% Normalize Head Saccades
 %---------------------------------------------------------------------------------------------------------------------------------
@@ -242,13 +145,12 @@ INTERVAL.HeadStats = cell2table(cellfun(@(x) MatStats(x,2), table2cell(INTERVAL.
                             'UniformOutput',false),'VariableNames',varnames);
                         
 %% SAVE %%
-%---------------------------------------------------------------------------------------------------------------------------------
 disp('Saving...')
 % save(['H:\DATA\Rigid_Data\' filename '_' datestr(now,'mm-dd-yyyy') '.mat'],...
 %     'SACD','SACCADE','INTERVAL','Stim','TRIAL','FLY','GRAND','D','I','U','N','T','-v7.3')
 
 save(['H:\DATA\Rigid_Data\' filename '_' datestr(now,'mm-dd-yyyy') '.mat'],...
-    'SACD','SACCADE','INTERVAL','Stim','D','I','U','N','T','-v7.3')
+      'PATH','SACD','SACCADE','INTERVAL','Stim','D','I','U','N','T','-v7.3')
 
 disp('SAVING DONE')
 end

@@ -180,20 +180,20 @@ else
         saccd_nanIdx = ~isnan(err_saccd_time);
         err_saccd_time = err_saccd_time(saccd_nanIdx);
 
-        err_saccd_pos = Error.Saccade.Pos(:,kk);   
+        err_saccd_pos = Error.Saccade.Pos(:,kk);
         err_saccd_pos = err_saccd_pos(saccd_nanIdx);
 
-        err_saccd_vel = Error.Saccade.Vel(:,kk);   
+        err_saccd_vel = Error.Saccade.Vel(:,kk);
         err_saccd_vel = err_saccd_vel(saccd_nanIdx);
 
         err_inter_time = Interval.Time(:,kk);
         inter_nanIdx = ~isnan(err_inter_time);
         err_inter_time = err_inter_time(inter_nanIdx);
 
-        err_inter_pos = Error.Interval.Pos(:,kk);   
+        err_inter_pos = Error.Interval.Pos(:,kk);
         err_inter_pos = err_inter_pos(inter_nanIdx);
 
-        err_inter_vel= Error.Interval.Vel(:,kk);   
+        err_inter_vel= Error.Interval.Vel(:,kk);
         err_inter_vel = err_inter_vel(inter_nanIdx);
 
         IntError.Saccade.Pos(:,kk) = nan(length(saccd_nanIdx),1);
