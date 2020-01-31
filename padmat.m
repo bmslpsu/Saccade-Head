@@ -10,10 +10,11 @@ function [paddata] = padmat(matdata,L,val,dim)
 %       paddata     :   padded data
 %
 
+sz = size(L);
 if dim==1
-    paddata = [val*ones(L(1),1) ; matdata ; val*ones(L(2),1)];
+    paddata = [val*ones(L(1),sz(2)) ; matdata ; val*ones(L(2),sz(2))];
 elseif dim==2
-    paddata = [val*ones(1,L(1)) , matdata , val*ones(1,L(2))];
+    paddata = [val*ones(sz(1),L(1)) , matdata , val*ones(sz(1),L(2))];
 else
     error('Must be along 1st or 2nd dimension')
 end

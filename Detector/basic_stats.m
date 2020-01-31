@@ -16,7 +16,7 @@ classdef basic_stats
             
             obj.mean    = nanmean(A,dim);
             obj.median  = nanmedian(A,dim);
-            obj.std    = nanstd(A,[],dim);
+            obj.std     = nanstd(A,[],dim);
         end
     end
 end

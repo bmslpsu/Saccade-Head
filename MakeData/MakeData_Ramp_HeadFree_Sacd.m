@@ -42,14 +42,17 @@ PATH.ang = fullfile(PATH.daq,'\Vid\tracked'); % tracked kinematic data location
 [D,I,N,U,T,FILES,~,basename] = GetFileData(PATH.ang,'*.csv',false,'fly','trial','vel','wave');
 
 %% Get Data %%
-% disp('Loading...')
-clc
-close all
+disp('Loading...')
 showplot = false;
 tintp = (0:(1/200):(10 - 1/200))';
 Vel = U.vel{1};
 Stim = (Vel*tintp')';
 SACCADE = [I , table(num2cell(zeros(N.file,1)))]; % store saccade objects
+SACCADE.Properties.VariableNames{5} = 'saccade';
+ALL_DATA = cell(N.vel/2,2);
+for jj = 1:N.vel
+    ALL_DATA{jj} = cell(N.fly,1);
+end
 SACCADE_STATS = []; % store saccade stats
 for kk = 1:N.file
     disp(kk)   
@@ -75,75 +78,160 @@ for kk = 1:N.file
     head_saccade = saccade(Head.X(:,1), Head.Time, 3.5, direction, peaks,  showplot);
     head_saccade = stimSaccade(head_saccade, Stim(:,I.vel(kk)), showplot);
     
-    SACCADE{kk,5} = {head_saccade};
-    
     if isnan(head_saccade.count)
         rep = 1;
+        SACCADE{kk,5} = {[]};
+        % ALL_DATA{I.vel(kk)}{I.fly(kk)}(end+1,1) = {[]};
     else
+        SACCADE{kk,5} = {head_saccade};
+        ALL_DATA{I.vel(kk)}{I.fly(kk)}(end+1,1) = {head_saccade};
         rep = head_saccade.count;
     end
     ITable = repmat(I(kk,:),rep,1);
     SACCADE_STATS = [SACCADE_STATS ; [ITable , head_saccade.SACD]];
+end
+
+%%
+% Extract & normalize saccades
+clear NORM
+NORM.saccade_all  = cell(N.vel,1);
+NORM.saccade_fly_all = cell(N.vel,1);
+for jj = 1:N.vel
+    for kk = 1:N.fly
+        % Get all saccades for all trials for each fly & calculate fly
+        % statistics
+        time = cellfun(@(x) x.normpeak_saccade.time, ALL_DATA{jj}{kk}, 'UniformOutput', false);
+        [time,~,~,~,dR] = nancat_center(time, 0, 1, [], true);
+        
+    	position = cellfun(@(x,y) padmat(x.normpeak_saccade.position,y,nan,1), ALL_DATA{jj}{kk}, ...
+            dR, 'UniformOutput', false);
+        position = cat(2,position{:});
+        
+    	velocity = cellfun(@(x,y) padmat(x.normpeak_saccade.velocity,y,nan,1), ALL_DATA{jj}{kk}, ...
+            dR, 'UniformOutput', false);
+        velocity = cat(2,velocity{:});
+        
+        NORM.saccade_all{jj}(kk).time = time;
+        NORM.saccade_all{jj}(kk).position = position;
+        NORM.saccade_all{jj}(kk).velocity = velocity;
+        
+        NORM.saccade_fly_all{jj}(kk).time = basic_stats(time,2);
+        NORM.saccade_fly_all{jj}(kk).position = basic_stats(position,2);
+        NORM.saccade_fly_all{jj}(kk).velocity = basic_stats(velocity,2);
+    end
+    % Get median fly saccades & calculate stats for each speed
+    time = [NORM.saccade_fly_all{jj}.time];
+    position = [NORM.saccade_fly_all{jj}.position];
+    velocity = [NORM.saccade_fly_all{jj}.velocity];
     
+	[time,~,~,~,dR] = nancat_center({time.median}',0, 1, [], true);
+    position = cellfun(@(x,y)  padmat(x,y,nan,1), {position.median}', dR, 'UniformOutput', false);
+    velocity = cellfun(@(x,y)  padmat(x,y,nan,1), {velocity.median}', dR, 'UniformOutput', false);
+    position = cat(2,position{:});
+    velocity = cat(2,velocity{:});
+    
+    NORM.saccade_fly_median(jj).time = time;
+    NORM.saccade_fly_median(jj).position = position;
+    NORM.saccade_fly_median(jj).velocity = velocity;
+    
+    NORM.saccade_vel(jj).time = basic_stats(time,2);
+    NORM.saccade_vel(jj).position = basic_stats(position,2);
+	NORM.saccade_vel(jj).velocity = basic_stats(velocity,2);
 end
+% Get median saccade by speed & calculate stats for each direction (CW,CCW)
+time = [NORM.saccade_vel.time];
+position = [NORM.saccade_vel.position];
+velocity = [NORM.saccade_vel.velocity];
 
-%%
+[time,~,~,~,dR] = nancat_center({time.median}',0, 1, [], true);
 
-% test = cellfun(@(x) x.SACD, SACCADE.Var1, 'UniformOutput',false);
-% test = cat(1,test{:});
-% test = [SACCADE,test];
+position = cellfun(@(x,y)  padmat(x,y,nan,1), {position.median}', dR, 'UniformOutput', false);
+velocity = cellfun(@(x,y)  padmat(x,y,nan,1), {velocity.median}', dR, 'UniformOutput', false);
+position = cat(2,position{:});
+velocity = cat(2,velocity{:});
 
-test = cellfun(@(x) x.normpeak_saccade, SACCADE.Var1, 'UniformOutput',false);
+NORM.saccade_vel_median.time = time;
+NORM.saccade_vel_median.position = position;
+NORM.saccade_vel_median.velocity = velocity;
 
-% test = cellfun(@(x) x.time, cellfun(@(x) x.normpeak_saccade, SACCADE.Var1, ...
-%     'UniformOutput',false),'UniformOutput',false);
+NORM.saccade_ALL(1).time = basic_stats(time(1:N.vel/2),2);
+NORM.saccade_ALL(1).position = basic_stats(position(1:N.vel/2),2);
+NORM.saccade_ALL(1).velocity = basic_stats(velocity(1:N.vel/2),2);
 
-%% Normalize Head Saccades
-%---------------------------------------------------------------------------------------------------------------------------------
-varnames = {'Time','Position','Velocity','Position_Error','Velocity_Error',...
-                'Position_IntError','Velocity_IntError','Stimulus_Position','Stimulus_Velocity'};
+NORM.saccade_ALL(2).time = basic_stats(time(N.vel/2+1:end),2);
+NORM.saccade_ALL(2).position = basic_stats(position(N.vel/2+1:end),2);
+NORM.saccade_ALL(2).velocity = basic_stats(velocity(N.vel/2+1:end),2);
 
-clear SACCADE
-SACCADE.Head = cell(N{1,3},9);
-SACCADE.cIdx = cell(N{1,3},1);
-dR = cell(N{1,3},1);
-center = 0;
-dim = 1;
-for jj = 1:N{1,3}
-    [SACCADE.Head{jj,1},SACCADE.cIdx{jj},~,~,dR{jj}] = nancat_center(SACD.Saccade.Head{jj}(:,1), center, dim, [], []);
-    for ww = 2:size(SACD.Saccade.Head{jj},2)
-        for kk = 1:size(SACD.Saccade.Head{jj},1)
-            for ii = 1:size(SACD.Interval.Head{jj}{kk,ww},2)
-                SACCADE.Head{jj,ww}{kk,1}(:,ii) = cat_pad(SACD.Saccade.Head{jj}{kk,ww}(:,ii), dR{jj}{kk}(:,ii),nan);
-            end
-        end
-    	SACCADE.Head{jj,ww} = cat(2,SACCADE.Head{jj,ww}{:});
+% Extract & normalize inter-saccade intervals
+NORM.interval_all  = cell(N.vel,1);
+NORM.interval_fly_all = cell(N.vel,1);
+for jj = 1:N.vel
+    for kk = 1:N.fly
+        % Get all saccades for all trials for each fly & calculate fly
+        % statistics
+        time = cellfun(@(x) x.normstart_interval.time, ALL_DATA{jj}{kk}, 'UniformOutput', false);
+        [time,~,~,~,dR] = nancat_center(time, 0, 1, [], false);
+        
+    	position = cellfun(@(x,y) padmat(x.normstart_interval.position,y,nan,1), ALL_DATA{jj}{kk}, ...
+            dR, 'UniformOutput', false);
+        position = cat(2,position{:});
+        
+    	velocity = cellfun(@(x,y) padmat(x.normstart_interval.velocity,y,nan,1), ALL_DATA{jj}{kk}, ...
+            dR, 'UniformOutput', false);
+        velocity = cat(2,velocity{:});
+        
+        NORM.interval_all{jj}(kk).time = time;
+        NORM.interval_all{jj}(kk).position = position;
+        NORM.interval_all{jj}(kk).velocity = velocity;
+        
+        NORM.interval_fly_all{jj}(kk).time = basic_stats(time,2);
+        NORM.interval_fly_all{jj}(kk).position = basic_stats(position,2);
+        NORM.interval_fly_all{jj}(kk).velocity = basic_stats(velocity,2);
     end
+    % Get median fly saccades & calculate stats for each speed
+    time = [NORM.interval_fly_all{jj}.time];
+    position = [NORM.interval_fly_all{jj}.position];
+    velocity = [NORM.interval_fly_all{jj}.velocity];
+    
+	[time,~,~,~,dR] = nancat_center({time.median}',0, 1, [], false);
+    position = cellfun(@(x,y)  padmat(x,y,nan,1), {position.median}', dR, 'UniformOutput', false);
+    velocity = cellfun(@(x,y)  padmat(x,y,nan,1), {velocity.median}', dR, 'UniformOutput', false);
+    position = cat(2,position{:});
+    velocity = cat(2,velocity{:});
+    
+    NORM.interval_fly_median(jj).time = time;
+    NORM.interval_fly_median(jj).position = position;
+    NORM.interval_fly_median(jj).velocity = velocity;
+    
+    NORM.interval_vel(jj).time = basic_stats(time,2);
+    NORM.interval_vel(jj).position = basic_stats(position,2);
+	NORM.interval_vel(jj).velocity = basic_stats(velocity,2);
 end
-SACCADE.Head = cell2table(SACCADE.Head,'VariableNames',varnames);
-SACCADE.HeadStats = cell2table(cellfun(@(x) MatStats(x,2), table2cell(SACCADE.Head),...
-                            'UniformOutput',false),'VariableNames',varnames);
-%%
-clear INTERVAL
-INTERVAL.Head = cell(N{1,3},9);
-dR = cell(N{1,3},1);
-center = 0;
-dim = 1;
-for jj = 1:N{1,3}
-    [INTERVAL.Head{jj,1},~,~,~,dR{jj}] = nancat_center(SACD.Interval.Head{jj}(:,1), center, dim);
-    for ww = 2:size(SACD.Interval.Head{jj},2)
-        for kk = 1:size(SACD.Interval.Head{jj},1)
-            for ii = 1:size(SACD.Interval.Head{jj}{kk,ww},2)
-                INTERVAL.Head{jj,ww}{kk,1}(:,ii) = cat_pad(SACD.Interval.Head{jj}{kk,ww}(:,ii), dR{jj}{kk}(:,ii),nan);
-            end
-        end
-    	INTERVAL.Head{jj,ww} = cat(2,INTERVAL.Head{jj,ww}{:});
-    end
-end
-INTERVAL.Head = cell2table(INTERVAL.Head,'VariableNames',varnames);
-INTERVAL.HeadStats = cell2table(cellfun(@(x) MatStats(x,2), table2cell(INTERVAL.Head),...
-                            'UniformOutput',false),'VariableNames',varnames);
-                        
+% Get median saccade by speed & calculate stats for each direction (CW,CCW)
+time = [NORM.interval_vel.time];
+position = [NORM.interval_vel.position];
+velocity = [NORM.interval_vel.velocity];
+
+[time,~,~,~,dR] = nancat_center({time.median}',0, 1, [], false);
+
+position = cellfun(@(x,y)  padmat(x,y,nan,1), {position.median}', dR, 'UniformOutput', false);
+velocity = cellfun(@(x,y)  padmat(x,y,nan,1), {velocity.median}', dR, 'UniformOutput', false);
+position = cat(2,position{:});
+velocity = cat(2,velocity{:});
+
+NORM.interval_vel_median.time = time;
+NORM.interval_vel_median.position = position;
+NORM.interval_vel_median.velocity = velocity;
+
+NORM.interval_ALL(1).time = basic_stats(time(1:N.vel/2),2);
+NORM.interval_ALL(1).position = basic_stats(position(1:N.vel/2),2);
+NORM.interval_ALL(1).velocity = basic_stats(velocity(1:N.vel/2),2);
+
+NORM.interval_ALL(2).time = basic_stats(time(N.vel/2+1:end),2);
+NORM.interval_ALL(2).position = basic_stats(position(N.vel/2+1:end),2);
+NORM.interval_ALL(2).velocity = basic_stats(velocity(N.vel/2+1:end),2);
+
+
 %% SAVE %%
 disp('Saving...')
 % save(['H:\DATA\Rigid_Data\' filename '_' datestr(now,'mm-dd-yyyy') '.mat'],...
