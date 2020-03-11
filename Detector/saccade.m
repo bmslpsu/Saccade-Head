@@ -1,7 +1,7 @@
 classdef saccade
     % saccade: class to detect and analyze saccade in a data set
     %   
-           
+ 	
     properties (SetAccess = private, Hidden = false)
         n                   % # of data points
         Ts                  % sampling time
@@ -18,24 +18,25 @@ classdef saccade
         boundThresh         % ratio of peak velocity to bound saccades on both sides
         count               % # of saccades deteteced
         rate                % saccades / time unit
+        amp_cutoff = 2;    	% cut off for saccade amplitudes (< amp_cutoff are removed)
         SACD                % table of saccade statistics
-
+        
         saccades            % saccade only index/time/position/velocity tables in cells
         intervals           % inter-saccade intervals
         shift               % data with interpolation between saccades
-        normpeak_saccade    % normalized saccades,  aligned to peak time
-        normstart_interval	% normalized intervals, aligned to start time
-        normend_interval    % normalized intervals, aligned to end time
+        normpeak_saccade    % normalized saccades , aligned to peak time
+        norm_interval       % normalized intervals, aligned to start time
+        normstart_interval	% normalized intervals, aligned to start time and initial position
+        normend_interval    % normalized intervals, aligned to end time and end position
 
         saccades_all        % all saccade data
         removed_all         % data with saccades removed & nan's in their place
 
         stimlus_position    % stimulus position
         stimlus_velocity    % stimulus veloicty
+        stimulus            % stimulus inter-saccade intervals
         normstart_stimulus 	% normalized stimulus intervals, aligned to start time
         normend_stimulus  	% normalized stimulus intervals, aligned to end time
-        stimulus            % stimulus inter-saccade intervals
-
         error               % error (stimulus - position) for inter-saccade intervals
         int_error        	% integrated error (stimulus - position) for inter-saccade intervals
     end
@@ -53,6 +54,7 @@ classdef saccade
         amplitudes
         durations
         directions
+        tablenames
         
         align_saccade_peak
         align_interval_start
@@ -64,14 +66,19 @@ classdef saccade
     end
     
     methods
-        function obj = saccade(position,time,threshold,direction,peaks,debug)
+        function obj = saccade(position, time, threshold, direction, pks, debug)
             % saccade: Construct an instance of this class
-            %   Detailed explanation goes here
+            %   Saccade detector
+            
+            if nargin==0
+                obj = setDeafults(obj);
+                return
+            end
             
             if nargin<6
                 debug = true; % default show plots
                 if nargin<5
-                   peaks = []; % default no peaks given
+                   pks = []; % default no peaks given
                 end
             end
             
@@ -82,7 +89,8 @@ classdef saccade
             obj.index       	= (1:obj.n)';                     	% index vector
             obj.Ts           	= mean(diff(obj.time));             % sampling time
             obj.Fs           	= 1/obj.Ts;                         % sampling frequency
-            obj.velocity      	= [0 ; diff(obj.position)/obj.Ts]; 	% velocity
+            obj.velocity      	= diff(obj.position)/obj.Ts;        % velocity
+            obj.velocity      	= [obj.velocity(1) ; obj.velocity];	% velocity
             obj.abs_velocity	= abs(obj.velocity);                % absolute velocity
 
             obj.median.abs_velocity	= median(obj.abs_velocity);	% median absolute velocity
@@ -97,15 +105,37 @@ classdef saccade
             end
             
             % Detect, isolate, & normalize sacades & inter-saccade intervals
-            obj = detectSaccades(obj,peaks);
+            obj = detectSaccades(obj,pks);
             obj = removeSaccades(obj);
             obj = normSaccade(obj);
             
             if debug
                 plotSaccade(obj)
-                plotInterval(obj)
+                if obj.count~=0
+                    plotInterval(obj)
+                else
+                    warning('No saccades detetected')
+                end
             end
             
+        end
+        
+    	function obj = setDeafults(obj)
+            % setDeafults: sets values to default
+            % 
+            
+            empty_feilds = ["time","position","velocity"];
+            
+            for f = 1:length(empty_feilds)
+                obj.normpeak_saccade.(empty_feilds(f))      = [];
+                obj.norm_interval.(empty_feilds(f))         = [];
+                obj.normstart_interval.(empty_feilds(f))   	= [];
+                obj.normend_interval.(empty_feilds(f))      = [];
+                obj.normstart_stimulus.(empty_feilds(f))  	= [];
+                obj.normend_stimulus.(empty_feilds(f))   	= [];
+                obj.error.(empty_feilds(f))                 = [];
+                obj.int_error.(empty_feilds(f))             = [];
+            end
         end
         
         function obj = calculateThreshold(obj,N)
@@ -114,13 +144,17 @@ classdef saccade
             
             obj.nstd_thresh = N;
             obj.threshold = obj.median.abs_velocity + obj.nstd_thresh*obj.std.abs_velocity;
+            
+            if obj.threshold < 350
+                obj.threshold = 350;
+            end
         end
         
-        function obj = detectSaccades(obj,peaks)
+        function obj = detectSaccades(obj,pks)
             % detetcSaccades: detetc saccades in data
-            %   peaks   : saccade peak locations [indicies]
+            %   pks   : saccade peak locations [indicies]
             
-            if (nargin < 2) || isempty(peaks) % if peaks are not given
+            if (nargin < 2) || isempty(pks) % if peaks are not given
                 obj.ismanual = false;
                 
                 % Limit peak detetction to absolute velocity above threshold
@@ -128,14 +162,14 @@ classdef saccade
                 svel(obj.abs_velocity<obj.threshold) = 0;
 
                 % Find peaks in absolute of velocity
-                [~, locs] = findpeaks(svel,'MINPEAKDISTANCE',40); % find local maxima
+                [~, locs] = findpeaks(svel,'MINPEAKDISTANCE',15); % find local maxima
                 window = obj.n*0.015; % window length at start & end to ignore saccades [samples]
                 I = (locs > window) & (locs < (obj.n - (window+1))); % saccades inside middle window
                 obj.peaks.index = locs(I);
                 
             elseif nargin == 2 % user specifies peaks
              	obj.ismanual = true;
-                obj.peaks.index = peaks;
+                obj.peaks.index = pks;
                 obj.threshold = nan;
             end
             
@@ -143,25 +177,25 @@ classdef saccade
             if obj.direction==0
                 % analyze all saccades
             else % remove saccades that don't match the input direction
-                dir_include = sign(obj.velocity(obj.peaks.index)) == obj.direction;
-                obj.peaks.index = obj.peaks.index(dir_include);
+                if obj.direction~=0
+                    dir_include = sign(obj.velocity(obj.peaks.index)) == obj.direction;
+                    obj.peaks.index = obj.peaks.index(dir_include);
+                end
             end
             
             obj.peaks.time      = obj.time(obj.peaks.index);
             obj.peaks.position  = obj.position(obj.peaks.index);
             obj.peaks.velocity  = obj.velocity(obj.peaks.index);
             obj.count           = length(obj.peaks.index);
-            obj.rate            = obj.count / (obj.time(end) - obj.time(1));
-            obj.cmap            = hsv(obj.count);
             
             % Names for saccade statistics table
-            tablenames = {'Duration'  ,  'Amplitude'  , 'Direction'  , ...
+            obj.tablenames = {'Duration'  ,  'Amplitude'  , 'Direction'  , ...
                           'StartIdx'  ,  'PeakIdx'    , 'EndIdx'     ,...
                        	  'StartTime' ,  'PeakTime'   , 'EndTime'    ,...
                           'StartPos'  ,  'PeakPos'    , 'EndPos'     , ...
                           'StartVel'  ,  'PeakVel'    , 'EndVel'};
                       
-            obj.boundThresh = 0.15; % saccades start & end at boundThresh*peak velocity
+            obj.boundThresh = 0.25; % saccades start & end at boundThresh*peak velocity
             if ~isempty(obj.peaks.index) % if any saccades are detected                
                 for ww = 1:obj.count % every saccade
                     % Find start & end of saccade
@@ -178,33 +212,63 @@ classdef saccade
                 obj.starts.time   	= obj.time      (obj.starts.index);
                 obj.starts.position	= obj.position  (obj.starts.index);
                 obj.starts.velocity	= obj.velocity  (obj.starts.index);
+                
                 obj.ends.time       = obj.time      (obj.ends.index);
                 obj.ends.position   = obj.position  (obj.ends.index);
                 obj.ends.velocity   = obj.velocity  (obj.ends.index);
+                obj.amplitudes     	= obj.ends.position - obj.starts.position;
+                
+                % Remove saccades below position amplitude threshold
+              	rmv_amp = abs(obj.amplitudes) < obj.amp_cutoff;
+                if any(rmv_amp)
+                    obj.amplitudes = obj.amplitudes(~rmv_amp,:);
 
-                obj.durations     	= obj.starts.time - obj.ends.time;
-                obj.amplitudes     	= obj.starts.position - obj.ends.position;
+                    obj.peaks.index  	= obj.peaks.index(~rmv_amp);
+                    obj.peaks.time      = obj.peaks.time(~rmv_amp);
+                    obj.peaks.position  = obj.peaks.position(~rmv_amp);
+                    obj.peaks.velocity  = obj.peaks.velocity(~rmv_amp);
+                    
+                    obj.starts.index  	= obj.starts.index(~rmv_amp);
+                    obj.starts.time   	= obj.starts.time(~rmv_amp);
+                    obj.starts.position = obj.starts.position(~rmv_amp);
+                    obj.starts.velocity = obj.starts.velocity(~rmv_amp);
+
+                    obj.ends.index  	= obj.ends.index(~rmv_amp);
+                    obj.ends.time       = obj.ends.time(~rmv_amp);
+                    obj.ends.position   = obj.ends.position(~rmv_amp);
+                    obj.ends.velocity   = obj.ends.velocity(~rmv_amp);
+
+                    obj.count           = length(obj.peaks.index);
+                end
+                
+                obj.durations     	= obj.ends.time - obj.starts.time;
                 obj.directions      = sign(obj.peaks.velocity);
-
-                % Collect data
-                STATS = [obj.durations        , obj.amplitudes      , obj.directions    , ...
-                         obj.starts.index     , obj.peaks.index     , obj.ends.index        , ...
-                         obj.starts.time	  , obj.peaks.time      , obj.ends.time         , ...
-                         obj.starts.position  , obj.peaks.position  , obj.ends.position     , ...
-                         obj.starts.velocity  , obj.peaks.velocity  , obj.ends.velocity     ,];
+             	obj.rate            = obj.count / (obj.time(end) - obj.time(1));
+                obj.cmap            = hsv(obj.count);
+                
+                if obj.count == 0
+                    STATS = nan(size(obj.tablenames));
+                else
+                    % Collect data
+                    STATS = [obj.durations        , obj.amplitudes      , obj.directions    , ...
+                             obj.starts.index     , obj.peaks.index     , obj.ends.index        , ...
+                             obj.starts.time	  , obj.peaks.time      , obj.ends.time         , ...
+                             obj.starts.position  , obj.peaks.position  , obj.ends.position     , ...
+                             obj.starts.velocity  , obj.peaks.velocity  , obj.ends.velocity     ,];
+                end
                      
                 % Saccade table
                 obj.SACD = splitvars(table(STATS));
-                obj.SACD.Properties.VariableNames = tablenames;
+                obj.SACD.Properties.VariableNames = obj.tablenames;
+                
             else
-                STATS = nan(size(tablenames));
-                obj.count = nan;
-                obj.rate = nan;
+                STATS = nan(size(obj.tablenames));
+                obj.count = 0;
+                obj.rate = 0;
                 
              	% Saccade table
-                obj.SACD = splitvars(table([STATS , nan(1,5)]));
-                obj.SACD.Properties.VariableNames = [tablenames, ...
-                    {'IntTime','ErrorPos','ErrorVel','IntErrorPos','IntErrorVel'}];
+                obj.SACD = splitvars(table(STATS));
+                obj.SACD.Properties.VariableNames = obj.tablenames;
             end
             
         end
@@ -213,7 +277,7 @@ classdef saccade
       	% removeSaccades: extract saccade kinematics from data & grab
       	% intervals between saccades
      	% 
-            if ~isnan(obj.count) % if any saccades are detected
+            if obj.count~=0 % if any saccades are detected
                 obj.saccades  = cell(obj.count,1); % pull out each saccade
                 obj.intervals = cell(obj.count,1); % pull out each interval
                 for ww = 1:obj.count % every saccade
@@ -299,7 +363,7 @@ classdef saccade
         % normSaccade: align saccades to peak time & align intervals to
         % start and end time.
         %  
-            if ~isnan(obj.count) % if there are any saccades
+            if obj.count~=0 % if there are any saccades
                 % Normalize saccade times to saccade peak times
                 obj.normpeak_saccade.time = cellfun(@(x,y) x.Time - y, obj.saccades, ...
                     num2cell(obj.SACD.PeakTime),'UniformOutput', false);
@@ -330,6 +394,13 @@ classdef saccade
 
                 [obj.normstart_interval.time ,~,~,~,obj.align_interval_start,~] = ...
                     nancat_center(obj.normstart_interval.time, 0 ,1);
+               
+                % Align interval start times without normalizing positions
+                obj.norm_interval.time = obj.normstart_interval.time;
+                
+                obj.norm_interval.position = cellfun(@(x,y) padmat(x.Position, y,nan,1), ...
+                    obj.intervals, obj.align_interval_start, 'UniformOutput', false);
+                obj.norm_interval.position = cat(2,obj.norm_interval.position{:});
 
                 % Align interval positions to interval start times
                 obj.normstart_interval.position = cellfun(@(x,y) padmat(x.Position - x.Position(1),y,nan,1), ...
@@ -340,11 +411,15 @@ classdef saccade
                 obj.normstart_interval.velocity = cellfun(@(x,y) padmat(x.Velocity,y,nan,1), obj.intervals, ...
                     obj.align_interval_start, 'UniformOutput', false);
                 obj.normstart_interval.velocity = cat(2,obj.normstart_interval.velocity{:});
+                
+                obj.norm_interval.velocity = obj.normstart_interval.velocity;
 
                 % Compute interval stats
                 obj.normstart_interval.time_stats = basic_stats(obj.normstart_interval.time,2);
                 obj.normstart_interval.position_stats = basic_stats(obj.normstart_interval.position,2);
                 obj.normstart_interval.velocity_stats = basic_stats(obj.normstart_interval.velocity,2);
+                
+                obj.norm_interval.position_stats = basic_stats(obj.norm_interval.position,2);
 
                 % Get interval times
                 obj.normstart_interval.endidx = sum(~isnan(obj.normstart_interval.time));
@@ -376,6 +451,10 @@ classdef saccade
                 obj.normend_interval.time_stats = basic_stats(obj.normstart_interval.time,2);
                 obj.normend_interval.position_stats = basic_stats(obj.normstart_interval.position,2);
                 obj.normend_interval.velocity_stats = basic_stats(obj.normstart_interval.velocity,2);
+            else
+             	IntTime = table(nan,'VariableNames',{'IntTime'});
+                obj.SACD = [obj.SACD , IntTime];
+                obj = setDeafults(obj);
             end
         end
         
@@ -384,19 +463,19 @@ classdef saccade
         % motion stimulus (stimulus position, stimulus velocity, error,integrated error)
         %  
         
-            if ~isnan(obj.count) % if there are any saccades
-                if nargin<3
+         	% Get stimulus data
+            obj.stimlus_position = stim(:);
+            obj.stimlus_velocity = diff(obj.stimlus_position)./diff(obj.time);
+            obj.stimlus_velocity = [obj.stimlus_velocity(1) ; obj.stimlus_velocity];
+            obj.stimulus = cell(obj.count,1); % pull out each saccade
+        
+            if obj.count~=0 % if there are any saccades
+                if nargin < 3
                     debug = false; % default
                 end
 
-                % Get stimulus data
-                obj.stimlus_position = stim(:);
-                obj.stimlus_velocity = diff(obj.stimlus_position)./diff(obj.time);
-                obj.stimlus_velocity = [obj.stimlus_velocity(1) ; obj.stimlus_velocity];
-
                 % Extract stimulus intervals
-                if ~isempty(obj.count) && ~isempty(stim) % if any saccades are detected and a stimulus if given
-                    obj.stimulus  = cell(obj.count,1); % pull out each saccade
+                if ~isempty(stim) % if any saccades are detected and a stimulus if given
                     for ww = 1:obj.count % every saccade                   
                         % Create stimulus table
                         if ww~=1
@@ -419,7 +498,11 @@ classdef saccade
                             obj.stimulus{ww}.Velocity  = nan*obj.stimlus_velocity(obj.stimulus{ww}.Index);
                         end
                     end
-
+                    % Assign times
+                    obj.normstart_stimulus.time = obj.normstart_interval.time;
+                    obj.normend_stimulus.time   = obj.normend_interval.time;
+                    %-------------------------------------------
+                    
                     % Align stimulus interval positions to interval start times
                     obj.normstart_stimulus.position = cellfun(@(x,y) padmat(x.Position - x.Position(1),y,nan,1), ...
                         obj.stimulus, obj.align_interval_start, 'UniformOutput', false);
@@ -429,7 +512,9 @@ classdef saccade
                     obj.normstart_stimulus.velocity = cellfun(@(x,y) padmat(x.Velocity,y,nan,1), ...
                         obj.stimulus, obj.align_interval_start, 'UniformOutput', false);
                     obj.normstart_stimulus.velocity = cat(2,obj.normstart_stimulus.velocity{:});
-
+                    
+                    %-------------------------------------------
+                    
                     % Align stimulus interval positions to interval end times
                     obj.normend_stimulus.position = cellfun(@(x,y) padmat(x.Position,y,nan,1), ...
                         obj.stimulus, obj.align_interval_end, 'UniformOutput', false);
@@ -439,14 +524,17 @@ classdef saccade
                     obj.normend_stimulus.velocity = cellfun(@(x,y) padmat(x.Velocity,y,nan,1), ...
                         obj.stimulus, obj.align_interval_end, 'UniformOutput', false);
                     obj.normend_stimulus.velocity = cat(2,obj.normend_stimulus.velocity{:});
+                    
+                    %-------------------------------------------
 
                     % Get time vectors for integration & compute error & integrated error within intervals
                     [~,max_time] = max(obj.normstart_interval.endidx);
                     tvector = obj.normstart_interval.time(:,max_time);
 
                     % Compute error within intervals
-                    obj.error.position = obj.normstart_stimulus.position - obj.normstart_interval.position;
-                    obj.error.velocity = obj.normstart_stimulus.velocity - obj.normstart_interval.velocity;
+                    obj.error.time  	= obj.normstart_interval.time;
+                    obj.error.position  = obj.normstart_stimulus.position - obj.normstart_interval.position;
+                    obj.error.velocity  = obj.normstart_stimulus.velocity - obj.normstart_interval.velocity;
 
                     obj.error.position_end = arrayfun(@(x,y)  obj.error.position(y,x), ...
                                 1:size(obj.error.position,2), obj.normstart_interval.endidx, ...
@@ -456,8 +544,9 @@ classdef saccade
                                 'UniformOutput',true);
 
                     % Compute integrated error within intervals
-                    obj.int_error.position = cumtrapz(tvector, obj.error.position, 1);
-                    obj.int_error.velocity = cumtrapz(tvector, obj.error.velocity, 1);
+                    obj.int_error.time      = obj.normstart_interval.time;
+                    obj.int_error.position  = cumtrapz(tvector, obj.error.position, 1);
+                    obj.int_error.velocity  = cumtrapz(tvector, obj.error.velocity, 1);
 
                     obj.int_error.position_end = arrayfun(@(x,y)  obj.int_error.position(y,x), ...
                                 1:size(obj.int_error.position,2), obj.normstart_interval.endidx, ...
@@ -484,8 +573,18 @@ classdef saccade
 
                 % Plot if specified
                 if debug
-                   plotStimulus(obj) 
+                    if ~obj.count==0
+                        plotStimulus(obj) 
+                    else
+                        warning('No saccades detetected')
+                    end
                 end
+                
+            else
+                % Saccade table
+                obj.SACD = splitvars(table([obj.SACD , splitvars(table(nan(1,4)))]));
+                obj.SACD.Properties.VariableNames = [obj.tablenames, ...
+                    {'IntTime','ErrorPos','ErrorVel','IntErrorPos','IntErrorVel'}];
             end
         end
         
@@ -502,47 +601,52 @@ classdef saccade
                 ylabel('Position')
                 h(1) = plot(obj.time,obj.position,'k');
                 plot(obj.time, zeros(obj.n,1),'--','Color',[0.5 0.5 0.5])
-                for ww = 1:obj.count
-                   plot(obj.saccades{ww}.Time,obj.saccades{ww}.Position,...
-                       'LineWidth', 1, 'Color', obj.cmap(ww,:))
-                   plot(obj.intervals{ww}.Time,obj.intervals{ww}.Position,...
-                       'LineWidth', 1, 'Color', 0.7*obj.cmap(ww,:))
+                if obj.count~=0
+                    for ww = 1:obj.count
+                       plot(obj.saccades{ww}.Time,obj.saccades{ww}.Position,...
+                           'LineWidth', 1, 'Color', obj.cmap(ww,:))
+                       plot(obj.intervals{ww}.Time,obj.intervals{ww}.Position,...
+                           'LineWidth', 1, 'Color', 0.7*obj.cmap(ww,:))
+                    end
+                    plot(obj.starts.time , obj.starts.position , '*g')
+                    plot(obj.peaks.time  , obj.peaks.position  , '*b')
+                    plot(obj.ends.time   , obj.ends.position   , '*r')
                 end
-              	plot(obj.starts.time , obj.starts.position , '*g')
-              	plot(obj.peaks.time  , obj.peaks.position  , '*b')
-                plot(obj.ends.time   , obj.ends.position   , '*r')
                 
                 ax(1).YLim = max(abs(ax(1).YLim))*[-1 1];
 
             ax(2) = subplot(4,1,2) ; hold on
                 ylabel('Velocity')
-                h(2) = plot(obj.time,obj.velocity,'k');                
-                for ww = 1:obj.count
-                   plot(obj.saccades{ww}.Time,obj.saccades{ww}.Velocity,...
-                       'LineWidth', 1, 'Color', obj.cmap(ww,:))
-                   plot(obj.intervals{ww}.Time,obj.intervals{ww}.Velocity,...
-                       'LineWidth', 1, 'Color', 0.7*obj.cmap(ww,:))
-                end
-                plot(obj.starts.time , obj.starts.velocity  , '*g')
-              	plot(obj.peaks.time  , obj.peaks.velocity   , '*b')
-                plot(obj.ends.time   , obj.ends.velocity    , '*r')
+                h(2) = plot(obj.time,obj.velocity,'k'); 
+                plot(obj.time, -obj.threshold*ones(obj.n,1) , '--m')
                 plot(obj.time,  obj.threshold*ones(obj.n,1) , '--m')
-              	plot(obj.time, -obj.threshold*ones(obj.n,1) , '--m')
-                
+                if obj.count~=0
+                    for ww = 1:obj.count
+                       plot(obj.saccades{ww}.Time,obj.saccades{ww}.Velocity,...
+                           'LineWidth', 1, 'Color', obj.cmap(ww,:))
+                       plot(obj.intervals{ww}.Time,obj.intervals{ww}.Velocity,...
+                           'LineWidth', 1, 'Color', 0.7*obj.cmap(ww,:))
+                    end
+                    plot(obj.starts.time , obj.starts.velocity  , '*g')
+                    plot(obj.peaks.time  , obj.peaks.velocity   , '*b')
+                    plot(obj.ends.time   , obj.ends.velocity    , '*r')
+                end
                 ax(2).YLim = max(abs(ax(2).YLim))*[-1 1];
 
             ax(3) = subplot(4,1,3) ; hold on
-                ylabel('Removed Position')                
-                plot(obj.shift.Time, obj.shift.IntrpPosition,      	 'r', 'LineWidth', 1);
-                plot(obj.shift.Time, obj.shift.Position,             'k', 'LineWidth', 1);
-                plot(obj.removed_all.Time, obj.removed_all.Position, 'c', 'LineWidth', 1);
-                
+                if obj.count~=0
+                    ylabel('Removed Position')                
+                    plot(obj.shift.Time, obj.shift.IntrpPosition,      	 'r', 'LineWidth', 1);
+                    plot(obj.shift.Time, obj.shift.Position,             'k', 'LineWidth', 1);
+                    plot(obj.removed_all.Time, obj.removed_all.Position, 'c', 'LineWidth', 1);
+                end
             ax(4) = subplot(4,1,4) ; hold on
-                ylabel('Removed Velocity')
-                xlabel('Time')
-                plot(obj.shift.Time, obj.shift.IntrpVelocity,   'r', 'LineWidth', 0.5);
-                plot(obj.shift.Time, obj.shift.Velocity,        'k', 'LineWidth', 0.5);
-                
+                if obj.count~=0
+                    ylabel('Removed Velocity')
+                    xlabel('Time')
+                    plot(obj.shift.Time, obj.shift.IntrpVelocity,   'r', 'LineWidth', 0.5);
+                    plot(obj.shift.Time, obj.shift.Velocity,        'k', 'LineWidth', 0.5);
+                end
             set(ax,'LineWidth',1,'FontWeight','bold')
             linkaxes(ax,'x')
             set(h,'LineWidth',0.5)
@@ -574,9 +678,9 @@ classdef saccade
                                 1,1,'k',[0.4 0.4 0.6],0.3,2); uistack(hstd(2),'bottom')
                                 
           	ax(3) = subplot(2,2,2) ; hold on ; title('Intervals')
-                h.intpos = plot(obj.normstart_interval.time,obj.normstart_interval.position);
-                [hstd(3),~] = PlotPatch(obj.normstart_interval.position_stats.median, ...
-                                obj.normstart_interval.position_stats.std, ...
+                h.intpos = plot(obj.normstart_interval.time,obj.norm_interval.position);
+                [hstd(3),~] = PlotPatch(obj.norm_interval.position_stats.median, ...
+                                obj.norm_interval.position_stats.std, ...
                                 obj.normstart_interval.time_stats.median,...
                                 1,1,'k',[0.4 0.4 0.6],0.3,2); uistack(hstd(3),'bottom')
                             
@@ -615,7 +719,7 @@ classdef saccade
           	ax(2) = subplot(2,3,4) ; hold on
                 ylabel('Velocity')
                 h.stimvel = plot(obj.normstart_interval.time, obj.normstart_stimulus.velocity);
-                ax(2).YLim = 1.1*max(max(obj.normstart_stimulus.velocity))*[-1 1];
+                ax(2).YLim = 1.1*abs(max(max(obj.normstart_stimulus.velocity)))*[-1 1];
                 
           	ax(3) = subplot(2,3,2) ; hold on ; title('Error')
                 h.errpos = plot(obj.normstart_interval.time,obj.error.position);
