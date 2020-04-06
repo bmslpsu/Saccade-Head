@@ -1,41 +1,52 @@
-function [] = MakeData_Ramp_HeadFree_Sacd(wave,Fc)
+function [] = MakeData_Sine_HeadFree_Sacd(amp,Fc,direction)
 %% MakeData_Ramp_HeadFree_Sacd:
 %   INPUTS:
-%       wave    :   spatial wavelength of data
-%       Fc      :   head data low-pass filter cutoff frequency [Hz]
+%       amp         :   amplitude of sineusoid stimulus
+%       Fc          :   head data low-pass filter cutoff frequency [Hz]
+%       direction   :   only get saccades in this direction
 %
 %   OUTPUTS:
 %       -
 %
 
-wave = 30;
-Fc = 40;
+% amp = 3.75;
+% Fc = 40;
+% direction = 0; % get saccades in all directions
+
+switch direction
+    case 0
+        dirlabel = 'ALL';
+    case 1
+        dirlabel = 'CW';
+    case -1
+        dirlabel = 'CCW';
+    otherwise
+        error('direction must be 0,1, or -1')
+end
 
 % Data location
-rootdir = ['H:\EXPERIMENTS\RIGID\Experiment_Asymmetry_Control_Verification\HighContrast\' num2str(wave)];
+rootdir = ['H:\EXPERIMENTS\RIGID\Experiment_Sinusoid\' num2str(amp)];
 
 % Output file name
-filename = ['NewRampStim_HeadFree_SACCD_Anti_filt=' num2str(Fc) '_Wave=' num2str(wave)];
+filename = ['SS_HeadFree_SACCD_' dirlabel '_filt=' num2str(Fc) '_Amp=' num2str(amp)];
 
 % Setup Directories 
 PATH.daq = rootdir; % DAQ data location
 PATH.vid = fullfile(PATH.daq,'\Vid'); % video data location
 % PATH.ang = fullfile(PATH.daq,'\Vid\tracked'); % tracked kinematic data location
-PATH.ang = fullfile(PATH.daq,'\Vid\tracked_head'); % tracked kinematic data location
+PATH.ang = fullfile(PATH.daq,'\Vid\Angles'); % tracked kinematic data location
 
 % Select files
-[D,I,N,U,T,FILES,~,basename] = GetFileData(PATH.ang,'*.mat',false,'fly','trial','vel','wave');
+[D,I,N,U,T,~,~,basename] = GetFileData(PATH.ang,'*.mat',false);
 
 %% Get Data %%
 disp('Loading...')
 showplot = false;
 tintrp = (0:(1/200):(10 - 1/200))';
-Vel = U.vel{1};
-Stim = (Vel*tintrp')';
 SACCADE = [I , table(num2cell(zeros(N.file,1)))]; % store saccade objects
-SACCADE.Properties.VariableNames{5} = 'saccade'; 
-ALL_DATA = cell(N.fly,N.vel);
-COUNT = cell(N.fly,N.vel);
+SACCADE.Properties.VariableNames{4} = 'saccade'; 
+ALL_DATA = cell(N.fly,N.freq);
+COUNT = cell(N.fly,N.freq);
 SACCADE_STATS = []; % store saccade stats
 for kk = 1:N.file
     disp(kk)
@@ -63,23 +74,22 @@ for kk = 1:N.file
     
     % Get Saccade Stats
     peaks = [];
-    direction = -sign(D.vel(kk)); % only get saccades in the opposite direction of visual motion
-    head_saccade = saccade(Head.X(:,1), Head.Time, 350, direction, peaks, showplot);
-    % head_saccade = stimSaccade(head_saccade, Stim(:,I.vel(kk)), showplot); % with approximate pattern position
-    head_saccade = stimSaccade(head_saccade, pat.pos, showplot); % with actual pattern position
+    head_saccade = saccade(Head.X(:,1), Head.Time, 5, direction, peaks, showplot);
+    % figure (1) ; suptitle(num2str(D.freq(kk)))
+    head_saccade = stimSaccade(head_saccade, pat.pos, false); % with actual pattern position
     
-    COUNT{I.fly(kk),I.vel(kk)}(end+1,1) = head_saccade.count;
+    COUNT{I.fly(kk),I.freq(kk)}(end+1,1) = head_saccade.count;
     
     if head_saccade.count==0
         rep = 1;
-        SACCADE{kk,5} = {head_saccade};
+        SACCADE{kk,4} = {head_saccade};
         % ALL_DATA{I.fly(kk),I.vel(kk)}(end+1,1) = saccade();
     else
-        SACCADE{kk,5} = {head_saccade};
-        ALL_DATA{I.fly(kk),I.vel(kk)}(end+1,1) = head_saccade;
+        SACCADE{kk,4} = {head_saccade};
+        ALL_DATA{I.fly(kk),I.freq(kk)}(end+1,1) = head_saccade;
         rep = head_saccade.count;
     end
-    VTable = table(D.vel(kk),'VariableNames',{'Vel'});
+    VTable = table(D.freq(kk),'VariableNames',{'Vel'});
     ITable = [I(kk,:),VTable];
     ITable = repmat(ITable,rep,1);
     SACCADE_STATS = [SACCADE_STATS ; [ITable , head_saccade.SACD]];
@@ -103,6 +113,7 @@ norm_fields = {'time','position','velocity'};
 center = 0; % normalization center for saccades & inter-saccade intervals
 dim = 1; % dimension to center
 
+clc
 FLY = []; % all trials per speed per fly
 GRAND = []; % all trials per speed
 for kk = 1:nfield % for each field in the saccade structure
@@ -114,7 +125,7 @@ for kk = 1:nfield % for each field in the saccade structure
     
     FLY.(fields{kk}) = cellfun(@(x) struct_center([x.(fields{kk})], center, even, dim, norm_fields), ...
                             ALL_DATA, 'UniformOutput', true);
-    for jj = 1:N.vel
+    for jj = 1:N.freq
         GRAND.(fields{kk})(:,jj) = struct_center(FLY.(fields{kk})(:,jj),center, even , dim, norm_fields);
     end
 end
@@ -122,6 +133,6 @@ end
 %% SAVE %%
 disp('Saving...')
 save(['H:\DATA\Rigid_Data\' filename '_' datestr(now,'mm-dd-yyyy') '.mat'],...
-      'PATH','ALL_DATA','COUNT','SACCADE','SACCADE_STATS','FLY','GRAND','Stim','D','I','U','N','T','-v7.3')
+      'PATH','ALL_DATA','COUNT','SACCADE','SACCADE_STATS','FLY','GRAND','D','I','U','N','T','-v7.3')
 disp('SAVING DONE')
 end

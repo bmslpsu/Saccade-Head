@@ -58,4 +58,33 @@ XLabelHC = get(ax(clms+1:N.vel), 'XLabel');
 set([XLabelHC{:}], 'String', 'Frequency (Hz)')
 YLabelHC = get(ax([1,clms+1]), 'YLabel');
 set([YLabelHC{:}], 'String', 'Head Magnitude (°)')
+
+%% Time Domain Confirmation
+saccade = (cat(1,SACCADE.saccade{:}));
+time = saccade(1).time;
+
+vI = 2;
+Vel = U.vel{1}(vI);
+vI_all = SACCADE.vel == vI;
+velocity = cat(2,saccade(vI_all).velocity);
+stimulus = cat(2,saccade(vI_all).stimlus_velocity);
+
+trialI = 10;
+clear ax h
+FIG = figure (2) ; clf
+FIG.Color = 'w';
+FIG.Units = 'inches';
+FIG.Position = [2 2 clms*(4/3) 3];
+
+ax = subplot(1,1,1); hold on ; title(['Stimulus Velocity = ' num2str(Vel) ' (°/s)'])
+h(1) = plot(time, stimulus(:,trialI), 'g');
+h(2) = plot(time, velocity(:,trialI), 'k');
+legend(h, 'Visual Motion', 'Head', 'Box', 'off')
+xlabel('Time (s)')
+ylabel('Velocity (°/s)')
+set(h, 'LineWidth', 1)
+
+set(ax,'LineWidth',1.5,'FontWeight','bold','XLim',[2 4],'YLim',800*[-1 1])
+set(ax, 'YTick', 750*[-1 0 1])
+
 end

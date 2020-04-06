@@ -43,10 +43,11 @@ set(h,'EdgeColor','none')
 set(ax,'FontSize',8);
 set(ax,'Color','w');
 set(ax,'ThetaLim',[-20 20]);
-% set(ax,'RLim',[0 300]);
+set(ax,'RLim',[0 0.105]);
 set(ax,'ThetaDir','clockwise')
 set(ax,'ThetaTick',-20:10:20);
 set(ax,'ThetaZeroLocation','top');
+% linkaxes(ax)
 % leg = legend('Start','End','Location','North');
 % leg.Location = 'northwest';
 % leg.Box = 'off';

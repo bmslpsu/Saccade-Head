@@ -39,7 +39,7 @@ PATH.benifly = fullfile(PATH.daq,'\tracked_head_wing'); % tracked benifly data l
 
 %% Get Data %%
 disp('Loading...')
-showplot = false;
+showplot = true;
 tintp = (0:(1/200):(10 - 1/200))';
 SACCADE = [I , table(num2cell(zeros(N.file,1)))]; % store saccade objects
 SACCADE.Properties.VariableNames{5} = 'saccade';
@@ -70,7 +70,7 @@ for kk = 1:N.file
     head_saccade = saccade(Head.X(:,1), Head.Time, 3.5, direction, peaks, showplot);
     % figure (1)
     
-    COUNT{I.fly(kk),I.wave(kk)} = head_saccade.count;
+    COUNT{I.fly(kk),I.wave(kk)}(end+1,1) = head_saccade.count;
     
     if head_saccade.count==0
         rep = 1;

@@ -1,5 +1,5 @@
-function [] = Saccade_ExampleTrials()
-%% Saccade_ExampleTrials:
+function [] = SS_Saccade_ExampleTrials()
+%% SS_Saccade_ExampleTrials:
 root = 'H:\DATA\Rigid_Data\';
 
 [FILE,PATH] = uigetfile({'*.mat', 'DAQ-files'}, ...
@@ -7,12 +7,9 @@ root = 'H:\DATA\Rigid_Data\';
 
 load(fullfile(PATH,FILE),'PATH','COUNT','SACCADE','SACCADE_STATS','FLY','GRAND','Stim','D','I','U','N')
 
-clms = N.vel/2;
-% CC = repmat(hsv(clms),2,1);
-% Vel = U{1,3}{1};
 clearvars -except clms CC Vel PATH COUNT SACCADE SACCADE_STATS FLY GRAND Stim D I U N
 
-%% Active Tracking vs Landing Behavior %%
+%% Example Trial
 clearvars -except clms CC Vel PATH COUNT SACCADE SACCADE_STATS FLY GRAND Stim D I U N
 
 FIG = figure (1) ; clf
@@ -24,18 +21,30 @@ movegui(FIG,'center')
 FIG.Color = 'w';
 clear ax h
 
-active = 149;
-active_switch = 309;
-% active_switch = 260;
-land = 4;
-ss = 100;
+% 15
+% idx_1 = 10;
+% idx_2 = 5;
+% idx_35 = 9;
+% idx_65 = 3;
+% idx_12 = 4;
 
-idx = ss;
+% 3.75
+idx_05 = 2;
+idx_1 = 5;
+idx_2 = 4;
+idx_35 = 3;
+idx_65 = 6;
+idx_12 = 21;
+
+idx = idx_05;
 trial = SACCADE.saccade{idx};
 
-ax(1) = subplot(4,1,1) ; hold on ; title(['Stimulus: ' num2str(D.freq(idx)) ' (°/s)'])
+ax(1) = subplot(4,1,1) ; hold on ; title(['Stimulus: ' num2str(D.freq(idx)) ' (Hz)'])
     ylabel('Position (°)')
-    h(1) = plot(trial.time,trial.position,'k');
+    stim = trial.stimlus_position;
+    stim = stim - mean(stim);
+    h(1) = plot(trial.time, stim, 'Color', [0.5 0.5 0.5]);
+    plot(trial.time, trial.position,'k');
     plot(trial.time, zeros(trial.n,1),'--','Color',[0.5 0.5 0.5])
     if trial.count~=0
         for ww = 1:trial.count

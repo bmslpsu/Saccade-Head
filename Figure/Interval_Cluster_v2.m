@@ -1,11 +1,10 @@
-function [] = Interval_Cluster()
+function [] = Interval_Cluster_v2()
 %% Interval_Cluster:
 root = 'H:\DATA\Rigid_Data\';
 
-[FILE,PATH] = uigetfile({'*.mat', 'DAQ-files'}, ...
-    'Select head angle trials', root, 'MultiSelect','off');
+[FILE,PATH] = uigetfile({'*.mat'},'Select data file', root, 'MultiSelect','off');
 
-load(fullfile(PATH,FILE),'PATH','COUNT','SACCADE','SACCADE_STATS','FLY','GRAND','Stim','D','I','U','N')
+load(fullfile(PATH,FILE),'GRAND','U','N','SACCADE')
 
 clms = N.vel/2;
 CC = repmat(hsv(clms),2,1);
@@ -14,28 +13,25 @@ Vel = U.vel{1};
 Speed = Vel(1:N.vel/2);
 
 %% Cluster saccades
-clearvars -except clms CC Speed Vel PATH COUNT SACCADE SACCADE_STATS FLY GRAND Stim D I U N
+clearvars -except clms CC Speed Vel COUNT SACCADE SACCADE_STATS FLY GRAND Stim D I U N
 
 Ts = SACCADE.saccade{1}.Ts; % sampling time [s]
 
 IntAll = GRAND;
 IntSort = IntAll; % grouped saccade & intervals
 main_fields = string(fieldnames(IntSort)); % all fields
-% IntSort = rmfield(IntSort,main_fields(1)); % only intervals
-% main_fields = main_fields(2:end); % only intervals
 n_main_fields = length(main_fields); % # of fields
-field_time = main_fields(1);
+field_time = main_fields(2);
 
 % Get rid of intervals before 1st saccade
-valid_time = cell(N.vel,1);
-length_idx = cell(N.vel,1);
-int_times = cell(N.vel,1);
-int_stats = cell(N.vel,1);
+length_idx = struct('all',[],'below',[],'above',[],'speed',[]);
+valid_time = struct('all',[],'below',[],'above',[],'speed',[]);
+int_times  = struct('all',[],'below',[],'above',[],'speed',[]);
+int_stats  = struct('all',[],'below',[],'above',[],'speed',[]);
 for jj = 1:N.vel
+    time_field = IntAll.(field_time)(jj).time;
+	allnan_idx = isnan(time_field(1,:)); % use time of first field to find nan's
     for kk = 1:n_main_fields
-        time_field = IntAll.(field_time)(jj).time;
-        allnan_idx = isnan(time_field(1,:)); % use time of first field to find nan's
-    
         field_names = string(fieldnames(IntSort.(main_fields(kk))));
         for f = 1:length(field_names)
             IntSort.(main_fields(kk))(jj).(field_names(f)) = ...
@@ -44,11 +40,12 @@ for jj = 1:N.vel
 
         % Sort intervals
         time_field = IntSort.(main_fields(kk))(jj).time;
-        valid_time{jj} = ~isnan(time_field); % valid times in intervals
-        length_idx{jj} = sum(valid_time{jj},1); % how long intervals are in samples
-        [length_idx{jj},order] = sort(length_idx{jj},'ascend'); % sort by lengths by length
-        max_length = max(length_idx{jj});
-        valid_time{jj} = valid_time{jj}(1:max_length,order); % valid times by length
+        valid_time(jj).all = ~isnan(time_field); % valid times in intervals
+        temp = sum(valid_time(jj).all, 1); % how long intervals are in samples
+        [temp,order] = sort(temp,'ascend'); % sort by lengths by length
+        length_idx(jj).all = temp;
+        max_length = max(length_idx(jj).all);
+        valid_time(jj).all =valid_time(jj).all(1:max_length,order); % valid times by length
 
         % Sort intervals by length & get rid of trailing nan's
         for f = 1:length(field_names)
@@ -56,8 +53,8 @@ for jj = 1:N.vel
                 IntSort.(main_fields(kk))(jj).(field_names(f))(1:max_length,order);
         end
 
-        int_times{jj} = length_idx{jj} * Ts;
-        int_stats{jj} = basic_stats(int_times{jj},2);
+        int_times(jj).all = length_idx(jj).all * Ts;
+        int_stats(jj).all = basic_stats(int_times(jj).all,2);
     end
 end
 
@@ -68,15 +65,17 @@ n = 2;
 [b,a] = butter(n, Fc/(Fs/2), 'low');
 for jj = 1:N.vel
     for kk = 1:n_main_fields
-        field_names = string(fieldnames(IntSort.(main_fields(kk))));
-        field_names = field_names(2:3); % don't filter "time"
-        for f = 1:length(field_names)
-        	all = IntSort.(main_fields(kk))(jj).(field_names(f));
-            for ii = 1:size(all,2)
-              	vals = all(:,ii);
-                filtidx = ~isnan(vals);
-                vals(filtidx) = filtfilt(b,a,vals(filtidx));
-                IntSort.(main_fields(kk))(jj).(field_names(f))(filtidx,ii) = vals(filtidx);
+        if kk ~= 1
+            field_names = string(fieldnames(IntSort.(main_fields(kk))));
+            field_names = field_names(2:3); % don't filter time
+            for f = 1:length(field_names)
+                all = IntSort.(main_fields(kk))(jj).(field_names(f));
+                for ii = 1:size(all,2)
+                    vals = all(:,ii);
+                    filtidx = ~isnan(vals);
+                    vals(filtidx) = filtfilt(b,a,vals(filtidx));
+                    IntSort.(main_fields(kk))(jj).(field_names(f))(filtidx,ii) = vals(filtidx);
+                end
             end
         end
     end
@@ -90,15 +89,11 @@ cut_time = head_amp ./ (head_gain.*abs(Vel));
 
 IntBelow = IntSort;
 IntAbove = IntSort;
-int_time_below = int_times;
-int_time_above = int_times;
-below_valid_time = valid_time;
 for jj = 1:N.vel
+	time_field = IntSort.(field_time)(jj).time;
+    cut_idx = find(time_field(:,end) <= cut_time(jj), 1, 'last');
+    rmv_idx = sum(valid_time(jj).all ,1) > cut_idx;
     for kk = 1:n_main_fields
-    	time_field = IntSort.(field_time)(jj).time;
-        cut_idx = find(time_field(:,end) <= cut_time(jj), 1, 'last');
-        rmv_idx = sum(valid_time{jj},1) > cut_idx;
-
         % Seperate intervals shorter & longer than cut-time
         field_names = string(fieldnames(IntSort.(main_fields(kk))));
         for f = 1:length(field_names)
@@ -107,11 +102,14 @@ for jj = 1:N.vel
             IntAbove.(main_fields(kk))(jj).(field_names(f)) = ...
                 IntAbove.(main_fields(kk))(jj).(field_names(f))(:,rmv_idx);
         end
-        int_time_below{jj} = Ts * sum(~isnan(IntBelow.norm_interval(jj).time),1);
-        int_time_above{jj} = Ts * sum(~isnan(IntAbove.norm_interval(jj).time),1);
-
-        below_valid_time{jj} = ~isnan(IntBelow.(main_fields(kk))(jj).time);
-        max_length = max(sum(below_valid_time{jj},1));
+        int_times(jj).below = Ts * sum(~isnan(IntBelow.norm_interval(jj).time),1);
+        int_times(jj).above = Ts * sum(~isnan(IntAbove.norm_interval(jj).time),1);
+        int_stats(jj).below = basic_stats(int_times(jj).below,2);
+        int_stats(jj).above = basic_stats(int_times(jj).above,2);
+        
+        valid_time(jj).below = ~isnan(IntBelow.(main_fields(kk))(jj).time);
+        valid_time(jj).above = ~isnan(IntAbove.(main_fields(kk))(jj).time);
+        max_length = max(sum(valid_time(jj).below,1));
 
         % Get rid of trailing nan's in shorter intervals
         for f = 1:length(field_names)
@@ -119,7 +117,67 @@ for jj = 1:N.vel
                 IntBelow.(main_fields(kk))(jj).(field_names(f))(1:max_length,:);
         end
     end
+    length_idx(jj).below = sum(~isnan(IntBelow.(field_time)(jj).time));
+    length_idx(jj).above = sum(~isnan(IntAbove.(field_time)(jj).time));
 end
+
+%% Group & sort by speed & for all
+IntSpeed = [];
+for jj = 1:N.vel/2
+    for kk = 1:n_main_fields
+        % Concatenate intervals with same speed
+        field_names = string(fieldnames(IntSort.(main_fields(kk))));
+        for f = 1:length(field_names)
+            IntSpeed.(main_fields(kk))(jj).(field_names(f)) = nancat(2, ...
+                IntSort.(main_fields(kk))(jj).(field_names(f)), ...
+                 -IntSort.(main_fields(kk))(jj + clms).(field_names(f)));
+        end
+        
+        % Sort intervals
+        time_field = IntSpeed.(main_fields(kk))(jj).time;
+        valid_time(jj).speed = ~isnan(time_field); % valid times in intervals
+        length_idx(jj).speed = sum(valid_time(jj).speed,1); % how long intervals are in samples
+        [length_idx(jj).speed,order] = sort(length_idx(jj).speed,'ascend'); % sort by lengths by length
+        max_length = max(length_idx(jj).speed);
+        valid_time(jj).speed = valid_time(jj).speed(1:max_length,order); % valid times by length
+
+        % Sort intervals by length & get rid of trailing nan's
+        for f = 1:length(field_names)
+            IntSpeed.(main_fields(kk))(jj).(field_names(f)) = ...
+                IntSpeed.(main_fields(kk))(jj).(field_names(f))(1:max_length,order);
+        end
+
+        int_times(jj).speed = length_idx(jj).speed * Ts;
+        int_stats(jj).speed = basic_stats(int_times(jj).speed,2);
+    end
+end
+int_times(1).all_speed = cat(2,int_times(:).speed);
+int_times(1).all_speed = sort(int_times(1).all_speed);
+int_stats(1).all_speed = basic_stats(int_times(jj).speed,2);
+
+%% Visualize interval lengths
+FIG = figure (30) ; clf
+FIG.Units = 'inches';
+FIG.Position = [2 2 2*(4/3) 4];
+FIG.Name = 'Interval Time Visualization: Speed';
+FIG.PaperPositionMode = 'auto';
+movegui(FIG,'center')
+FIG.Color = 'w';
+clear h
+h = gobjects(N.vel/2,1);
+ax = subplot(1,1,1); hold on
+for jj = 1:N.vel/2
+    times = int_times(jj).speed;
+    span = linspace(0,1,length(times));
+    h(jj) = plot(span, times, '.', 'MarkerFaceColor', 'none', 'MarkerEdgeColor', CC(jj,:));
+end
+span = linspace(0,1,length(int_times(1).all_speed)); 
+h(end+1) = plot(span, int_times(1).all_speed, '.', 'MarkerFaceColor', 'none', 'MarkerEdgeColor', 'k');
+leg = legend(h, [ string(Vel(1:clms)) ; "ALL"], 'Box', 'off');
+leg.Title.String = 'Speed (°/s)';
+xlabel('Normalized Trial #')
+ylabel('Interval Time')
+set(ax,'LineWidth',1.5)
 
 %% Split intervals
 FIG = figure (1) ; clf
@@ -194,10 +252,10 @@ for jj = 1:N.vel
 
         title([num2str(Vel(jj)) ' (°/s)'])
         
-        n_trial = size(valid_time{jj},2);
+        n_trial = size(valid_time(jj).all,2);
         
      	% Find the transition cutoff
-        cut_trial = find(int_times{jj} >= cut_time(jj), 1, 'first');
+        cut_trial = find(int_times(jj).all >= cut_time(jj), 1, 'first');
         if isempty(cut_trial)
             cut_trial = size(int_times{jj},2);
         end
@@ -205,13 +263,14 @@ for jj = 1:N.vel
         cut_line1 = repmat(cut_time(jj) / Ts, 1, n_trial);
         cut_line2 = repmat(cut_trial, 2, 1);
         
-        %plot(1:n_trial, cut_line1, 'g', 'LineWidth', 1)
-        %plot(cut_line2, [1 , max(length_idx{jj})], 'g', 'LineWidth', 1)
+        plot(1:n_trial, cut_line1, 'g', 'LineWidth', 1)
+        plot(cut_line2, [1 , max(length_idx(jj).all)], 'g', 'LineWidth', 1)
         
         ax(jj).XTick = [1 n_trial];
         ax(jj).YTick = 1:200:2000;
         ax(jj).YTickLabels = string((ax(jj).YTick -1 )*Ts); % convert lables to time
 end
+set(ax,'YLim',[0 4*Fs])
 linkaxes(ax,'y')
 YLabelHC = get(ax([1,clms+1]), 'YLabel');
 set([YLabelHC{:}], 'String', 'Time (s)')
@@ -224,11 +283,63 @@ set(ax,'LineWidth',1,'FontWeight','bold','FontSize',8,'Color','k',...
 colormap(jet)
 
 hp = get(subplot(2,5,10),'Position');
-cbar = colorbar('Position', [hp(1)+hp(3)+0.02  0.05+hp(2)  0.01  hp(2)+hp(3)*1],'Ticks',[-15 15]);
-cbar.Label.String = 'Head Position (°)';
+cbar = colorbar('Position', [hp(1)+hp(3)+0.02  0.05+hp(2)  0.01  hp(2)+hp(3)*1],'Ticks',[0 15]);
+cbar.Label.String = 'Absolute Value of Head Position (°)';
+
+%% Visualize interval position/time by speed
+FIG = figure (3) ; clf
+FIG.Units = 'inches';
+FIG.Position = [2 2 clms*(4/3) 1.5];
+FIG.Name = 'Interval Time Visualization: Velocity';
+FIG.PaperPositionMode = 'auto';
+movegui(FIG,'center')
+FIG.Color = 'w';
+ax = gobjects(N.vel/2,1);
+clear h
+
+for jj = 1:N.vel/2
+    ax(jj) = subplot(1,clms,jj);
+        img = IntSpeed.normstart_interval(jj).position;
+        blank = isnan(img);
+        h = imagesc(img,'AlphaData',~blank,[0 15]); hold on
+
+        title([num2str(Vel(jj)) ' (°/s)'])
+        
+        n_trial = size(valid_time(jj).speed,2);
+        
+     	% Find the transition cutoff
+        cut_trial = find(int_times(jj).speed >= cut_time(jj), 1, 'first');
+        if isempty(cut_trial)
+            cut_trial = size(int_times(jj).speed,2);
+        end
+
+        cut_line1 = repmat(cut_time(jj) / Ts, 1, n_trial);
+        cut_line2 = repmat(cut_trial, 2, 1);
+        
+        plot(1:n_trial, cut_line1, 'g', 'LineWidth', 1)
+        plot(cut_line2, [1 , max(length_idx(jj).speed)], 'g', 'LineWidth', 1)
+        
+        ax(jj).XTick = [1 n_trial];
+        ax(jj).YTick = 1:200:2000;
+        ax(jj).YTickLabels = string((ax(jj).YTick -1 )*Ts); % convert lables to time
+end
+set(ax,'YLim',[0 4*Fs])
+linkaxes(ax,'y')
+YLabelHC = get(ax(1), 'YLabel');
+set([YLabelHC], 'String', 'Time (s)')
+XLabelHC = get(ax, 'XLabel');
+set([XLabelHC{:}], 'String', 'Interval #')
+set(ax,'LineWidth',1,'FontWeight','bold','FontSize',8,'Color','k',...
+    'YColor','k','XColor','k')
+
+colormap(jet)
+
+hp = get(subplot(1,5,5),'Position');
+cbar = colorbar('Position', [hp(1)+hp(3)+0.02  0.05+hp(2)  0.01  hp(2)+hp(3)*1],'Ticks',[0 15]);
+cbar.Label.String = 'Absolute Value of Head Position (°)';
 
 %% Interval Position %%
-FIG = figure (3) ; clf
+FIG = figure (4) ; clf
 FIG.Units = 'inches';
 FIG.Position = [2 2 4 3];
 FIG.Name = 'Interval Position';
@@ -268,7 +379,7 @@ set(ax,'YLim',30*[-1 1])
 uistack(h.med','top')
 
 %% Interval Position Error %%
-FIG = figure (4) ; clf
+FIG = figure (5) ; clf
 FIG.Units = 'inches';
 FIG.Position = [2 2 4 3];
 FIG.Name = 'Interval Position Error';
@@ -305,6 +416,46 @@ ylabel('Head Position Error (°)')
 set(ax,'LineWidth',1,'FontWeight','bold','FontSize',8,'Color','w',...
     'YColor','k','XColor','k','XLim',[0 2])
 set(ax,'YLim',50*[-1 1])
+% uistack(h.med','top')
+
+%% Interval Integrated Position Error %%
+FIG = figure (6) ; clf
+FIG.Units = 'inches';
+FIG.Position = [2 2 4 3];
+FIG.Name = 'Interval Position Error';
+FIG.PaperPositionMode = 'auto';
+movegui(FIG,'center')
+FIG.Color = 'w';
+ax = gobjects(N{1,3},1);
+clear ax h
+ax(1) = subplot(1,1,1) ; hold on
+
+pp = 1;
+pLim = 0.9;
+% test = [1:3,6:8];
+for jj = 1:N.vel   
+    time = IntBelow.int_error(jj).time;
+    pos = IntBelow.int_error(jj).position;
+    med_time = nanmedian(time,2);
+    med_pos = nanmedian(pos,2);
+    std_pos = nanstd(pos,[],2);
+    
+   	tLim = sum(isnan(time),2)./(size(time,2)-1);
+    span = 1:length(tLim(tLim<pLim));
+   	
+    h.trial = plot(time, pos, 'Color', [0.7*CC(jj,:) , 0.4], 'LineWidth', 0.6);
+	                              
+%     [h.patch(pp),h.med(pp)] = PlotPatch(med_pos(span), std_pos(span), med_time(span), 1, 1, ...
+%         CC(jj,:), 0.5*CC(jj,:), 0.2, 1.5);
+%     h.patch(pp).EdgeColor = CC(jj,:);
+    
+    pp = pp + 1;
+end
+xlabel('Time (s)')
+ylabel('Head Integrated Position Error (°)')
+set(ax,'LineWidth',1,'FontWeight','bold','FontSize',8,'Color','w',...
+    'YColor','k','XColor','k','XLim',[0 2])
+set(ax,'YLim',30*[-1 1])
 % uistack(h.med','top')
 
 %% Interval Velocity %%
@@ -371,13 +522,16 @@ set(ax,'YLim',100*[-1 1])
 linkaxes(ax,'xy')
 
 %% Interval Times %%
-int_time_below_all = cat(2,int_time_below{:})';
+int_time_below_all = cat(2,int_times(:).below)';
 % groups = (1:N.vel)';
+% Labels = Vel;
 groups = repmat((1:N.vel/2)',2,1);
-G = cellfun(@(x,y) y*ones(size(x)), int_time_below, num2cell(groups), 'UniformOutput', false);
+Labels = Speed;
+G = cellfun(@(x,y) y*ones(size(x)), {int_times(:).below}', num2cell(groups), ...
+    'UniformOutput', false);
 G = cat(2,G{:})';
 
-FIG = figure (5) ; clf
+FIG = figure (6) ; clf
 FIG.Units = 'inches';
 FIG.Position = [2 2 2 2];
 FIG.Name = 'Interval Times';
@@ -387,7 +541,7 @@ FIG.Color = 'w';
 ax = gobjects(N.vel,1);
 clear ax h
 ax(1) = subplot(1,1,1) ; hold on
-    bx = boxplot(int_time_below_all,G,'Labels',{Speed},'Width',0.5,'Symbol','.','Whisker',2);
+    bx = boxplot(int_time_below_all,G,'Labels',{Labels},'Width',0.5,'Symbol','.','Whisker',2);
     box off
     xlabel('Stimulus Speed (°/s)')
     ylabel('Interval Times (s)')
@@ -405,8 +559,91 @@ ax(1) = subplot(1,1,1) ; hold on
     
 set(ax,'LineWidth',1,'FontWeight','bold','FontSize',8)
 
+%% Interval Error %%
+int_below_error = {IntBelow.error(:).position}';
+int_below_error = cellfun(@(x,y) indexbyarray(x,y), int_below_error, {length_idx(:).below}', ...
+    'UniformOutput', false);
+% groups = (1:N.vel)';
+% Labels = Vel;
+groups = repmat((1:N.vel/2)',2,1);
+Labels = Speed;
+G = cellfun(@(x,y) y*ones(size(x)), int_below_error, num2cell(groups), ...
+    'UniformOutput', false);
+G = cat(2,G{:})';
+int_below_error = abs(cat(2,int_below_error{:}));
+
+FIG = figure (7) ; clf
+FIG.Units = 'inches';
+FIG.Position = [2 2 2 2];
+FIG.Name = 'Interval Error';
+FIG.PaperPositionMode = 'auto';
+movegui(FIG,'center')
+FIG.Color = 'w';
+ax = gobjects(N.vel,1);
+clear ax h
+ax(1) = subplot(1,1,1) ; hold on
+    bx = boxplot(int_below_error,G,'Labels',{Labels},'Width',0.5,'Symbol','.','Whisker',2);
+    box off
+    xlabel('Stimulus Speed (°/s)')
+    ylabel('Interval Error (°)')
+    
+    h = get(bx(5,:),{'XData','YData'});
+    for jj = 1:size(h,1)
+       patch(h{jj,1},h{jj,2},CC(jj,:));
+    end
+
+    set(findobj(ax,'tag','Median'), 'Color', 'w','LineWidth',1.5);
+    set(findobj(ax,'tag','Box'), 'Color', 'none');
+    set(findobj(ax,'tag','Upper Whisker'), 'Color', 'k','LineStyle','-');
+    set(findobj(ax,'tag','Lower Whisker'), 'Color', 'k','LineStyle','-');
+    ax.Children = ax.Children([end 1:end-1]);
+    
+set(ax,'LineWidth',1,'FontWeight','bold','FontSize',8)
+
+%% Interval Integrated Error %%
+int_below_interror = {IntBelow.int_error(:).position}';
+int_below_interror = cellfun(@(x,y) indexbyarray(x,y), int_below_interror, {length_idx(:).below}', ...
+    'UniformOutput', false);
+% groups = (1:N.vel)';
+% Labels = Vel;
+groups = repmat((1:N.vel/2)',2,1);
+Labels = Speed;
+G = cellfun(@(x,y) y*ones(size(x)), int_below_interror, num2cell(groups), ...
+    'UniformOutput', false);
+G = cat(2,G{:})';
+int_below_interror = abs(cat(2,int_below_interror{:}));
+
+FIG = figure (7) ; clf
+FIG.Units = 'inches';
+FIG.Position = [2 2 2 2];
+FIG.Name = 'Interval Error';
+FIG.PaperPositionMode = 'auto';
+movegui(FIG,'center')
+FIG.Color = 'w';
+ax = gobjects(N.vel,1);
+clear ax h
+ax(1) = subplot(1,1,1) ; hold on
+    bx = boxplot(int_below_interror,G,'Labels',{Labels},'Width',0.5,'Symbol','.','Whisker',2);
+    box off
+    xlabel('Stimulus Speed (°/s)')
+    ylabel('Integrated Error (°*s)')
+    
+    h = get(bx(5,:),{'XData','YData'});
+    for jj = 1:size(h,1)
+       patch(h{jj,1},h{jj,2},CC(jj,:));
+    end
+
+    set(findobj(ax,'tag','Median'), 'Color', 'w','LineWidth',1.5);
+    set(findobj(ax,'tag','Box'), 'Color', 'none');
+    set(findobj(ax,'tag','Upper Whisker'), 'Color', 'k','LineStyle','-');
+    set(findobj(ax,'tag','Lower Whisker'), 'Color', 'k','LineStyle','-');
+    ax.Children = ax.Children([end 1:end-1]);
+    
+set(ax,'LineWidth',1,'FontWeight','bold','FontSize',8)
+% set(ax,'YLim',[0 30])
+
 %% Interval Gains %%
-FIG = figure (100) ; clf
+FIG = figure (9) ; clf
 FIG.Units = 'inches';
 FIG.Position = [2 2 5 5];
 FIG.Name = 'Velocity Response';

@@ -92,7 +92,10 @@ if ~nan_cond
             comb_struct.(cent_fname(kk)) = cat(2,temp{:});
         end
     else
-       comb_struct = [];
+        for n = 1:length(fnames)
+            comb_struct.(fnames(n)) = nan;
+        end
+        % comb_struct = [];
     end
 else % return nan's if nan's or empty in norm field
     comb_struct.(norm_fname) = nan;

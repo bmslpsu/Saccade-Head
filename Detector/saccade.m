@@ -1,5 +1,5 @@
 classdef saccade
-    % saccade: class to detect and analyze saccade in a data set
+    % saccade: class to detect and analyze saccades in signal
     %   
  	
     properties (SetAccess = private, Hidden = false)

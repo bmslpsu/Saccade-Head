@@ -86,6 +86,47 @@ for ww = 1:n_plot
     ax(ww).YLim(1) = 0;
     ax(ww).YLim(2) = ylim_list(ww);
 end
+set(ax,'LineWidth',1,'FontWeight','bold')
+
+%% Saccade Count/Rate
+empty_cond = cellfun(@(x) isempty(x), COUNT, 'UniformOutput', true);
+COUNT(empty_cond) = {nan};
+count.stats = cellfun(@(x) basic_stats(x,1), COUNT, 'UniformOutput', true);
+for v = 1:N.wave
+    count.all{v,1} = cat(1,COUNT{:,v});
+    count.med(:,v)  = cat(1,count.stats(:,v).median);
+    count.mean(:,v) = cat(1,count.stats(:,v).mean);
+end
+n_length = cellfun(@(x) length(x), count.all, 'UniformOutput', true);
+G = [];
+for v = 1:N.wave
+   G = [G ; v*ones(n_length(v),1)]; 
+end
+count_all = cat(1,count.all{:});
+
+
+FIG = figure (2) ; clf
+FIG.Color = 'w';
+FIG.Units = 'inches';
+FIG.Position = [2 2 2*1.2 2];
+movegui(FIG,'center')
+ax = subplot(1,1,1); hold on
+
+bx = boxplot(count_all./10, G, 'Labels', {wave}, 'Width', 0.5, 'Symbol', '.', 'Whisker', 2);
+xlabel('Stimulus Speed (°/s)')
+ylabel('Rate (#/s)')
+
+h = get(bx(5,:),{'XData','YData'});
+for kk = 1:size(h,1)
+   patch(h{kk,1},h{kk,2},CC(kk,:));
+end
+
+set(findobj(ax,'tag','Median'), 'Color', 'w','LineWidth',1.5);
+set(findobj(ax,'tag','Box'), 'Color', 'none');
+set(findobj(ax,'tag','Upper Whisker'), 'Color', 'k','LineStyle','-');
+set(findobj(ax,'tag','Lower Whisker'), 'Color', 'k','LineStyle','-');
+ax.Children = ax.Children([end 1:end-1]);
 
 set(ax,'LineWidth',1,'FontWeight','bold')
+
 end
