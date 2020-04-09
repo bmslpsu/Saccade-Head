@@ -5,7 +5,7 @@ root = 'H:\DATA\Rigid_Data\';
 [FILE,PATH] = uigetfile({'*.mat', 'DAQ-files'}, ...
     'Select head angle trials', root, 'MultiSelect','off');
 
-load(fullfile(PATH,FILE),'PATH','COUNT','SACCADE','SACCADE_STATS','FLY','GRAND','Stim','D','I','U','N')
+load(fullfile(PATH,FILE),'PATH','COUNT','SACCADE','SACCADE_STATS','FLY','GRAND','D','I','U','N')
 
 clearvars -except clms CC Vel PATH COUNT SACCADE SACCADE_STATS FLY GRAND Stim D I U N
 
@@ -32,11 +32,11 @@ clear ax h
 idx_05 = 2;
 idx_1 = 5;
 idx_2 = 4;
-idx_35 = 3;
+idx_35 = 70;
 idx_65 = 6;
-idx_12 = 21;
+idx_12 = 5;
 
-idx = idx_05;
+idx = idx_35;
 trial = SACCADE.saccade{idx};
 
 ax(1) = subplot(4,1,1) ; hold on ; title(['Stimulus: ' num2str(D.freq(idx)) ' (Hz)'])
@@ -44,7 +44,7 @@ ax(1) = subplot(4,1,1) ; hold on ; title(['Stimulus: ' num2str(D.freq(idx)) ' (H
     stim = trial.stimlus_position;
     stim = stim - mean(stim);
     h(1) = plot(trial.time, stim, 'Color', [0.5 0.5 0.5]);
-    plot(trial.time, trial.position,'k');
+    plot(trial.time, trial.position - mean(trial.position),'k');
     plot(trial.time, zeros(trial.n,1),'--','Color',[0.5 0.5 0.5])
     if trial.count~=0
         for ww = 1:trial.count

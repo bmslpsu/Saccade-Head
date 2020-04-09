@@ -102,6 +102,62 @@ linkaxes(ax(1:clms),'y')
 linkaxes(ax((clms+1):N{1,3}),'y')
 linkaxes(ax,'x')
 
+%% Saccade Position: Both Directions %%
+FIG = figure (3) ; clf
+FIG.Units = 'inches';
+FIG.Position = [2 2 clms*(4/3) 3/2];
+FIG.Name = 'Saccade Velocity';
+FIG.PaperPositionMode = 'auto';
+movegui(FIG,'center')
+FIG.Color = 'w';
+ax = gobjects(N.vel/2,1);
+clear ax h
+
+med_span = 5;
+for jj = 1:N.vel/2
+    ax(jj) = subplot(1,clms,jj) ; hold on
+    title([num2str(Vel(jj)) ' (°/s)'])
+    
+    time = 1000*GRAND.normpeak_saccade(jj).time;
+    med_time = nanmedian(time,2);
+    vel = GRAND.normpeak_saccade(jj).position;
+    med_vel = nanmedian(vel,2);
+    std_vel = nanstd(vel,[],2);
+    
+	cent = find(med_time==0);
+    span = (cent - med_span):( cent + med_span);
+    
+    h.trial = plot(time, vel, 'Color', [0.7*CC(jj,:) , 0.2], 'LineWidth', 0.5);
+                                        
+    h.patch = PlotPatch(med_vel(span), std_vel(span), med_time(span), 1, 1, ...
+        CC(jj,:), [0.7 0.7 0.7], 0.4, 3);
+    h.patch.EdgeColor = CC(jj,:);
+    
+    njj = jj + N.vel/2;
+    time = 1000*GRAND.normpeak_saccade(njj).time;
+    med_time = nanmedian(time,2);
+    vel = GRAND.normpeak_saccade(njj).position;
+    med_vel = nanmedian(vel,2);
+    std_vel = nanstd(vel,[],2);
+    
+	cent = find(med_time==0);
+    span = (cent - med_span):( cent + med_span);
+    
+    h.trial = plot(time, vel, 'Color', [0.7*CC(jj,:) , 0.2], 'LineWidth', 0.5);
+                                        
+    h.patch = PlotPatch(med_vel(span), std_vel(span), med_time(span), 1, 1, ...
+        CC(jj,:), [0.7 0.7 0.7], 0.4, 3);
+    h.patch.EdgeColor = CC(jj,:);
+end
+set(ax,'LineWidth',1,'FontWeight','bold','FontSize',8,'Color','w',...
+    'YColor','k','XColor','k','XLim',1000*0.05*[-1 1],'YLim',20*[-1 1])
+XLabelHC = get(ax, 'XLabel');
+set([XLabelHC{:}], 'String', 'Time (ms)')
+YLabelHC = get(ax(1), 'YLabel');
+set([YLabelHC], 'String', 'Head Velocity (°/s)')
+linkaxes(ax,'xy')
+set(ax(2:end),'YTickLabels',[])
+
 %% Saccade Velocity: Both Directions %%
 FIG = figure (3) ; clf
 FIG.Units = 'inches';
@@ -156,7 +212,7 @@ set(ax,'LineWidth',1,'FontWeight','bold','FontSize',8,'Color','w',...
 XLabelHC = get(ax, 'XLabel');
 set([XLabelHC{:}], 'String', 'Time (ms)')
 YLabelHC = get(ax(1), 'YLabel');
-set([YLabelHC], 'String', 'Head Velocity (°)')
+set([YLabelHC], 'String', 'Head Velocity (°/s)')
 linkaxes(ax,'xy')
 set(ax(2:end),'YTickLabels',[])
 

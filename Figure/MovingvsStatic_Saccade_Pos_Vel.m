@@ -44,11 +44,10 @@ ALL.CCW_time = basic_stats(ALL.CCW.time,2);
 ALL.CCW_vel = basic_stats(ALL.CCW.velocity,2);
 ALL.CCW_pos = basic_stats(ALL.CCW.position,2);
 
-
 %% Saccade Position %%
 FIG = figure (2) ; clf
 FIG.Units = 'inches';
-FIG.Position = 2*[2 2 1.1384*(4/3) 3/2];
+FIG.Position = 1*[2 2 1*(4/3) 3/2];
 FIG.Name = 'Static Saccade Position';
 FIG.PaperPositionMode = 'auto';
 movegui(FIG,'center')
@@ -65,7 +64,7 @@ ax = subplot(1,1,1); hold on
 
     % plot(1000*ALL.MovingCCW.time, ALL.MovingCCW.position, 'Color', [0.5 0.5 0.5 0.2])
     [h.patch,h.move] = PlotPatch(ALL.MovingCCW_pos.median(span), ALL.MovingCCW_pos.std(span), ...
-                1000*ALL.MovingCCW_time.median(span), 1, 1, move_color, move_color, 0.2, 3);
+                1000*ALL.MovingCCW_time.median(span), 0, 1, move_color, move_color, 0.2, 3);
     h.patch.EdgeColor = move_color;
 
     % Moving CW
@@ -74,7 +73,7 @@ ax = subplot(1,1,1); hold on
 
     % plot(1000*ALL.MovingCW.time, ALL.MovingCW.position, 'Color', [0.5 0.5 0.5 0.2])
     [h.patch,h.move] = PlotPatch(ALL.MovingCW_pos.median(span), ALL.MovingCW_pos.std(span), ...
-                1000*ALL.MovingCW_time.median(span), 1, 1, move_color, move_color, 0.2, 3);
+                1000*ALL.MovingCW_time.median(span), 0, 1, move_color, move_color, 0.2, 3);
     h.patch.EdgeColor = move_color;
     
     % Static CCW
@@ -83,7 +82,7 @@ ax = subplot(1,1,1); hold on
 
     % plot(1000*ALL.CCW.time, ALL.CCW.position, 'Color', [0.5 0.5 0.5 0.2])
     [h.patch,h.stat] = PlotPatch(ALL.CCW_pos.median(span), ALL.CCW_pos.std(span), ...
-                1000*ALL.CCW_time.median(span), 1, 1, static_color, static_color, 0.2, 3);
+                1000*ALL.CCW_time.median(span), 0, 1, static_color, static_color, 0.2, 3);
     h.patch.EdgeColor = move_color;
 
     % Static CW
@@ -92,22 +91,22 @@ ax = subplot(1,1,1); hold on
 
     % plot(1000*ALL.CW.time, ALL.CW.position, 'Color', [0.5 0.5 0.5 0.2])
     [h.patch,h.stat] = PlotPatch(ALL.CW_pos.median(span), ALL.CW_pos.std(span), ...
-                1000*ALL.CW_time.median(span), 1, 1, static_color, static_color, 0.2, 3);
+                1000*ALL.CW_time.median(span), 0, 1, static_color, static_color, 0.2, 3);
     h.patch.EdgeColor = move_color;
     
 xlabel('Time (ms)')
 ylabel('Head Position (°)')
 
-leg = legend([h.move,h.stat],'Moving','Static');
-leg.Box = 'off';
+%leg = legend([h.move,h.stat],'Moving','Static');
+%leg.Box = 'off';
 
 set(ax,'LineWidth',1,'FontWeight','bold','FontSize',8,'Color','w',...
-    'YColor','k','XColor','k','XLim',1000*0.03*[-1 1],'YLim',20*[-1 1])
+    'YColor','k','XColor','k','XLim',1000*0.03*[-1 1],'YLim',15*[-1 1])
 
 %% Saccade Velocity %%
 FIG = figure (1) ; clf
 FIG.Units = 'inches';
-FIG.Position = 2*[2 2 1.1384*(4/3) 3/2];
+FIG.Position = 1*[2 2 1*(4/3) 3/2];
 FIG.Name = 'Static Saccade Position';
 FIG.PaperPositionMode = 'auto';
 movegui(FIG,'center')
@@ -124,7 +123,7 @@ ax = subplot(1,1,1); hold on
 
     % plot(1000*ALL.MovingCCW.time, ALL.MovingCCW.velocity, 'Color', [0.5 0.5 0.5 0.2])
     [h.patch,h.move] = PlotPatch(ALL.MovingCCW_vel.median(span), ALL.MovingCCW_vel.std(span), ...
-                1000*ALL.MovingCCW_time.median(span), 1, 1, move_color, move_color, 0.2, 3);
+                1000*ALL.MovingCCW_time.median(span), 0, 1, move_color, move_color, 0.2, 3);
     h.patch.EdgeColor = move_color;
 
     % Moving CW
@@ -133,7 +132,7 @@ ax = subplot(1,1,1); hold on
 
     % plot(1000*ALL.MovingCW.time, ALL.MovingCW.velocity, 'Color', [0.5 0.5 0.5 0.2])
     [h.patch,h.move] = PlotPatch(ALL.MovingCW_vel.median(span), ALL.MovingCW_vel.std(span), ...
-                1000*ALL.MovingCW_time.median(span), 1, 1, move_color, move_color, 0.2, 3);
+                1000*ALL.MovingCW_time.median(span), 0, 1, move_color, move_color, 0.2, 3);
     h.patch.EdgeColor = move_color;
     
     % Static CCW
@@ -142,7 +141,7 @@ ax = subplot(1,1,1); hold on
 
     % plot(1000*ALL.CCW.time, ALL.CCW.velocity, 'Color', [0.5 0.5 0.5 0.2])
     [h.patch,h.stat] = PlotPatch(ALL.CCW_vel.median(span), ALL.CCW_vel.std(span), ...
-                1000*ALL.CCW_time.median(span), 1, 1, static_color, static_color, 0.2, 3);
+                1000*ALL.CCW_time.median(span), 0, 1, static_color, static_color, 0.2, 3);
     h.patch.EdgeColor = move_color;
 
     % Static CW
@@ -151,16 +150,16 @@ ax = subplot(1,1,1); hold on
 
     % plot(1000*ALL.CW.time, ALL.CW.velocity, 'Color', [0.5 0.5 0.5 0.2])
     [h.patch,h.stat] = PlotPatch(ALL.CW_vel.median(span), ALL.CW_vel.std(span), ...
-                1000*ALL.CW_time.median(span), 1, 1, static_color, static_color, 0.2, 3);
+                1000*ALL.CW_time.median(span), 0, 1, static_color, static_color, 0.2, 3);
     h.patch.EdgeColor = move_color;
     
 xlabel('Time (ms)')
 ylabel('Head Velocity (°)')
 
-leg = legend([h.move,h.stat],'Moving','Static');
-leg.Box = 'off';
+% leg = legend([h.move,h.stat],'Moving','Static');
+% leg.Box = 'off';
 
 set(ax,'LineWidth',1,'FontWeight','bold','FontSize',8,'Color','w',...
-    'YColor','k','XColor','k','XLim',1000*0.05*[-1 1],'YLim',1000*[-1 1])
+    'YColor','k','XColor','k','XLim',1000*0.03*[-1 1],'YLim',600*[-1 1])
 
 end

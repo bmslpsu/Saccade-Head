@@ -24,7 +24,7 @@ FIG.Color = 'w';
 clear ax
 
 ax(1) = subplot(1,2,1,polaraxes); grid off ; axis tight
-    h(1) = polarhistogram(deg2rad(CW.SACCADE_STATS.StartPos),100,...
+    h(1) = polarhistogram(deg2rad(CW.SACCADE_STATS.StartPos),75,...
         'FaceColor','g','FaceAlpha',0.9,'Normalization','Probability'); hold on
     h(2) = polarhistogram(deg2rad(CW.SACCADE_STATS.EndPos),'BinEdges', h(1).BinEdges, ...
         'FaceColor','r','FaceAlpha',0.9,'Normalization','Probability');
@@ -32,7 +32,7 @@ ax(1) = subplot(1,2,1,polaraxes); grid off ; axis tight
     title('CW')
     
 ax(2) = subplot(1,2,2,polaraxes); grid off ; axis tight
-    h(3) = polarhistogram(deg2rad(CCW.SACCADE_STATS.StartPos),100,...
+    h(3) = polarhistogram(deg2rad(CCW.SACCADE_STATS.StartPos),75,...
         'FaceColor','g','FaceAlpha',0.9,'Normalization','Probability'); hold on
     h(4) = polarhistogram(deg2rad(CCW.SACCADE_STATS.EndPos),'BinEdges', h(1).BinEdges, ...
         'FaceColor','r','FaceAlpha',0.9,'Normalization','Probability');
@@ -43,7 +43,7 @@ set(h,'EdgeColor','none')
 set(ax,'FontSize',8);
 set(ax,'Color','w');
 set(ax,'ThetaLim',[-20 20]);
-set(ax,'RLim',[0 0.105]);
+set(ax,'RLim',[0 0.11]);
 set(ax,'ThetaDir','clockwise')
 set(ax,'ThetaTick',-20:10:20);
 set(ax,'ThetaZeroLocation','top');

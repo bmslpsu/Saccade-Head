@@ -28,7 +28,7 @@ PATH.ang = fullfile(PATH.daq,'\Vid\tracked_head'); % tracked kinematic data loca
 
 %% Get Data %%
 disp('Loading...')
-showplot = false;
+showplot = true;
 tintrp = (0:(1/200):(10 - 1/200))';
 Vel = U.vel{1};
 Stim = (Vel*tintrp')';
@@ -64,9 +64,17 @@ for kk = 1:N.file
     % Get Saccade Stats
     peaks = [];
     direction = -sign(D.vel(kk)); % only get saccades in the opposite direction of visual motion
-    head_saccade = saccade(Head.X(:,1), Head.Time, 350, direction, peaks, showplot);
+    % direction = sign(D.vel(kk));
+    head_saccade = saccade(Head.X(:,1), Head.Time, 5, direction, peaks, showplot);
     % head_saccade = stimSaccade(head_saccade, Stim(:,I.vel(kk)), showplot); % with approximate pattern position
-    head_saccade = stimSaccade(head_saccade, pat.pos, showplot); % with actual pattern position
+    head_saccade = stimSaccade(head_saccade, pat.pos, false); % with actual pattern position
+    
+%     if head_saccade.count ~=0
+%         head_saccade = saccade(Head.X(:,1), Head.Time, 5, direction, peaks, true);
+%         head_saccade = stimSaccade(head_saccade, pat.pos, false); % with actual pattern position
+%       	pause
+%         close all
+%     end
     
     COUNT{I.fly(kk),I.vel(kk)}(end+1,1) = head_saccade.count;
     

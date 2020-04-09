@@ -1,5 +1,5 @@
-function [] = Saccade_Stats()
-%% Saccade_Stats:
+function [] = Saccade_HeatMap()
+%% Saccade_HeatMap:
 
 root = 'H:\DATA\Rigid_Data\';
 
