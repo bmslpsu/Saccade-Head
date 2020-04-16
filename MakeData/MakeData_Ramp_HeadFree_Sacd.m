@@ -15,7 +15,7 @@ Fc = 40;
 rootdir = ['H:\EXPERIMENTS\RIGID\Experiment_Asymmetry_Control_Verification\HighContrast\' num2str(wave)];
 
 % Output file name
-filename = ['NewRampStim_HeadFree_SACCD_Anti_filt=' num2str(Fc) '_Wave=' num2str(wave)];
+filename = ['NewRamp_HeadFree_SACCD_Anti_filt=' num2str(Fc) '_Wave=' num2str(wave)];
 
 % Setup Directories 
 PATH.daq = rootdir; % DAQ data location
@@ -24,16 +24,17 @@ PATH.vid = fullfile(PATH.daq,'\Vid'); % video data location
 PATH.ang = fullfile(PATH.daq,'\Vid\tracked_head'); % tracked kinematic data location
 
 % Select files
-[D,I,N,U,T,FILES,~,basename] = GetFileData(PATH.ang,'*.mat',false,'fly','trial','vel','wave');
+[D,I,N,U,T,~,~,basename] = GetFileData(PATH.ang,'*.mat',false,'fly','trial','vel','wave');
 
 %% Get Data %%
 disp('Loading...')
-showplot = true;
+showplot = false;
 tintrp = (0:(1/200):(10 - 1/200))';
+[b,a] = butter(2,50/(200/2),'low');
 Vel = U.vel{1};
 Stim = (Vel*tintrp')';
-SACCADE = [I , table(num2cell(zeros(N.file,1)))]; % store saccade objects
-SACCADE.Properties.VariableNames{5} = 'saccade'; 
+SACCADE = [I , splitvars(table(num2cell(zeros(N.file,2))))]; % store saccade objects
+SACCADE.Properties.VariableNames(5:6) = {'head_saccade','dWBA'}; 
 ALL_DATA = cell(N.fly,N.vel);
 COUNT = cell(N.fly,N.vel);
 SACCADE_STATS = []; % store saccade stats
@@ -61,20 +62,26 @@ for kk = 1:N.file
     % benifly.Head(1) = benifly.Head(2);
     Head = process_signal(trig.time, hAngles, Fc, tintrp, [4 8 16 32 64]);
     
+  	% Get wing data
+	wing.left  = data(:,4);
+    wing.right = data(:,5);
+    wing.left  = interp1(pat.time, data(:,4), tintrp, 'nearest');
+    wing.right = interp1(pat.time, data(:,5), tintrp, 'nearest');
+    % wing.left  = interp1(trig.time, benifly.LWing, tintrp, 'nearest');
+    % wing.right = interp1(trig.time, benifly.RWing, tintrp, 'nearest');
+    % wing.left  = hampel(tintrp, wing.left);
+    % wing.right = hampel(tintrp, wing.right);
+    wing.left  = filtfilt(b, a, wing.left);
+    wing.right = filtfilt(b, a, wing.right);
+    wing.wba = wing.left - wing.right;
+    
     % Get Saccade Stats
     peaks = [];
     direction = -sign(D.vel(kk)); % only get saccades in the opposite direction of visual motion
     % direction = sign(D.vel(kk));
-    head_saccade = saccade(Head.X(:,1), Head.Time, 5, direction, peaks, showplot);
-    % head_saccade = stimSaccade(head_saccade, Stim(:,I.vel(kk)), showplot); % with approximate pattern position
-    head_saccade = stimSaccade(head_saccade, pat.pos, false); % with actual pattern position
-    
-%     if head_saccade.count ~=0
-%         head_saccade = saccade(Head.X(:,1), Head.Time, 5, direction, peaks, true);
-%         head_saccade = stimSaccade(head_saccade, pat.pos, false); % with actual pattern position
-%       	pause
-%         close all
-%     end
+    head_saccade = saccade(Head.X(:,1), Head.Time, 300, direction, peaks, showplot);
+    head_saccade = stimSaccade(head_saccade, Stim(:,I.vel(kk)), false); % with approximate pattern position
+    % head_saccade = stimSaccade(head_saccade, pat.pos, false); % with actual pattern position
     
     COUNT{I.fly(kk),I.vel(kk)}(end+1,1) = head_saccade.count;
     
@@ -87,6 +94,7 @@ for kk = 1:N.file
         ALL_DATA{I.fly(kk),I.vel(kk)}(end+1,1) = head_saccade;
         rep = head_saccade.count;
     end
+    SACCADE{kk,6} = {wing.wba};
     VTable = table(D.vel(kk),'VariableNames',{'Vel'});
     ITable = [I(kk,:),VTable];
     ITable = repmat(ITable,rep,1);

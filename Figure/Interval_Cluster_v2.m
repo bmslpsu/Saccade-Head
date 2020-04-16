@@ -365,7 +365,7 @@ ax(1) = subplot(1,1,1) ; hold on
 pp = 1;
 pLim = 0.9;
 % test = [1:3,6:8];
-for jj = 1:1 
+for jj = 1:N.vel
     time = IntBelow.normstart_interval(jj).time;
     pos = IntBelow.normstart_interval(jj).position;
     med_time = nanmedian(time,2);
@@ -729,7 +729,7 @@ FIG.Color = 'w';
 ax = gobjects(N.vel,1);
 clear ax h
 ax(1) = subplot(1,1,1) ; hold on
-    bx = boxplot(PeakGain_all,G,'Labels',{Speed},'Width',0.5,'Symbol','.','Whisker',2);
+    bx = boxplot(Gain_all,G,'Labels',{Speed},'Width',0.5,'Symbol','.','Whisker',2);
     box off
     xlabel('Stimulus Speed (°/s)')
     ylabel('Interval Peak Gain (°/s / °/s)')

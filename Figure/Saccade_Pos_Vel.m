@@ -106,7 +106,7 @@ linkaxes(ax,'x')
 FIG = figure (3) ; clf
 FIG.Units = 'inches';
 FIG.Position = [2 2 clms*(4/3) 3/2];
-FIG.Name = 'Saccade Velocity';
+FIG.Name = 'Saccade Position';
 FIG.PaperPositionMode = 'auto';
 movegui(FIG,'center')
 FIG.Color = 'w';

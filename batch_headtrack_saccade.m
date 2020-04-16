@@ -1,4 +1,4 @@
-function [] = batch_headtrack_saccade(root, npoints, playback, showpoint)
+function [] = batch_headtrack_saccade(root, npoints, center_file, playback, showpoint)
 %% batch_headtrack_saccade: runs head tracker for user selected video files
 %
 %   INPUT:
@@ -15,7 +15,9 @@ function [] = batch_headtrack_saccade(root, npoints, playback, showpoint)
 % showpoint = true;
 % npoints = 5;
 % playback = 5;
-% H:\EXPERIMENTS\RIGID\Experiment_Asymmetry_Control_Verification\HighContrast\30';
+% root = 'H:\EXPERIMENTS\RIGID\Experiment_Asymmetry_Control_Verification\HighContrast\22.5\Vid';
+% center_file = ['H:\EXPERIMENTS\RIGID\Experiment_Asymmetry_Control_Verification\HighContrast\22.5\Vid' ...
+%     '\tracked_head\Fly_8_Trial_1_Vel_120_SpatFreq_22.5.mat'];
 
 [FILES, PATH] = uigetfile({'*.mat', 'MAT-files'},'Select videos', root, 'MultiSelect','on');
 FILES = string(FILES);
@@ -23,12 +25,17 @@ nfile = length(FILES);
 
 headdir = fullfile(PATH,'tracked_head');
 
+if ~isempty(center_file)
+    load(center_file,'cPoint')
+else
+    cPoint = [];
+end
+
 for file = 1:nfile
     disp(FILES(file))
     disp('---------------------------------------')
     load(fullfile(PATH,FILES(file)),'vidData','t_v')
-
-    [hAngles,cPoint,validity,ROI,initframe,finalframe] = headtracker(vidData, npoints, playback, showpoint);
+    [hAngles,cPoint,validity,ROI,initframe,finalframe] = headtracker(vidData, npoints, cPoint, playback, showpoint);
     
     figure
     imagesc(validity)

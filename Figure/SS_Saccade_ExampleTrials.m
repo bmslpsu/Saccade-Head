@@ -34,9 +34,9 @@ idx_1 = 5;
 idx_2 = 4;
 idx_35 = 70;
 idx_65 = 6;
-idx_12 = 5;
+idx_12 = 1;
 
-idx = idx_35;
+idx = idx_12;
 trial = SACCADE.saccade{idx};
 
 ax(1) = subplot(4,1,1) ; hold on ; title(['Stimulus: ' num2str(D.freq(idx)) ' (Hz)'])

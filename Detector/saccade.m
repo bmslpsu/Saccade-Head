@@ -124,17 +124,17 @@ classdef saccade
             % setDeafults: sets values to default
             % 
             
-            empty_feilds = ["time","position","velocity"];
+            empty_fields = ["time","position","velocity"];
             
-            for f = 1:length(empty_feilds)
-                obj.normpeak_saccade.(empty_feilds(f))      = [];
-                obj.norm_interval.(empty_feilds(f))         = [];
-                obj.normstart_interval.(empty_feilds(f))   	= [];
-                obj.normend_interval.(empty_feilds(f))      = [];
-                obj.normstart_stimulus.(empty_feilds(f))  	= [];
-                obj.normend_stimulus.(empty_feilds(f))   	= [];
-                obj.error.(empty_feilds(f))                 = [];
-                obj.int_error.(empty_feilds(f))             = [];
+            for f = 1:length(empty_fields)
+                obj.normpeak_saccade.(empty_fields(f))      = [];
+                obj.norm_interval.(empty_fields(f))         = [];
+                obj.normstart_interval.(empty_fields(f))   	= [];
+                obj.normend_interval.(empty_fields(f))      = [];
+                obj.normstart_stimulus.(empty_fields(f))  	= [];
+                obj.normend_stimulus.(empty_fields(f))   	= [];
+                obj.error.(empty_fields(f))                 = [];
+                obj.int_error.(empty_fields(f))             = [];
             end
         end
         
@@ -145,8 +145,8 @@ classdef saccade
             obj.nstd_thresh = N;
             obj.threshold = obj.median.abs_velocity + obj.nstd_thresh*obj.std.abs_velocity;
             
-            if obj.threshold < 350
-                obj.threshold = 350;
+            if obj.threshold < 300
+                obj.threshold = 300;
             end
         end
         
