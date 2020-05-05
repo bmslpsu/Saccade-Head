@@ -33,7 +33,7 @@ active_60 = 149;
 active_90 = 265;
 
 idx = active_switch;
-trial = SACCADE.saccade{idx};
+trial = SACCADE.head_saccade{idx};
 
 ax(1) = subplot(4,1,1) ; hold on ; title(['Stimulus: ' num2str(D.vel(idx)) ' (°/s)'])
     ylabel('Position (°)')

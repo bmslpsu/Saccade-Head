@@ -5,7 +5,7 @@ root = 'H:\DATA\Rigid_Data\';
 [FILE,PATH] = uigetfile({'*.mat', 'DAQ-files'}, ...
     'Select head angle trials', root, 'MultiSelect','off');
 
-load(fullfile(PATH,FILE),'PATH','COUNT','SACCADE','SACCADE_STATS','FLY','GRAND','Stim','D','I','U','N')
+load(fullfile(PATH,FILE),'COUNT','SACCADE','SACCADE_STATS','FLY','GRAND','Stim','D','I','U','N')
 
 clms = N.vel/2;
 CC = repmat(hsv(clms),2,1);
@@ -80,10 +80,10 @@ for jj = 1:N.vel
 	cent = find(med_time==0);
     span = (cent - med_span):( cent + med_span);
     
-    h.trial = plot(time, vel, 'Color', [0.7*CC(jj,:) , 0.2], 'LineWidth', 0.5);
+    h.trial = plot(time, vel, 'Color', [0.5 0.5 0.5 , 0.2], 'LineWidth', 0.5);
                                         
     h.patch = PlotPatch(med_vel(span), std_vel(span), med_time(span), 1, 1, ...
-        CC(jj,:), [0.7 0.7 0.7], 0.4, 3);
+        CC(jj,:), 0.5*CC(jj,:), 0.2, 2);
     h.patch.EdgeColor = CC(jj,:);
     
     if sign(Vel(jj))==1
@@ -159,7 +159,7 @@ linkaxes(ax,'xy')
 set(ax(2:end),'YTickLabels',[])
 
 %% Saccade Velocity: Both Directions %%
-FIG = figure (3) ; clf
+FIG = figure (4) ; clf
 FIG.Units = 'inches';
 FIG.Position = [2 2 clms*(4/3) 3/2];
 FIG.Name = 'Saccade Velocity';
@@ -208,7 +208,7 @@ for jj = 1:N.vel/2
     
 end
 set(ax,'LineWidth',1,'FontWeight','bold','FontSize',8,'Color','w',...
-    'YColor','k','XColor','k','XLim',1000*0.05*[-1 1], 'YLim', 1000*[-1 1])
+    'YColor','k','XColor','k','XLim',1000*0.05*[-1 1], 'YLim', 1100*[-1 1])
 XLabelHC = get(ax, 'XLabel');
 set([XLabelHC{:}], 'String', 'Time (ms)')
 YLabelHC = get(ax(1), 'YLabel');

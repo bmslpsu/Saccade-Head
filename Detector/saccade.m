@@ -19,6 +19,7 @@ classdef saccade
         count               % # of saccades deteteced
         rate                % saccades / time unit
         amp_cutoff = 2;    	% cut off for saccade amplitudes (< amp_cutoff are removed)
+        sacd_length         % make every saccade the same length
         SACD                % table of saccade statistics
         
         saccades            % saccade only index/time/position/velocity tables in cells
@@ -66,7 +67,7 @@ classdef saccade
     end
     
     methods
-        function obj = saccade(position, time, threshold, direction, pks, debug)
+        function obj = saccade(position, time, threshold, direction, pks, debug, amp_cutoff, sacd_length)
             % saccade: Construct an instance of this class
             %   Saccade detector
             
@@ -75,13 +76,21 @@ classdef saccade
                 return
             end
             
-            if nargin<6
-                debug = true; % default show plots
-                if nargin<5
-                   pks = []; % default no peaks given
+            if nargin < 8
+                sacd_length = nan;
+                if nargin < 7
+                    amp_cutoff = 2;
+                    if nargin < 6
+                        debug = true; % default show plots
+                        if nargin < 5
+                           pks = []; % default no peaks given
+                        end
+                    end
                 end
             end
             
+            obj.sacd_length     = sacd_length;                      % saccade length in time [s]
+            obj.amp_cutoff      = amp_cutoff;                       % saccade amplitude cutoff
             obj.position     	= position(:);                      % position vector
             obj.time          	= time(:);                          % time vector
             obj.direction     	= sign(direction);                	% saccade direction to detect (-1,0,1)
@@ -145,9 +154,9 @@ classdef saccade
             obj.nstd_thresh = N;
             obj.threshold = obj.median.abs_velocity + obj.nstd_thresh*obj.std.abs_velocity;
             
-            if obj.threshold < 300
-                obj.threshold = 300;
-            end
+            % if obj.threshold < 350
+            %    obj.threshold = 350;
+            % end
         end
         
         function obj = detectSaccades(obj,pks)
@@ -163,7 +172,7 @@ classdef saccade
 
                 % Find peaks in absolute of velocity
                 [~, locs] = findpeaks(svel,'MINPEAKDISTANCE',15); % find local maxima
-                window = obj.n*0.015; % window length at start & end to ignore saccades [samples]
+                window = round(obj.n*0.015); % window length at start & end to ignore saccades [samples]
                 I = (locs > window) & (locs < (obj.n - (window+1))); % saccades inside middle window
                 obj.peaks.index = locs(I);
                 
@@ -196,17 +205,30 @@ classdef saccade
                           'StartVel'  ,  'PeakVel'    , 'EndVel'};
                       
             obj.boundThresh = 0.25; % saccades start & end at boundThresh*peak velocity
-            if ~isempty(obj.peaks.index) % if any saccades are detected                
-                for ww = 1:obj.count % every saccade
-                    % Find start & end of saccade
-                    obj.starts.index(ww,1) = find(obj.abs_velocity(1:obj.peaks.index(ww)) <= ... % saccade start index
-                        abs(obj.peaks.velocity(ww))*obj.boundThresh,1,'last');
-                    
-                    Eind = find(obj.abs_velocity <= abs(obj.peaks.velocity(ww))*obj.boundThresh); % all values below 1/4 peak
-                    Es = find(Eind > obj.peaks.index(ww),1,'first'); % first value under 25% of peak after the start index is the end index
-                    if ~isempty(Es) % make sure saccade ends
-                        obj.ends.index(ww,1) = Eind(Es); % saccade end index
+            if ~isempty(obj.peaks.index) % if any saccades are detected   
+                if isnan(obj.sacd_length)
+                    for ww = 1:obj.count % every saccade
+                        % Find start & end of saccade
+                        obj.starts.index(ww,1) = find(obj.abs_velocity(1:obj.peaks.index(ww)) <= ... % saccade start index
+                            abs(obj.peaks.velocity(ww))*obj.boundThresh,1,'last');
+
+                        % Eind = find(obj.abs_velocity <= abs(obj.peaks.velocity(ww))*obj.boundThresh); % all values below 1/4 peak
+                        if obj.peaks.velocity(ww) >= 0
+                            Eind = find(obj.velocity <= obj.peaks.velocity(ww)*obj.boundThresh); % all values below 1/4 peak
+                        elseif obj.peaks.velocity(ww) < 0
+                            Eind = find(obj.velocity >= obj.peaks.velocity(ww)*obj.boundThresh); % all values below 1/4 peak
+                        end
+                        Es = find(Eind > obj.peaks.index(ww),1,'first'); % first value under 25% of peak after the start index is the end index
+                        if ~isempty(Es) % make sure saccade ends
+                            obj.ends.index(ww,1) = Eind(Es); % saccade end index
+                        end
                     end
+                else
+                    span = ceil((obj.sacd_length * obj.Fs)/2);
+                    obj.starts.index = obj.peaks.index - span;
+                    obj.ends.index = obj.peaks.index + span;
+                    obj.ends.index(obj.ends.index > obj.n) = obj.n;
+                    obj.starts.index(obj.starts.index < 1) = 1;
                 end
                 
                 obj.starts.time   	= obj.time      (obj.starts.index);
@@ -295,19 +317,27 @@ classdef saccade
                     % Create interval table
                     if ww~=1
                         n_interval_idx = obj.SACD.StartIdx(ww) - obj.SACD.EndIdx(ww-1) + 1;
-                        obj.intervals{ww} = splitvars(table(nan(n_interval_idx,4)));
-                        obj.intervals{ww}.Properties.VariableNames = {'Index','Time','Position','Velocity'};
-                        
-                        obj.intervals{ww}.Index     = (obj.SACD.EndIdx(ww-1):obj.SACD.StartIdx(ww))';
-                     	obj.intervals{ww}.Time      = obj.time(obj.intervals{ww}.Index);
-                        obj.intervals{ww}.Position  = obj.position(obj.intervals{ww}.Index);
-                        obj.intervals{ww}.Velocity  = obj.velocity(obj.intervals{ww}.Index);
+                        if n_interval_idx < 1
+                            obj.intervals{ww} = splitvars(table(nan(4,4)));
+                            obj.intervals{ww}.Properties.VariableNames = {'Index','Time','Position','Velocity'};
+                        else
+                            obj.intervals{ww} = splitvars(table(nan(n_interval_idx,4)));
+                            obj.intervals{ww}.Properties.VariableNames = {'Index','Time','Position','Velocity'};
+
+                            obj.intervals{ww}.Index     = (obj.SACD.EndIdx(ww-1):obj.SACD.StartIdx(ww))';
+                            obj.intervals{ww}.Time      = obj.time(obj.intervals{ww}.Index);
+                            obj.intervals{ww}.Position  = obj.position(obj.intervals{ww}.Index);
+                            obj.intervals{ww}.Velocity  = obj.velocity(obj.intervals{ww}.Index);
+                        end
                     else % store 1st interval as nan's because we don't know the start of this interval
                         n_interval_idx = obj.SACD.StartIdx(ww);
+                        if n_interval_idx < 3
+                           n_interval_idx = 3; 
+                        end                        
                         obj.intervals{ww} = splitvars(table(nan(n_interval_idx,4)));
                      	obj.intervals{ww}.Properties.VariableNames = {'Index','Time','Position','Velocity'};
                         
-                        obj.intervals{ww}.Index     = (1:obj.SACD.StartIdx(ww))';
+                        obj.intervals{ww}.Index     = (1:n_interval_idx)';
                         obj.intervals{ww}.Time      = nan*obj.time(obj.intervals{ww}.Index);
                         obj.intervals{ww}.Position  = nan*obj.position(obj.intervals{ww}.Index);
                         obj.intervals{ww}.Velocity  = nan*obj.velocity(obj.intervals{ww}.Index);
@@ -347,11 +377,13 @@ classdef saccade
                 % Interpolate between saccades
                 intrp_pos = table( interp1(time_shift, pos_shift, obj.shift.Time, 'pchip'),... % interpolate
                     'VariableNames',{'IntrpPosition'} );
-                intrp_vel= table( interp1(time_shift, vel_shift, obj.shift.Time, 'pchip'),...  % interpolate
-                    'VariableNames',{'IntrpVelocity'} );
                 
-                % intrp_vel = table( [0;diff(intrp_pos{:,1})./diff(obj.time)], ...
-                %    'VariableNames',{'IntrpVelocity'} );
+                % intrp_vel = table( interp1(time_shift, vel_shift, obj.shift.Time, 'pchip'),...  % interpolate
+                    % 'VariableNames',{'IntrpVelocity'} );
+                    
+                intrp_vel = diff(intrp_pos{:,1}) / obj.Ts;
+                intrp_vel = [intrp_vel(1) ; intrp_vel];
+                intrp_vel = table( intrp_vel, 'VariableNames',{'IntrpVelocity'} );
                 
                 % Add to shift table
                 obj.shift = [obj.shift,intrp_pos,intrp_vel];
@@ -423,7 +455,10 @@ classdef saccade
 
                 % Get interval times
                 obj.normstart_interval.endidx = sum(~isnan(obj.normstart_interval.time));
-                obj.normstart_interval.endidx(1) = obj.normstart_interval.endidx(1) + 1;
+                
+                zeroIdx = obj.normstart_interval.endidx(1,:) == 0;
+                obj.normstart_interval.endidx(zeroIdx) = obj.normstart_interval.endidx(zeroIdx) + 1;
+                
                 IntTime = table(max(obj.normstart_interval.time(obj.normstart_interval.endidx,:))',...
                     'VariableNames',{'IntTime'});
                 obj.SACD = [obj.SACD , IntTime];

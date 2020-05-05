@@ -18,19 +18,20 @@ rootdir = ['H:\EXPERIMENTS\RIGID\Experiment_Asymmetry_Control_Verification\HighC
 filename = ['NewRamp_HeadFree_SACCD_Anti_filt=' num2str(Fc) '_Wave=' num2str(wave)];
 
 % Setup Directories 
-PATH.daq = rootdir; % DAQ data location
-PATH.vid = fullfile(PATH.daq,'\Vid'); % video data location
-% PATH.ang = fullfile(PATH.daq,'\Vid\tracked'); % tracked kinematic data location
-PATH.ang = fullfile(PATH.daq,'\Vid\tracked_head'); % tracked kinematic data location
+PATH.daq  = rootdir; % DAQ data location
+PATH.vid  = fullfile(PATH.daq,'Vid'); % video data location
+PATH.head = fullfile(PATH.vid,'tracked_head'); % tracked kinematic data location
+PATH.wing = fullfile(PATH.vid,'tracked_head_wing'); % tracked kinematic data location
 
 % Select files
-[D,I,N,U,T,~,~,basename] = GetFileData(PATH.ang,'*.mat',false,'fly','trial','vel','wave');
+[D,I,N,U,T,~,~,basename] = GetFileData(PATH.head,'*.mat',false,'fly','trial','vel','wave');
 
 %% Get Data %%
 disp('Loading...')
 showplot = false;
 tintrp = (0:(1/200):(10 - 1/200))';
-[b,a] = butter(2,50/(200/2),'low');
+[wing.b,wing.a] = butter(2,Fc/(200/2),'low');
+[head.b,head.a] = butter(2,Fc/(200/2),'low');
 Vel = U.vel{1};
 Stim = (Vel*tintrp')';
 SACCADE = [I , splitvars(table(num2cell(zeros(N.file,2))))]; % store saccade objects
@@ -42,8 +43,8 @@ for kk = 1:N.file
     disp(kk)
     % Load HEAD & DAQ data
 	load(fullfile(PATH.daq, [basename{kk} '.mat']),'data','t_p'); % load head angles % time arrays
-    load(fullfile(PATH.ang, [basename{kk} '.mat']),'hAngles'); % load head angles % time arrays
-    % benifly = ImportBenifly(fullfile(PATH.ang, FILES{kk})); % load head angles
+    load(fullfile(PATH.head, [basename{kk} '.mat']),'hAngles'); % load head angles % time arrays
+    % benifly = ImportBenifly(fullfile(PATH.wing, [basename{kk} '.csv'])); % load head & wing angles
     
     % Sync video with trigger & pattern
     trig.raw_time   = t_p; % DAQ raw times for trigger
@@ -60,7 +61,11 @@ for kk = 1:N.file
     
     % Get head data
     % benifly.Head(1) = benifly.Head(2);
-    Head = process_signal(trig.time, hAngles, Fc, tintrp, [4 8 16 32 64]);
+    % head.pos = rad2deg(benifly.Head);
+    head.pos = hAngles;
+    head.pos = interp1(trig.time, head.pos, tintrp, 'pchip');
+    head.pos = filtfilt(head.b, head.a, head.pos);
+    % Head = process_signal(trig.time, , Fc, tintrp, [4 8 16 32 64]);
     
   	% Get wing data
 	wing.left  = data(:,4);
@@ -71,17 +76,25 @@ for kk = 1:N.file
     % wing.right = interp1(trig.time, benifly.RWing, tintrp, 'nearest');
     % wing.left  = hampel(tintrp, wing.left);
     % wing.right = hampel(tintrp, wing.right);
-    wing.left  = filtfilt(b, a, wing.left);
-    wing.right = filtfilt(b, a, wing.right);
+    wing.left  = filtfilt(wing.b, wing.a, wing.left);
+    wing.right = filtfilt(wing.b, wing.a, wing.right);
     wing.wba = wing.left - wing.right;
     
     % Get Saccade Stats
     peaks = [];
     direction = -sign(D.vel(kk)); % only get saccades in the opposite direction of visual motion
     % direction = sign(D.vel(kk));
-    head_saccade = saccade(Head.X(:,1), Head.Time, 300, direction, peaks, showplot);
+    amp_cut = 7;
+    head_saccade = saccade(head.pos, tintrp, 300, direction, peaks, showplot, amp_cut);
     head_saccade = stimSaccade(head_saccade, Stim(:,I.vel(kk)), false); % with approximate pattern position
     % head_saccade = stimSaccade(head_saccade, pat.pos, false); % with actual pattern position
+    % figure (1)
+    
+%     if head_saccade.count > 0
+%         head_saccade = saccade(head.pos, tintrp, 300, direction, peaks, true, amp_cut);
+%         pause
+%         head_saccade = stimSaccade(head_saccade, Stim(:,I.vel(kk)), false); % with approximate pattern position
+%     end
     
     COUNT{I.fly(kk),I.vel(kk)}(end+1,1) = head_saccade.count;
     
@@ -108,7 +121,7 @@ end
 
 % Fill in empty saccade trials
 empty_idx = cellfun(@(x) isempty(x), ALL_DATA);
-ALL_DATA(empty_idx) = {saccade(nan*Head.X(:,1), nan*Head.Time, 350, 0, [], false)};
+ALL_DATA(empty_idx) = {saccade(nan*head.pos, nan*head.pos, 350, 0, [], false)};
 
 %% Extract & group saccades & intervals by speed & by fly
 fields = {'normpeak_saccade','norm_interval','normstart_interval','normend_interval',...

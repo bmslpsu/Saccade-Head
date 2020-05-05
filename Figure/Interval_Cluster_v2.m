@@ -15,7 +15,7 @@ Speed = Vel(1:N.vel/2);
 %% Cluster saccades
 clearvars -except clms CC Speed Vel COUNT SACCADE SACCADE_STATS FLY GRAND Stim D I U N
 
-Ts = SACCADE.saccade{1}.Ts; % sampling time [s]
+Ts = SACCADE.head_saccade{1}.Ts; % sampling time [s]
 
 IntAll = GRAND;
 IntSort = IntAll; % grouped saccade & intervals
