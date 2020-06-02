@@ -18,7 +18,7 @@ classdef saccade
         boundThresh         % ratio of peak velocity to bound saccades on both sides
         count               % # of saccades deteteced
         rate                % saccades / time unit
-        amp_cutoff = 2;    	% cut off for saccade amplitudes (< amp_cutoff are removed)
+        amp_cutoff;         % cut off for saccade amplitudes (< amp_cutoff are removed)
         sacd_length         % make every saccade the same length
         SACD                % table of saccade statistics
         
@@ -67,9 +67,21 @@ classdef saccade
     end
     
     methods
-        function obj = saccade(position, time, threshold, direction, pks, debug, amp_cutoff, sacd_length)
+        function obj = saccade(position, time, threshold, amp_cutoff, direction, pks, sacd_length, showplot)
             % saccade: Construct an instance of this class
-            %   Saccade detector
+            %
+            %   INPUTS:
+            %       position    : signal vector
+            %       time        : time vector
+            %       threshold   : absolute velocity threshold (if negative, interpret as STD's from
+            %                     median). If 2x1, use 2nd value as minimum threshold.
+            %       amp_cutoff  : minimum position amplitude for a saccade
+            %       pks         : if you already have the location of the peaks (indicies)
+            %       direction   : get saccades in this direction only (1=+, -1=-, 0=both)
+            %       sacd_length : if specified, return each saccade with a set start and stop time offset
+            %                  	  from peak time
+            %       showplot 	: show some plots if true
+            %
             
             if nargin==0
                 obj = setDeafults(obj);
@@ -77,19 +89,25 @@ classdef saccade
             end
             
             if nargin < 8
-                sacd_length = nan;
+                showplot = false; % default: show plots
                 if nargin < 7
-                    amp_cutoff = 2;
+                    sacd_length = nan; % defualt: find start/stop of saccades automatically
                     if nargin < 6
-                        debug = true; % default show plots
+                        pks = []; % default: no peaks given
                         if nargin < 5
-                           pks = []; % default no peaks given
+                            direction = 0; % default: both directions
+                            if nargin < 4
+                                amp_cutoff = 0; % defualt: don't use cutoff
+                                if nargin < 3
+                                    threshold = -3; % default: 3 STD's from mean
+                                end
+                            end
                         end
                     end
                 end
             end
             
-            obj.sacd_length     = sacd_length;                      % saccade length in time [s]
+            obj.sacd_length     = sacd_length;                      % saccade length in time units
             obj.amp_cutoff      = amp_cutoff;                       % saccade amplitude cutoff
             obj.position     	= position(:);                      % position vector
             obj.time          	= time(:);                          % time vector
@@ -106,11 +124,11 @@ classdef saccade
             obj.std.abs_velocity 	= std(obj.abs_velocity);   	% STD absolute velocity
             
             % Calculate saccade detcetion threshold
-            if threshold <= 6 % calculate threshold based on # of standard deviations
-                obj = calculateThreshold(obj,threshold);
+            if threshold(1) < 0 % calculate threshold based on # of standard deviations from mean
+                obj = calculateThreshold(obj,-threshold);
             else % specify threshold manually
                 obj.threshold = threshold; % detection threshold
-                obj.nstd_thresh = nan;
+                obj.nstd_thresh = nan; % not used
             end
             
             % Detect, isolate, & normalize sacades & inter-saccade intervals
@@ -118,7 +136,7 @@ classdef saccade
             obj = removeSaccades(obj);
             obj = normSaccade(obj);
             
-            if debug
+            if showplot
                 plotSaccade(obj)
                 if obj.count~=0
                     plotInterval(obj)
@@ -150,13 +168,16 @@ classdef saccade
         function obj = calculateThreshold(obj,N)
             % calculateThreshold: compute detetcion threshold
             %   N   : # of stds for threshold
+            %
             
             obj.nstd_thresh = N;
             obj.threshold = obj.median.abs_velocity + obj.nstd_thresh*obj.std.abs_velocity;
             
-            % if obj.threshold < 350
-            %    obj.threshold = 350;
-            % end
+            if length(N) == 2
+                if obj.threshold < -N(2)
+                   obj.threshold = -N(2);
+                end
+            end
         end
         
         function obj = detectSaccades(obj,pks)

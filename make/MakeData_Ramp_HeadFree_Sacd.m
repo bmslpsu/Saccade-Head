@@ -28,7 +28,9 @@ PATH.wing = fullfile(PATH.vid,'tracked_head_wing'); % tracked kinematic data loc
 
 %% Get Data %%
 disp('Loading...')
-showplot = true;
+showplot = false;
+amp_cut = 7;
+
 tintrp = (0:(1/200):(10 - 1/200))';
 [wing.b,wing.a] = butter(2,Fc/(200/2),'low');
 [head.b,head.a] = butter(2,Fc/(200/2),'low');
@@ -84,11 +86,10 @@ for kk = 1:N.file
     peaks = [];
     direction = -sign(D.vel(kk)); % only get saccades in the opposite direction of visual motion
     % direction = sign(D.vel(kk));
-    amp_cut = 7;
-    head_saccade = saccade(head.pos, tintrp, 300, direction, peaks, showplot, amp_cut);
+    head_saccade = saccade(head.pos, tintrp, 300, amp_cut, direction, peaks, nan, showplot);
     head_saccade = stimSaccade(head_saccade, Stim(:,I.vel(kk)), false); % with approximate pattern position
     % head_saccade = stimSaccade(head_saccade, pat.pos, false); % with actual pattern position
-    figure (1)
+    % figure (1)
     
 %     if head_saccade.count > 0
 %         head_saccade = saccade(head.pos, tintrp, 300, direction, peaks, true, amp_cut);

@@ -35,7 +35,7 @@ ax(1) = subplot(1,2,1,polaraxes); grid off ; axis tight
     
 ax(2) = subplot(1,2,2,polaraxes); grid off ; axis tight
     h(3) = polarhistogram(deg2rad(CCW.SACCADE_STATS.StartPos),edges,...
-        'FaceColor','g','FaceAlpha',0.9,'Normalization','Probability'); hold on
+        'FaceColor','g','FaceAlpha',0.7,'Normalization','Probability'); hold on
     h(4) = polarhistogram(deg2rad(CCW.SACCADE_STATS.EndPos),'BinEdges', h(1).BinEdges, ...
         'FaceColor','r','FaceAlpha',0.9,'Normalization','Probability');
     ax(2).ThetaAxis.Label.String = 'Head Position (°)';
@@ -68,10 +68,10 @@ clear ax h
 edges = deg2rad(-20:1:20);
 
 ax(1) = subplot(1,1,1,polaraxes); grid off ; axis tight
-    h(1) = polarhistogram(deg2rad([CW.SACCADE_STATS.StartPos;CCW.SACCADE_STATS.StartPos]), edges,...
-        'FaceColor','g','FaceAlpha',0.9,'Normalization','Probability'); hold on
-    h(2) = polarhistogram(deg2rad([CW.SACCADE_STATS.EndPos;CCW.SACCADE_STATS.EndPos]), edges, ...
-        'FaceColor','r','FaceAlpha',0.9,'Normalization','Probability');
+    h(1) = polarhistogram(deg2rad([-CW.SACCADE_STATS.StartPos;CCW.SACCADE_STATS.StartPos]), edges,...
+        'FaceColor','g','FaceAlpha',0.7,'Normalization','Probability'); hold on
+    h(2) = polarhistogram(deg2rad([-CW.SACCADE_STATS.EndPos;CCW.SACCADE_STATS.EndPos]), edges, ...
+        'FaceColor','r','FaceAlpha',0.7,'Normalization','Probability');
     ax(1).ThetaAxis.Label.String = 'Head Position (°)';
     
 set(h,'EdgeColor','none')
