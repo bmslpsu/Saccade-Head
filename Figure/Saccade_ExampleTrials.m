@@ -23,16 +23,15 @@ movegui(FIG,'center')
 FIG.Color = 'w';
 clear ax h
 
-active = 149;
 active_switch = 309;
-active_switch = 260;
+% active_switch = 260;
 % active_switch = 444;
 land = 4;
 active_30 = 100;
 active_60 = 149;
 active_90 = 265;
 
-idx = active_switch;
+idx = active_60;
 trial = SACCADE.head_saccade{idx};
 
 ax(1) = subplot(4,1,1) ; hold on ; title(['Stimulus: ' num2str(D.vel(idx)) ' (°/s)'])

@@ -89,6 +89,7 @@ for ww = 1:n_plot
 end
 
 set(ax,'LineWidth',1,'FontWeight','bold', 'Box', 'off')
+set(ax(2), 'YTick', 0:5:35)
 
 %% Saccade Count/Rate
 count.stats = cellfun(@(x) basic_stats(x,1), COUNT, 'UniformOutput', true);
@@ -104,7 +105,6 @@ for v = 1:N.vel/2
    G = [G ; v*ones(n_length(v),1)]; 
 end
 count_all = cat(1,count.all{:});
-
 
 % FIG = figure (3) ; clf
 % FIG.Color = 'w';

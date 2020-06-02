@@ -51,11 +51,11 @@ for jj = wave_order
 	cent = find(med_time==0);
     span = (cent - med_span):( cent + med_span);
     
-    h.trial = plot(time, pos, 'Color', [0.7*CC(jj,:) , 0.2], 'LineWidth', 0.5);
+    h.trial = plot(time, pos, 'Color', [0.5 0.5 0.5 , 0.2], 'LineWidth', 0.5);
                                         
-    h.patch = PlotPatch(med_pos(span), std_pos(span), med_time(span), 1, 1, ...
-        CC(jj,:), [0.7 0.7 0.7], 0.4, 3);
-    h.patch.EdgeColor = CC(jj,:);
+    h.patch = PlotPatch(med_pos(span), std_pos(span), med_time(span), 2, 1, ...
+        CC(jj,:), 0.5*CC(jj,:), 0.3, 1);
+    %h.patch.EdgeColor = CC(jj,:);
     
     % CCW
    	time = 1000*CCW.GRAND.normpeak_saccade(jj).time;
@@ -69,9 +69,9 @@ for jj = wave_order
     
     h.trial = plot(time, pos, 'Color', [0.7*CC(jj,:) , 0.2], 'LineWidth', 0.5);
                                         
-    h.patch = PlotPatch(med_pos(span), std_pos(span), med_time(span), 1, 1, ...
-        CC(jj,:), [0.7 0.7 0.7], 0.4, 3);
-    h.patch.EdgeColor = CC(jj,:);
+    h.patch = PlotPatch(med_pos(span), std_pos(span), med_time(span), 2, 1, ...
+        CC(jj,:), 0.5*CC(jj,:), 0.3, 1);
+    %h.patch.EdgeColor = CC(jj,:);
     
     pp = pp +1;
 end
@@ -81,14 +81,13 @@ set(ax(2:end),'YTickLabels',[])
 XLabelHC = get(ax, 'XLabel');
 set([XLabelHC{:}], 'String', 'Time (ms)')
 YLabelHC = get(ax(1), 'YLabel');
-set([YLabelHC{:}], 'String', 'Head Position (°)')
+set([YLabelHC], 'String', 'Head Position (°)')
 linkaxes(ax,'xy')
-
 
 %% Saccade Velocity %%
 FIG = figure (2) ; clf
 FIG.Units = 'inches';
-FIG.Position = [2 2 1.1384*clms*(4/3) 3/2];
+FIG.Position = [2 2 1.1384*clms*(4/3) 1.2*3/2];
 FIG.Name = 'Static Saccade Velocity';
 FIG.PaperPositionMode = 'auto';
 movegui(FIG,'center')
@@ -112,11 +111,11 @@ for jj = wave_order
 	cent = find(med_time==0);
     span = (cent - med_span):( cent + med_span);
     
-    h.trial = plot(time, vel, 'Color', [0.7*CC(jj,:) , 0.2], 'LineWidth', 0.5);
+    h.trial = plot(time, vel, 'Color', [0.5 0.5 0.5 , 0.2], 'LineWidth', 0.5);
                                         
-    h.patch = PlotPatch(med_vel(span), std_vel(span), med_time(span), 1, 1, ...
-        CC(jj,:), [0.7 0.7 0.7], 0.4, 3);
-    h.patch.EdgeColor = CC(jj,:);
+    h.patch = PlotPatch(med_vel(span), std_vel(span), med_time(span), 2, 1, ...
+        CC(jj,:), 0.5*CC(jj,:), 0.3, 1);
+    %h.patch.EdgeColor = CC(jj,:);
     
     % CCW
     time = 1000*CCW.GRAND.normpeak_saccade(jj).time;
@@ -128,11 +127,11 @@ for jj = wave_order
 	cent = find(med_time==0);
     span = (cent - med_span):( cent + med_span);
     
-    h.trial = plot(time, vel, 'Color', [0.7*CC(jj,:) , 0.2], 'LineWidth', 0.5);
+    h.trial = plot(time, vel, 'Color', [0.5 0.5 0.5 , 0.2], 'LineWidth', 0.5);
                                         
-    h.patch = PlotPatch(med_vel(span), std_vel(span), med_time(span), 1, 1, ...
-        CC(jj,:), [0.7 0.7 0.7], 0.4, 3);
-    h.patch.EdgeColor = CC(jj,:);
+    h.patch = PlotPatch(med_vel(span), std_vel(span), med_time(span), 2, 1, ...
+        CC(jj,:), 0.5*CC(jj,:), 0.3, 1);
+    %h.patch.EdgeColor = CC(jj,:);
     
     pp = pp +1;    
 end

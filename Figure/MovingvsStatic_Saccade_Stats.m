@@ -12,7 +12,7 @@ Static = load(fullfile(StaticPATH,Static),'PATH','COUNT','SACCADE_STATS','D','I'
 %% Boxplots
 CC = [0.8 0 0 ; 0 0 0.8];
 stats_list = {'Amplitude','PeakVel','Duration'};
-ylim_list = [30 1050 100];
+ylim_list = [35 1200 100];
 
 YY = [  "Amplitude (°)",...
         "Peak Velocity (°/s)",...
@@ -61,9 +61,13 @@ G = [ones(length(move_count),1) ; 2*ones(length(static_count),1)];
 
 ax(ww+1) = subplot(2,2,ww+1); axis tight
 bx = boxplot(count_all./10, G, 'Labels', {'Moving','Static'}, 'Width', 0.5, 'Symbol', '.', 'Whisker', 2);
-xlabel('Stimulus Speed (°/s)')
+% xlabel('Stimulus Speed (°/s)')
 ylabel('Rate (#/s)')
 box off
+ylim([0 3])
+
+ax(2).YTick = [ax(2).YTick 1200];
+ax(1).YTick = [ax(1).YTick 35];
 
 h = get(bx(5,:),{'XData','YData'});
 for kk = 1:size(h,1)

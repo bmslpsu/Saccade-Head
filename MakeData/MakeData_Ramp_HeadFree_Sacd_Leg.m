@@ -1,4 +1,4 @@
-function [] = MakeData_Ramp_HeadFree_Sacd(wave,Fc)
+function [] = MakeData_Ramp_HeadFree_Sacd_Leg(wave,Fc)
 %% MakeData_Ramp_HeadFree_Sacd:
 %   INPUTS:
 %       wave    :   spatial wavelength of data
@@ -13,9 +13,10 @@ Fc = 40;
 
 % Data location
 rootdir = ['H:\EXPERIMENTS\RIGID\Experiment_Asymmetry_Control_Verification\HighContrast\' num2str(wave)];
+legdir = 'Q:\Google Drive PSU\Experiment_Data';
 
 % Output file name
-filename = ['NewRamp_HeadFree_SACCD_Anti_filt=' num2str(Fc) '_Wave=' num2str(wave)];
+filename = ['NewRamp_HeadFree_SACCD_Anti_filt=' num2str(Fc) '_Wave=' num2str(wave) '_Leg'];
 
 % Setup Directories 
 PATH.daq  = rootdir; % DAQ data location
@@ -28,7 +29,7 @@ PATH.wing = fullfile(PATH.vid,'tracked_head_wing'); % tracked kinematic data loc
 
 %% Get Data %%
 disp('Loading...')
-showplot = true;
+showplot = false;
 tintrp = (0:(1/200):(10 - 1/200))';
 [wing.b,wing.a] = butter(2,Fc/(200/2),'low');
 [head.b,head.a] = butter(2,Fc/(200/2),'low');
@@ -45,6 +46,7 @@ for kk = 1:N.file
 	load(fullfile(PATH.daq, [basename{kk} '.mat']),'data','t_p'); % load head angles % time arrays
     load(fullfile(PATH.head, [basename{kk} '.mat']),'hAngles'); % load head angles % time arrays
     % benifly = ImportBenifly(fullfile(PATH.wing, [basename{kk} '.csv'])); % load head & wing angles
+    DLC_table = readDLC(fullfile(legdir, [basename{kk} '.csv']));
     
     % Sync video with trigger & pattern
     trig.raw_time   = t_p; % DAQ raw times for trigger
@@ -88,7 +90,7 @@ for kk = 1:N.file
     head_saccade = saccade(head.pos, tintrp, 300, direction, peaks, showplot, amp_cut);
     head_saccade = stimSaccade(head_saccade, Stim(:,I.vel(kk)), false); % with approximate pattern position
     % head_saccade = stimSaccade(head_saccade, pat.pos, false); % with actual pattern position
-    figure (1)
+    % figure (1)
     
 %     if head_saccade.count > 0
 %         head_saccade = saccade(head.pos, tintrp, 300, direction, peaks, true, amp_cut);

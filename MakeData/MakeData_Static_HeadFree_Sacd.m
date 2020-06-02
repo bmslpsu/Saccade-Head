@@ -8,8 +8,8 @@ function [] = MakeData_Static_HeadFree_Sacd(Fc,direction)
 %       -
 %
 
-% Fc = 40;
-% direction = 0; % get saccades in all directions
+Fc = 40;
+direction = 0; % get saccades in all directions
 
 switch direction
     case 0
@@ -46,8 +46,10 @@ SACCADE.Properties.VariableNames{5} = 'saccade';
 ALL_DATA = cell(N.fly,N.wave);
 COUNT = cell(N.fly,N.wave);
 SACCADE_STATS = []; % store saccade stats
-for kk = 1:N.file
+for kk = 16:N.file
     disp(kk)
+    disp(basename{kk})
+    
     % Load HEAD & DAQ data
 	load(fullfile(PATH.daq, [basename{kk} '.mat']),'data','t_p'); % load head angles % time arrays
     load(fullfile(PATH.head, [basename{kk} '.mat']),'hAngles'); % load head angles % time arrays
@@ -67,8 +69,10 @@ for kk = 1:N.file
     
     % Get Saccade Stats
     peaks = []; % find peaks automatically
-    head_saccade = saccade(Head.X(:,1), Head.Time, 3.5, direction, peaks, showplot);
-    % figure (1)
+    amp_cut = 7;
+    head_saccade = saccade(Head.X(:,1), Head.Time, 300, direction, peaks, showplot, amp_cut);
+    
+    %figure (1)
     
     COUNT{I.fly(kk),I.wave(kk)}(end+1,1) = head_saccade.count;
     

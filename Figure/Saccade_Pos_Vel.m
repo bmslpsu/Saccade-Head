@@ -39,15 +39,15 @@ for jj = 1:N.vel
 	cent = find(med_time==0);
     span = (cent - med_span):( cent + med_span);
     
-    h.trial = plot(time, pos, 'Color', [0.7*CC(jj,:) , 0.2], 'LineWidth', 0.5);
+    h.trial = plot(time, pos, 'Color', [0.5 0.5 0.5 , 0.2], 'LineWidth', 0.5);
                                         
-    h.patch = PlotPatch(med_pos(span), std_pos(span), med_time(span), 1, 1, ...
-        CC(jj,:), [0.7 0.7 0.7], 0.4, 3);
+    h.patch = PlotPatch(med_pos(span), std_pos(span), med_time(span), 2, 1, ...
+        CC(jj,:),  0.5*CC(jj,:), 0.3, 2);
     h.patch.EdgeColor = CC(jj,:);
 end
 set(ax,'LineWidth',1,'FontWeight','bold','FontSize',8,'Color','w',...
     'YColor','k','XColor','k','XLim',1000*0.05*[-1 1],'YLim',20*[-1 1])
-XLabelHC = get(ax, 'XLabel');
+XLabelHC = get(ax(6:10), 'XLabel');
 set([XLabelHC{:}], 'String', 'Time (ms)')
 YLabelHC = get(ax([1,clms+1]), 'YLabel');
 set([YLabelHC{:}], 'String', 'Head Position (°)')
@@ -82,8 +82,8 @@ for jj = 1:N.vel
     
     h.trial = plot(time, vel, 'Color', [0.5 0.5 0.5 , 0.2], 'LineWidth', 0.5);
                                         
-    h.patch = PlotPatch(med_vel(span), std_vel(span), med_time(span), 1, 1, ...
-        CC(jj,:), 0.5*CC(jj,:), 0.2, 2);
+    h.patch = PlotPatch(med_vel(span), std_vel(span), med_time(span), 2, 1, ...
+        CC(jj,:), 0.5*CC(jj,:), 0.3, 2);
     h.patch.EdgeColor = CC(jj,:);
     
     if sign(Vel(jj))==1
@@ -94,7 +94,7 @@ for jj = 1:N.vel
 end
 set(ax,'LineWidth',1,'FontWeight','bold','FontSize',8,'Color','w',...
     'YColor','k','XColor','k','XLim',1000*0.05*[-1 1])
-XLabelHC = get(ax, 'XLabel');
+XLabelHC = get(ax(6:10), 'XLabel');
 set([XLabelHC{:}], 'String', 'Time (ms)')
 YLabelHC = get(ax([1,clms+1]), 'YLabel');
 set([YLabelHC{:}], 'String', 'Head Velocity (°)')

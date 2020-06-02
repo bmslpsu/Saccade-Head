@@ -7,6 +7,8 @@ root = 'H:\DATA\Rigid_Data\';
 
 load(fullfile(PATH,FILE),'PATH','COUNT','SACCADE','SACCADE_STATS','FLY','GRAND','Stim','D','I','U','N')
 
+clearvars -except clms CC Vel PATH COUNT SACCADE SACCADE_STATS FLY GRAND Stim D I U N
+
 %% Saccade Trigger Polar Plot
 FIG = figure (1) ; clf
 FIG.Units = 'inches';
@@ -69,13 +71,14 @@ clear ax h
 stim_dir = sign(SACCADE_STATS.Vel);
 CW  = stim_dir ==  1;
 CCW = stim_dir == -1;
+edges = deg2rad(-20:1:20);
 
 ax(1) = subplot(1,1,1,polaraxes); grid off ; axis tight
     Trig_Positive = [ SACCADE_STATS.StartPos(CW); -SACCADE_STATS.StartPos(CCW)];
     Trig_Negative = [ SACCADE_STATS.EndPos(CW);  -SACCADE_STATS.EndPos(CCW)];
-    h(1) = polarhistogram(deg2rad(Trig_Positive),100,...
+    h(1) = polarhistogram(deg2rad(Trig_Positive),edges,...
         'FaceColor','g','FaceAlpha',0.9,'Normalization','Probability'); hold on
-    h(2) = polarhistogram(deg2rad(Trig_Negative),'BinEdges', h(1).BinEdges, ...
+    h(2) = polarhistogram(deg2rad(Trig_Negative),'BinEdges', edges, ...
         'FaceColor','r','FaceAlpha',0.9,'Normalization','Probability');
     title('CW Stimulus Direction   ===>')
     ax(1).ThetaAxis.Label.String = 'Head Position (°)';
@@ -84,7 +87,7 @@ set(h,'EdgeColor','none')
 set(ax,'FontSize',8);
 set(ax,'Color','w');
 set(ax,'ThetaLim',[-20 20]);
-% set(ax,'RLim',[0 300]);
+set(ax,'RLim',[0 0.12]);
 set(ax,'ThetaDir','clockwise')
 set(ax,'ThetaTick',-20:10:20);
 set(ax,'ThetaZeroLocation','top');
