@@ -12,12 +12,12 @@ function [] = batch_headtrack_saccade(root, npoints, center_file, playback, show
 %       -
 %
 
-showpoint = true;
-npoints = 1;
-playback = 5;
-root = 'H:\EXPERIMENTS\RIGID\Experiment_Asymmetry_Control_Verification\HighContrast\30\Vid';
-center_file = ['H:\EXPERIMENTS\RIGID\Experiment_Asymmetry_Control_Verification\HighContrast\30\Vid' ...
-    '\tracked_head\Fly_2_Trial_1_Vel_-120_SpatFreq_30.mat'];
+% showpoint = true;
+% npoints = 1;
+% playback = 5;
+% root = 'H:\EXPERIMENTS\RIGID\Experiment_Asymmetry_Control_Verification\HighContrast\30\Vid';
+% center_file = ['H:\EXPERIMENTS\RIGID\Experiment_Asymmetry_Control_Verification\HighContrast\30\Vid' ...
+%     '\tracked_head\Fly_4_Trial_1_Vel_-60_SpatFreq_30'];
 
 [FILES, PATH] = uigetfile({'*.mat', 'MAT-files'},'Select videos', root, 'MultiSelect','on');
 FILES = string(FILES);

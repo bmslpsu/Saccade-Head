@@ -9,7 +9,7 @@ root = 'H:\DATA\Rigid_Data\';
 load(fullfile(PATH,FILE),'PATH','COUNT','SACCADE','SACCADE_STATS','FLY','GRAND','D','I','U','N')
 
 clms = N.freq;
-CC = hsv(clms);
+CC = jet(clms);
 
 %% Saccade Statistics %%
 absflag = true;
@@ -116,7 +116,7 @@ FIG.Position = [2 2 2 2];
 movegui(FIG,'center')
 ax = subplot(1,1,1); hold on
 
-bx = boxplot(count_all./10, G, 'Labels', {Freq}, 'Width', 0.5, 'Symbol', '.', 'Whisker', 2);
+bx = boxplot(count_all./10, G, 'Labels', {Freq}, 'Width', 0.5, 'Symbol', '', 'Whisker', 2);
 xlabel('Stimulus Frequency (Hz)')
 ylabel('Rate (#/s')
 

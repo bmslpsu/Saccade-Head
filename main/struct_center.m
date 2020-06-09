@@ -10,7 +10,7 @@ function [comb_struct] = struct_center(struct_array, center, even, dim, varargin
 %                          	the normalization field)
 %       center          :   center value for normalization parameter
 %       even            :   (boolean) for even padding around center
-%       dim             :   dimension to operate in
+%       dim             :   dimension to operate on
 %   
 %   OUTPUT:
 %       comb_struct  	:   combined structure array

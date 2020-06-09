@@ -16,12 +16,12 @@ function [centData,cIdx,cVal,R,dR,new_length,n_vector] = nancat_center(data,cent
 %       n_vector 	:   total # of vectors in all cells
 %
 
-if nargin<3
+if nargin < 3
     dim = 1; % defaults to columns
-    if nargin<2
+    if nargin < 2
         center = 0; % default center value is 0
     end
-elseif nargin==4
+elseif nargin == 4
     if ~isempty(center)
         error('Error: the input "center" must be empty when using the input "Cent"')
     end
@@ -69,9 +69,9 @@ for jj = 1:n_data % for each cell
             cIdx(jj,kk) = 1;
         end
         
-        if nargin==4
+        if nargin == 4
             if isempty(Cent)
-                % no affect
+                % no effect
             elseif isnan(Cent)
                 cIdx(jj,kk) = n_center(jj); % for last index
             else
@@ -87,7 +87,7 @@ maxR = cellfun(@(x) max(x,[],2)', R, 'UniformOutput', false);
 maxR = cell2mat(maxR);
 maxR_ALL = max(maxR,[],1)';
 
-if nargin==5
+if nargin == 5
     if Even % even padding around center
         maxR_ALL = max(maxR_ALL)*ones(size(maxR_ALL));
     end

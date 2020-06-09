@@ -17,7 +17,7 @@ function [MOV] = make_montage_rigid_head_wing_leg(rootdir,rootpat,vidFs,export)
 
 % Example Input %
 clear ; clc ; close all 
-export = true;
+export = false;
 vidFs = 50;
 rootdir = 'H:\EXPERIMENTS\RIGID\Experiment_Asymmetry_Control_Verification\HighContrast\30';
 rootpat = 'C:\Users\BC\Box\Git\Arena\Patterns';
@@ -83,7 +83,7 @@ disp('DONE')
 %% Get pattern data & sync with start of visual stimulus
 pattern_total_time = 10;
 [TRIG,PAT] = sync_pattern_trigger(raw_data.t_p, raw_data.data(:,2), pattern_total_time, ...
-                        raw_data.data(:,1), true, 1, false);
+                        raw_data.data(:,1), true, 1, true, false);
 % Get kinematics data
 FLY.time    = TRIG.time_sync; % video time
 FLY.Fs      = round(1/mean(diff(FLY.time))); % video sampling rate
@@ -274,4 +274,10 @@ if export
     close(VID) % close video
 end
 disp('DONE')
+
+% %% Leg Image
+% frame_idx = 0.65*2000;
+% frame = median(FLY.raw(:,:,frame_idx-3:frame_idx),3);
+% imshow(frame)
+
 end

@@ -76,7 +76,7 @@ for kk = 1:N.file
     wing.right = interp1(pat.time, data(:,5), tintrp, 'nearest');
     % wing.left  = interp1(trig.time, benifly.LWing, tintrp, 'nearest');
     % wing.right = interp1(trig.time, benifly.RWing, tintrp, 'nearest');
-    % wing.left  = hampel(tintrp, wing.left);
+    % wing.left  = hampel(tintrp, wing.left); 
     % wing.right = hampel(tintrp, wing.right);
     wing.left  = filtfilt(wing.b, wing.a, wing.left);
     wing.right = filtfilt(wing.b, wing.a, wing.right);
@@ -84,17 +84,18 @@ for kk = 1:N.file
     
     % Get Saccade Stats
     peaks = [];
-    direction = -sign(D.vel(kk)); % only get saccades in the opposite direction of visual motion
-    % direction = sign(D.vel(kk));
+    %direction = -sign(D.vel(kk)); % only get saccades in the opposite direction of visual motion
+    direction = sign(D.vel(kk));
     head_saccade = saccade(head.pos, tintrp, 300, amp_cut, direction, peaks, nan, showplot);
     head_saccade = stimSaccade(head_saccade, Stim(:,I.vel(kk)), false); % with approximate pattern position
     % head_saccade = stimSaccade(head_saccade, pat.pos, false); % with actual pattern position
     % figure (1)
     
 %     if head_saccade.count > 0
-%         head_saccade = saccade(head.pos, tintrp, 300, direction, peaks, true, amp_cut);
+%         head_saccade = saccade(head.pos, tintrp, 350, amp_cut, direction, peaks, nan, true);
 %         pause
-%         head_saccade = stimSaccade(head_saccade, Stim(:,I.vel(kk)), false); % with approximate pattern position
+%         head_saccade = stimSaccade(head_saccade, Stim(:,I.vel(kk)), false);
+%         close all
 %     end
     
     COUNT{I.fly(kk),I.vel(kk)}(end+1,1) = head_saccade.count;
@@ -122,7 +123,7 @@ end
 
 % Fill in empty saccade trials
 empty_idx = cellfun(@(x) isempty(x), ALL_DATA);
-ALL_DATA(empty_idx) = {saccade(nan*head.pos, nan*head.pos, 350, 0, [], false)};
+ALL_DATA(empty_idx) = {saccade(nan*head.pos, nan*head.pos, 300, 0, 0, [], [], false)};
 
 %% Extract & group saccades & intervals by speed & by fly
 fields = {'normpeak_saccade','norm_interval','normstart_interval','normend_interval',...
@@ -145,7 +146,7 @@ for kk = 1:nfield % for each field in the saccade structure
     FLY.(fields{kk}) = cellfun(@(x) struct_center([x.(fields{kk})], center, even, dim, norm_fields), ...
                             ALL_DATA, 'UniformOutput', true);
     for jj = 1:N.vel
-        GRAND.(fields{kk})(:,jj) = struct_center(FLY.(fields{kk})(:,jj),center, even , dim, norm_fields);
+        GRAND.(fields{kk})(:,jj) = struct_center(FLY.(fields{kk})(:,jj), center, even , dim, norm_fields);
     end
 end
 

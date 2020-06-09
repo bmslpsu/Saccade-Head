@@ -83,6 +83,37 @@ for jj = 1:N.vel
     end
 end
 
+%% Combine directions
+IntSort_Speed = [];
+for jj = 1:N.vel/2
+    for kk = 1:n_main_fields
+        field_names = string(fieldnames(IntSort.(main_fields(kk))));
+        for f = 1:length(field_names)
+            cw  = IntSort.(main_fields(kk))(jj).(field_names(f));
+            ccw = IntSort.(main_fields(kk))(jj + N.vel/2).(field_names(f));
+            
+            if strcmp(field_names(f),'time')
+                flip = 1;
+            else
+                flip = -1;
+            end
+            
+            dim = [size(cw,1) ; size(ccw,1)];
+            sz_diff = diff(dim);
+           	if sz_diff > 0
+                comb = [padmatrix(cw,[sz_diff 0],nan,2), flip*ccw];
+            elseif sz_diff < 0
+                comb = [cw, flip*padmatrix(ccw,-sz_diff,nan,2)];
+            else
+                comb = [cw, flip*ccw];
+            end
+            
+            IntSort_Speed.(main_fields(kk))(jj).(field_names(f)) = comb;
+        end
+        IntSort_Speed.(main_fields(kk))(jj) = struct_center(IntSort_Speed.(main_fields(kk))(jj), 0, false, 1);
+    end
+end
+
 
 %% Interval Position
 FIG = figure (1) ; clf
@@ -103,14 +134,14 @@ for jj = 1:N.vel/2
         med_pos = nanmedian(pos,2);
         std_pos = nanstd(pos,[],2);
         
-        h.trial = plot(time, pos, 'Color', [0.7*CC(jj,:) , 0.2], 'LineWidth', 0.5);
+        h.trial = plot(time, pos, 'Color', [0.5 0.5 0.5 , 0.2], 'LineWidth', 0.5);
         
     	span_std = 1: Fs*(int_stats(jj).all.mean + 1*int_stats(jj).all.std);
         span_med = 1: Fs*(int_stats(jj).all.mean);
         
     	[h.patch(jj,1),h.med(jj,1)] = PlotPatch(med_pos(span_std), std_pos(span_std), med_time(span_std), 1, 1, ...
-                                        CC(jj,:), [0.5 0.5 0.5], 0.7, 1.5);
-        h.patch(jj,1).EdgeColor = CC(jj,:);
+                                        CC(jj,:), 0.5*CC(jj,:), 0.3, 1.5);
+        %h.patch(jj,1).EdgeColor = CC(jj,:);
         h.med(jj,1).Color = 'none';
         
         plot(med_time(span_med), med_pos(span_med), 'Color', CC(jj,:), 'LineWidth', 2)
@@ -123,23 +154,23 @@ for jj = 1:N.vel/2
         med_pos = nanmedian(pos,2);
         std_pos = nanstd(pos,[],2);
         
-        h.trial = plot(time, pos, 'Color', [0.7*CC(jj,:) , 0.2], 'LineWidth', 0.5);
+        h.trial = plot(time, pos, 'Color', [0.5 0.5 0.5 , 0.2], 'LineWidth', 0.5);
 
       	span_std = 1: Fs*(int_stats(jj+N.vel/2).all.mean + 1*int_stats(jj+N.vel/2).all.std);
         span_med = 1: Fs*(int_stats(jj).all.mean);
         
     	[h.patch(jj,2),h.med(jj,2)] = PlotPatch(med_pos(span_std), std_pos(span_std), med_time(span_std), 1, 1, ...
-                                        CC(jj,:), [0.5 0.5 0.5], 0.7, 1.5);
-        h.patch(jj,2).EdgeColor = CC(jj,:);
+                                        CC(jj,:), 0.5*CC(jj,:), 0.3, 1.5);
+        %h.patch(jj,2).EdgeColor = CC(jj,:);
       	h.med(jj,2).Color = 'none';
         
         plot(med_time(span_med), med_pos(span_med), 'Color', CC(jj,:), 'LineWidth', 2)
 end
 linkaxes(ax,'xy')
-set(ax,'LineWidth',1.5,'YLim',30*[-1 1])
+set(ax,'LineWidth',1,'YLim',30*[-1 1])
 set(ax,'XLim',[0 2])
 XLabelHC = get(ax, 'XLabel');
-set([XLabelHC{:}], 'String', 'Time (ms)')
+set([XLabelHC{:}], 'String', 'Time (s)')
 YLabelHC = get(ax(1,:), 'YLabel');
 set([YLabelHC{:}], 'String', 'Head Position (°)')
 
@@ -162,14 +193,14 @@ for jj = 1:N.vel/2
         med_vel = nanmedian(pos,2);
         std_vel = nanstd(pos,[],2);
         
-        h.trial = plot(time, pos, 'Color', [0.7*CC(jj,:) , 0.2], 'LineWidth', 0.5);
+        h.trial = plot(time, pos, 'Color', [0.5 0.5 0.5 , 0.2], 'LineWidth', 0.5);
         
     	span_std = 1: Fs*(int_stats(jj).all.mean + 1*int_stats(jj).all.std);
         span_med = 1: Fs*(int_stats(jj).all.mean);
         
     	[h.patch(jj,1),h.med(jj,1)] = PlotPatch(med_vel(span_std), std_vel(span_std), med_time(span_std), 1, 1, ...
-                                        CC(jj,:), [0.5 0.5 0.5], 0.7, 1.5);
-        h.patch(jj,1).EdgeColor = CC(jj,:);
+                                        CC(jj,:), 0.5*CC(jj,:), 0.3, 1.5);
+        %h.patch(jj,1).EdgeColor = CC(jj,:);
         h.med(jj,1).Color = 'none';
         
         plot(med_time(span_med), med_vel(span_med), 'Color', CC(jj,:), 'LineWidth', 2)
@@ -184,14 +215,14 @@ for jj = 1:N.vel/2
         med_vel = nanmedian(pos,2);
         std_vel = nanstd(pos,[],2);
         
-        h.trial = plot(time, pos, 'Color', [0.7*CC(jj,:) , 0.2], 'LineWidth', 0.5);
+        h.trial = plot(time, pos, 'Color', [0.5 0.5 0.5 , 0.2], 'LineWidth', 0.5);
 
       	span_std = 1: Fs*(int_stats(jj+N.vel/2).all.mean + 1*int_stats(jj+N.vel/2).all.std);
         span_med = 1: Fs*(int_stats(jj).all.mean);
         
     	[h.patch(jj,2),h.med(jj,2)] = PlotPatch(med_vel(span_std), std_vel(span_std), med_time(span_std), 1, 1, ...
-                                        CC(jj,:), [0.5 0.5 0.5], 0.7, 1.5);
-        h.patch(jj,2).EdgeColor = CC(jj,:);
+                                        CC(jj,:), 0.5*CC(jj,:), 0.3, 1.5);
+        %h.patch(jj,2).EdgeColor = CC(jj,:);
       	h.med(jj,2).Color = 'none';
         
         plot(med_time(span_med), med_vel(span_med), 'Color', CC(jj,:), 'LineWidth', 2)

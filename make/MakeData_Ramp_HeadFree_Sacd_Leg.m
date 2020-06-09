@@ -1,5 +1,5 @@
 function [] = MakeData_Ramp_HeadFree_Sacd_Leg(wave,Fc)
-%% MakeData_Ramp_HeadFree_Sacd:
+%% MakeData_Ramp_HeadFree_Sacd_Leg:
 %   INPUTS:
 %       wave    :   spatial wavelength of data
 %       Fc      :   head data low-pass filter cutoff frequency [Hz]
@@ -13,16 +13,17 @@ Fc = 40;
 
 % Data location
 rootdir = ['H:\EXPERIMENTS\RIGID\Experiment_Asymmetry_Control_Verification\HighContrast\' num2str(wave)];
-legdir = 'Q:\Google Drive PSU\Experiment_Data';
+rootdlc = 'Q:\Google Drive PSU\Experiment_Data';
 
 % Output file name
-filename = ['NewRamp_HeadFree_SACCD_Anti_filt=' num2str(Fc) '_Wave=' num2str(wave) '_Leg'];
+filename = ['NewRamp_HeadFree_SACCD_Leg_Anti_filt=' num2str(Fc) '_Wave=' num2str(wave)];
 
 % Setup Directories 
 PATH.daq  = rootdir; % DAQ data location
 PATH.vid  = fullfile(PATH.daq,'Vid'); % video data location
 PATH.head = fullfile(PATH.vid,'tracked_head'); % tracked kinematic data location
 PATH.wing = fullfile(PATH.vid,'tracked_head_wing'); % tracked kinematic data location
+PATH.dlc  = rootdlc; % DLC data location
 
 % Select files
 [D,I,N,U,T,~,~,basename] = GetFileData(PATH.head,'*.mat',false,'fly','trial','vel','wave');
@@ -30,13 +31,16 @@ PATH.wing = fullfile(PATH.vid,'tracked_head_wing'); % tracked kinematic data loc
 %% Get Data %%
 disp('Loading...')
 showplot = false;
+amp_cut = 7;
+leg_thresh = 0.9;
+
 tintrp = (0:(1/200):(10 - 1/200))';
 [wing.b,wing.a] = butter(2,Fc/(200/2),'low');
 [head.b,head.a] = butter(2,Fc/(200/2),'low');
 Vel = U.vel{1};
 Stim = (Vel*tintrp')';
-SACCADE = [I , splitvars(table(num2cell(zeros(N.file,2))))]; % store saccade objects
-SACCADE.Properties.VariableNames(5:6) = {'head_saccade','dWBA'}; 
+SACCADE = [I , splitvars(table(num2cell(zeros(N.file,3))))]; % store saccade objects
+SACCADE.Properties.VariableNames(5:end) = {'head_saccade','dWBA','leg'};
 ALL_DATA = cell(N.fly,N.vel);
 COUNT = cell(N.fly,N.vel);
 SACCADE_STATS = []; % store saccade stats
@@ -46,7 +50,14 @@ for kk = 1:N.file
 	load(fullfile(PATH.daq, [basename{kk} '.mat']),'data','t_p'); % load head angles % time arrays
     load(fullfile(PATH.head, [basename{kk} '.mat']),'hAngles'); % load head angles % time arrays
     % benifly = ImportBenifly(fullfile(PATH.wing, [basename{kk} '.csv'])); % load head & wing angles
-    DLC_table = readDLC(fullfile(legdir, [basename{kk} '.csv']));
+    
+    % DLC data
+    dlc_file        = dir(PATH.dlc);
+    dlc_file    	= string({dlc_file.name}');
+    dlc_file        = start_end_string(dlc_file, basename{kk}, '.csv');
+    dlc_data        = readDLC(fullfile(PATH.dlc,dlc_file)); % load DLC data
+    leg_prob        = [dlc_data.front_leg_left_prob , dlc_data.front_leg_right_prob];
+ 	leg_class       = max(leg_prob > leg_thresh,[],2);
     
     % Sync video with trigger & pattern
     trig.raw_time   = t_p; % DAQ raw times for trigger
@@ -86,8 +97,7 @@ for kk = 1:N.file
     peaks = [];
     direction = -sign(D.vel(kk)); % only get saccades in the opposite direction of visual motion
     % direction = sign(D.vel(kk));
-    amp_cut = 7;
-    head_saccade = saccade(head.pos, tintrp, 300, direction, peaks, showplot, amp_cut);
+    head_saccade = saccade(head.pos, tintrp, 300, amp_cut, direction, peaks, nan, showplot);
     head_saccade = stimSaccade(head_saccade, Stim(:,I.vel(kk)), false); % with approximate pattern position
     % head_saccade = stimSaccade(head_saccade, pat.pos, false); % with actual pattern position
     % figure (1)
@@ -110,6 +120,7 @@ for kk = 1:N.file
         rep = head_saccade.count;
     end
     SACCADE{kk,6} = {wing.wba};
+    SACCADE{kk,7} = {leg_class};
     VTable = table(D.vel(kk),'VariableNames',{'Vel'});
     ITable = [I(kk,:),VTable];
     ITable = repmat(ITable,rep,1);
@@ -123,7 +134,7 @@ end
 
 % Fill in empty saccade trials
 empty_idx = cellfun(@(x) isempty(x), ALL_DATA);
-ALL_DATA(empty_idx) = {saccade(nan*head.pos, nan*head.pos, 350, 0, [], false)};
+ALL_DATA(empty_idx) = {saccade(nan*head.pos, nan*head.pos, 300, 0, 0, [], [], false)};
 
 %% Extract & group saccades & intervals by speed & by fly
 fields = {'normpeak_saccade','norm_interval','normstart_interval','normend_interval',...
@@ -146,7 +157,7 @@ for kk = 1:nfield % for each field in the saccade structure
     FLY.(fields{kk}) = cellfun(@(x) struct_center([x.(fields{kk})], center, even, dim, norm_fields), ...
                             ALL_DATA, 'UniformOutput', true);
     for jj = 1:N.vel
-        GRAND.(fields{kk})(:,jj) = struct_center(FLY.(fields{kk})(:,jj),center, even , dim, norm_fields);
+        GRAND.(fields{kk})(:,jj) = struct_center(FLY.(fields{kk})(:,jj), center, even , dim, norm_fields);
     end
 end
 

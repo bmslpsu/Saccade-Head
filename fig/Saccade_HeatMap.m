@@ -22,7 +22,7 @@ clear h
 ax(1) = subplot(3,2,1);
     X = abs(Move.SACCADE_STATS.Amplitude);
     Y = abs(Move.SACCADE_STATS.PeakVel);
-    h(1) = histogram2(X, Y, [nbins,nbins], 'Normalization','pdf','FaceColor','flat',...
+    h(1) = histogram2(X, Y, [nbins,nbins], 'Normalization','Probability','FaceColor','flat',...
         'ShowEmptyBins','on','DisplayStyle','tile');
     grid off
     xlabel('Amplitude (°)')
@@ -33,7 +33,7 @@ ax(1) = subplot(3,2,1);
 ax(2) = subplot(3,2,2);
     X = abs(Static.SACCADE_STATS.Amplitude);
     Y = abs(Static.SACCADE_STATS.PeakVel);
-    h(2) = histogram2(X, Y, h(1).XBinEdges, h(1).YBinEdges, 'Normalization','pdf','FaceColor','flat',...
+    h(2) = histogram2(X, Y, h(1).XBinEdges, h(1).YBinEdges, 'Normalization','Probability','FaceColor','flat',...
         'ShowEmptyBins','on','DisplayStyle','tile');
     grid off
     xlabel('Amplitude (°)')
@@ -45,7 +45,7 @@ ax(3) = subplot(3,2,3);
     X = abs(Move.SACCADE_STATS.Amplitude);
     Y = abs(Move.SACCADE_STATS.Duration);
     dur_bins = 0:0.005:0.1;
-    h(3) = histogram2(X, Y, h(1).XBinEdges, dur_bins, 'Normalization','pdf','FaceColor','flat',...
+    h(3) = histogram2(X, Y, h(1).XBinEdges, dur_bins, 'Normalization','Probability','FaceColor','flat',...
         'ShowEmptyBins','on','DisplayStyle','tile');
     grid off
     xlabel('Amplitude (°)')
@@ -56,7 +56,7 @@ ax(4) = subplot(3,2,4);
     X = abs(Static.SACCADE_STATS.Amplitude);
     Y = abs(Static.SACCADE_STATS.Duration);
     dur_bins = 0:0.005:0.1;
-    h(4) = histogram2(X, Y, h(1).XBinEdges, dur_bins, 'Normalization','pdf','FaceColor','flat',...
+    h(4) = histogram2(X, Y, h(1).XBinEdges, dur_bins, 'Normalization','Probability','FaceColor','flat',...
         'ShowEmptyBins','on','DisplayStyle','tile');
     grid off
     xlabel('Amplitude (°)')
@@ -67,7 +67,7 @@ ax(5) = subplot(3,2,5);
     X = abs(Move.SACCADE_STATS.PeakVel);
     Y = abs(Move.SACCADE_STATS.Duration);
     dur_bins = 0:0.005:0.1;
-    h(5) = histogram2(X, Y, h(1).YBinEdges, dur_bins, 'Normalization','pdf','FaceColor','flat',...
+    h(5) = histogram2(X, Y, h(1).YBinEdges, dur_bins, 'Normalization','Probability','FaceColor','flat',...
         'ShowEmptyBins','on','DisplayStyle','tile');
     grid off
     xlabel('Peak Velocity (°/s)')
@@ -78,7 +78,7 @@ ax(6) = subplot(3,2,6);
     X = abs(Static.SACCADE_STATS.PeakVel);
     Y = abs(Static.SACCADE_STATS.Duration);
     dur_bins = 0:0.005:0.1;
-    h(6) = histogram2(X, Y, h(1).YBinEdges, dur_bins, 'Normalization','pdf','FaceColor','flat',...
+    h(6) = histogram2(X, Y, h(1).YBinEdges, dur_bins, 'Normalization','Probability','FaceColor','flat',...
         'ShowEmptyBins','on','DisplayStyle','tile');
     grid off
     xlabel('Peak Velocity (°/s)')

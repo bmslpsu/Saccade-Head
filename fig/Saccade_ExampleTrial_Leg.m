@@ -1,4 +1,4 @@
-function [] = Saccade_ExampleTrials()
+function [] = Saccade_ExampleTrial_Leg()
 %% Saccade_ExampleTrials:
 root = 'H:\DATA\Rigid_Data\';
 
@@ -23,45 +23,40 @@ movegui(FIG,'center')
 FIG.Color = 'w';
 clear ax h
 
-active_switch = 309;
-% active_switch = 260;
-% active_switch = 444;
-land = 4;
-active_30 = 100;
-active_60 = 149;
-active_90 = 265;
-
-idx = active_switch;
+idx = 153;
 trial = SACCADE.head_saccade{idx};
+leg_time = SACCADE.head_saccade{idx}.Ts * find(SACCADE.leg{idx}, 1, 'first');
 
 ax(1) = subplot(4,1,1) ; hold on ; title(['Stimulus: ' num2str(D.vel(idx)) ' (°/s)'])
     ylabel('Position (°)')
     h(1) = plot(trial.time,trial.position,'k');
     plot(trial.time, zeros(trial.n,1),'--','Color',[0.5 0.5 0.5])
     if trial.count~=0
-%         for ww = 1:trial.count
-%            plot(trial.saccades{ww}.Time,trial.saccades{ww}.Position,...
-%                'LineWidth', 1, 'Color', trial.cmap(ww,:))
+        for ww = 1:trial.count
+           plot(trial.saccades{ww}.Time,trial.saccades{ww}.Position,...
+               'LineWidth', 1, 'Color', trial.cmap(ww,:))
 %            plot(trial.intervals{ww}.Time,trial.intervals{ww}.Position,...
 %                'LineWidth', 1, 'Color', 0.7*trial.cmap(ww,:))
-%         end
+        end
 %         plot(trial.starts.time , trial.starts.position , '*g')
 %         plot(trial.peaks.time  , trial.peaks.position  , '*b')
 %         plot(trial.ends.time   , trial.ends.position   , '*r')
     end
 
     ax(1).YLim = 20*[-1 1];
+  	plot([leg_time leg_time], ax(1).YLim, 'r', 'LineWidth', 2)
+
 
 ax(2) = subplot(4,1,2) ; hold on
     ylabel('Velocity (°/s)')
     h(2) = plot(trial.time,trial.velocity,'k'); 
     if trial.count~=0
-%         for ww = 1:trial.count
-%            plot(trial.saccades{ww}.Time,trial.saccades{ww}.Velocity,...
-%                'LineWidth', 1, 'Color', trial.cmap(ww,:))
+        for ww = 1:trial.count
+           plot(trial.saccades{ww}.Time,trial.saccades{ww}.Velocity,...
+               'LineWidth', 1, 'Color', trial.cmap(ww,:))
 %            plot(trial.intervals{ww}.Time,trial.intervals{ww}.Velocity,...
 %                'LineWidth', 1, 'Color', 0.7*trial.cmap(ww,:))
-%         end
+        end
 %         plot(trial.starts.time , trial.starts.velocity  , '*g')
 %         plot(trial.peaks.time  , trial.peaks.velocity   , '*b')
 %         plot(trial.ends.time   , trial.ends.velocity    , '*r')

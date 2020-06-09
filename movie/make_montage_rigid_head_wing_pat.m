@@ -1,4 +1,4 @@
-function [MOV] = make_montage_rigid_head_wing(rootdir,rootpat,vidFs,export)
+function [MOV] = make_montage_rigid_head_wing_pat(rootdir,rootpat,vidFs,export)
 %% make_montage_rigid_head_wing_leg: makes movie for fly in rigid tether
 %
 % 	Includes fly video, head tracking, wing tracking, leg tracking 
@@ -63,7 +63,7 @@ mkdir(PATH.mov) % create directory for export images
 % Set file names
 [~,FILE.basename,~] = fileparts(FILE.raw);
 FILE.benifly   	= [FILE.basename '.csv'];
-FILE.montage    = [FILE.basename '_Montage.mp4'];
+FILE.montage    = [FILE.basename '_Montage_Pat.mp4'];
 FILE.mask       = [FILE.basename '.json'];
 
 % Load data
@@ -112,6 +112,7 @@ FLY.int_lwing 	= FLY.lwing(TRIG.range);
 FLY.int_rwing  	= FLY.rwing(TRIG.range);
 FLY.int_wba     = FLY.wba(TRIG.range);
 FLY.int_rwing  	= FLY.rwing(TRIG.range);
+PAT.norm        = 3.75*(PAT.pos_exp - mean(PAT.pos_exp));
 
 %% Get video data
 FLY.raw = squeeze(vid_data.vidData(:,:,TRIG.range)); % raw video data
@@ -171,7 +172,9 @@ colormap(cmap)
 clear ax
 ax(1) = subplot(2,4,[1:2,5:6]) ; cla; hold on; axis square % for raw fly & pattern vid
 ax(2) = subplot(2,4,[3:4]) ; cla; hold on
-        ylabel('Head (°)','Color','w','FontSize',fontsize)
+        ylabel('(°)','Color','w','FontSize',fontsize)
+        h.pat = animatedline('Color','g','LineWidth',1); % for pattern angle
+        h.pat.Color(4) = 0.5;
         h.head = animatedline('Color','c','LineWidth',linewidth); % for head angle
 ax(3) = subplot(2,4,[7:8]) ; cla; hold on
         ylabel('\DeltaWBA (°)','Color','w','FontSize',fontsize)
@@ -240,7 +243,8 @@ for jj = 1:FLY.nframe % for each frame
     % Head plot
     subplot(2,4,[3:4]); hold on
         addpoints(h.head, FLY.int_time(jj), FLY.int_head(jj))
-            
+        addpoints(h.pat, FLY.int_time(jj), PAT.norm(jj))
+
    	% WBA plot
 	subplot(2,4,[7:8]); hold on
         addpoints(h.wba, FLY.int_time(jj), FLY.int_wba(jj))

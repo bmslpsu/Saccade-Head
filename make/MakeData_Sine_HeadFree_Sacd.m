@@ -9,9 +9,9 @@ function [] = MakeData_Sine_HeadFree_Sacd(amp,Fc,direction)
 %       -
 %
 
-% amp = 3.75;
-% Fc = 40;
-% direction = 0; % get saccades in all directions
+amp = 7.5;
+Fc = 40;
+direction = 0; % get saccades in all directions
 
 switch direction
     case 0
@@ -42,6 +42,7 @@ PATH.ang = fullfile(PATH.daq,'\Vid\Angles'); % tracked kinematic data location
 %% Get Data %%
 disp('Loading...')
 showplot = false;
+amp_cut = 7;
 tintrp = (0:(1/200):(10 - 1/200))';
 SACCADE = [I , table(num2cell(zeros(N.file,1)))]; % store saccade objects
 SACCADE.Properties.VariableNames{4} = 'saccade'; 
@@ -74,7 +75,7 @@ for kk = 1:N.file
     
     % Get Saccade Stats
     peaks = [];
-    head_saccade = saccade(Head.X(:,1), Head.Time, 5, direction, peaks, showplot);
+    head_saccade = saccade(Head.X(:,1), Head.Time, 300, amp_cut, direction, peaks, nan, showplot);
     % figure (1) ; suptitle(num2str(D.freq(kk)))
     head_saccade = stimSaccade(head_saccade, pat.pos, false); % with actual pattern position
     
@@ -102,7 +103,7 @@ end
 
 % Fill in empty saccade trials
 empty_idx = cellfun(@(x) isempty(x), ALL_DATA);
-ALL_DATA(empty_idx) = {saccade(nan*Head.X(:,1), nan*Head.Time, 350, 0, [], false)};
+ALL_DATA(empty_idx) = {saccade(nan*Head.X(:,1), nan*Head.Time, 300, 0, 0, [], [], false)};
 
 %% Extract & group saccades & intervals by speed & by fly
 fields = {'normpeak_saccade','norm_interval','normstart_interval','normend_interval',...
