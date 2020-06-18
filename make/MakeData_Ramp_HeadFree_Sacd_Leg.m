@@ -120,7 +120,7 @@ for kk = 1:N.file
         rep = head_saccade.count;
     end
     SACCADE{kk,6} = {wing.wba};
-    SACCADE{kk,7} = {leg_class};
+    SACCADE{kk,7} = {leg_prob};
     VTable = table(D.vel(kk),'VariableNames',{'Vel'});
     ITable = [I(kk,:),VTable];
     ITable = repmat(ITable,rep,1);

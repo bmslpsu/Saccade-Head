@@ -25,6 +25,9 @@ h = gobjects(6,1);
 ax(1) = subplot(3,2,1);
     X = abs(Move.SACCADE_STATS.Amplitude);
     Y = abs(Move.SACCADE_STATS.PeakVel);
+    X = X(~isnan(X));
+    Y = Y(~isnan(Y));
+    [rho_move.amp_pkv,pval_move.amp_pkv] = corr(X,Y);
     h(1) = histogram2(X, Y, edges.amp, edges.pkv, 'FaceColor', 'flat', 'EdgeColor', 'none', ...
         'ShowEmptyBins','on', 'Normalization','Probability','DisplayStyle','tile');
     axis tight
@@ -37,6 +40,8 @@ ax(1) = subplot(3,2,1);
 ax(2) = subplot(3,2,2);
     X = abs(Static.SACCADE_STATS.Amplitude);
     Y = abs(Static.SACCADE_STATS.PeakVel);
+    X = X(~isnan(X));
+    Y = Y(~isnan(Y));
     h(2) = histogram2(X, Y, edges.amp, edges.pkv, 'FaceColor', 'flat', 'EdgeColor', 'none', ...
         'ShowEmptyBins','on', 'Normalization','Probability','DisplayStyle','tile');
     grid off
@@ -48,6 +53,9 @@ ax(2) = subplot(3,2,2);
 ax(3) = subplot(3,2,3);
     X = abs(Move.SACCADE_STATS.Amplitude);
     Y = 1000*abs(Move.SACCADE_STATS.Duration);
+    X = X(~isnan(X));
+    Y = Y(~isnan(Y));
+    [rho_move.amp_dur,pval_move.amp_dur] = corr(X,Y);
     h(3) = histogram2(X, Y, edges.amp, edges.dur, 'FaceColor', 'flat', 'EdgeColor', 'none', ...
         'ShowEmptyBins','on', 'Normalization','Probability','DisplayStyle','tile');
     grid off
@@ -58,6 +66,8 @@ ax(3) = subplot(3,2,3);
 ax(4) = subplot(3,2,4);
     X = abs(Static.SACCADE_STATS.Amplitude);
     Y = 1000*abs(Static.SACCADE_STATS.Duration);
+    X = X(~isnan(X));
+    Y = Y(~isnan(Y));
     h(4) = histogram2(X, Y, edges.amp, edges.dur, 'FaceColor', 'flat', 'EdgeColor', 'none', ...
         'ShowEmptyBins','on', 'Normalization','Probability','DisplayStyle','tile');
     grid off
@@ -68,6 +78,9 @@ ax(4) = subplot(3,2,4);
 ax(5) = subplot(3,2,5);
     X = abs(Move.SACCADE_STATS.PeakVel);
     Y = 1000*abs(Move.SACCADE_STATS.Duration);
+    X = X(~isnan(X));
+    Y = Y(~isnan(Y));
+    [rho_move.pkv_dur,pval_move.pkv_dur] = corr(X,Y);
     h(5) = histogram2(X, Y, edges.pkv, edges.dur, 'FaceColor', 'flat', 'EdgeColor', 'none', ...
         'ShowEmptyBins','on', 'Normalization','Probability','DisplayStyle','tile');
     grid off
@@ -78,6 +91,8 @@ ax(5) = subplot(3,2,5);
 ax(6) = subplot(3,2,6);
     X = abs(Static.SACCADE_STATS.PeakVel);
     Y = 1000*abs(Static.SACCADE_STATS.Duration);
+    X = X(~isnan(X));
+    Y = Y(~isnan(Y));
     h(6) = histogram2(X, Y, edges.pkv, edges.dur, 'FaceColor', 'flat', 'EdgeColor', 'none', ...
         'ShowEmptyBins','on', 'Normalization','Probability','DisplayStyle','tile');
     grid off
@@ -92,5 +107,37 @@ set(ax, 'LineWidth', 1, 'FontWeight', 'bold')
 hp = get(subplot(3,2,6),'Position');
 cbar = colorbar('Position', [hp(1)+hp(3)+0.02  0.15+hp(2)  0.03  hp(2)+hp(3)*1]);
 cbar.Label.String = 'Probability';
+
+%% Surface
+x = 1000*abs(Move.SACCADE_STATS.Duration);
+y = abs(Move.SACCADE_STATS.Amplitude);
+z = abs(Move.SACCADE_STATS.PeakVel);
+
+nanI = isnan(x);
+x = x(~nanI);
+y = y(~nanI);
+z = z(~nanI);
+
+n = 200;
+edges.dur = linspace(0,100,n);
+edges.amp = linspace(7,31,n);
+edges.pkv = linspace(300,1000,n);
+
+% vq = griddata(x, y, z, edges.dur, edges.amp, edges.pkv);
+clc
+[xq,yq] = meshgrid(edges.dur, edges.amp);
+vq = griddata(x, y, z, edges.dur, edges.amp');
+
+
+surface(xq,yq,vq, 'EdgeColor', 'none')
+
+hold on
+view(3)
+xlabel('Duration (s)')
+ylabel('Ampltitude (°)')
+zlabel('Peak Velocity (°/s)')
+
+
+
 
 end

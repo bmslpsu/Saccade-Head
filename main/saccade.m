@@ -532,17 +532,29 @@ classdef saccade
 
                 % Extract stimulus intervals
                 if ~isempty(stim) % if any saccades are detected and a stimulus if given
-                    for ww = 1:obj.count % every saccade                   
+                    for ww = 1:obj.count % every saccade
                         % Create stimulus table
                         if ww~=1
                             n_stim_idx = obj.SACD.StartIdx(ww) - obj.SACD.EndIdx(ww-1) + 1;
-                            obj.stimulus{ww} = splitvars(table(nan(n_stim_idx,4)));
-                            obj.stimulus{ww}.Properties.VariableNames = {'Index','Time','Position','Velocity'};
+                            if n_stim_idx > 0
+                                obj.stimulus{ww} = splitvars(table(nan(n_stim_idx,4)));
+                                obj.stimulus{ww}.Properties.VariableNames = {'Index','Time','Position','Velocity'};
 
-                            obj.stimulus{ww}.Index     = (obj.SACD.EndIdx(ww-1):obj.SACD.StartIdx(ww))';
-                            obj.stimulus{ww}.Time      = obj.time(obj.stimulus{ww}.Index);
-                            obj.stimulus{ww}.Position  = obj.stimlus_position(obj.stimulus{ww}.Index);
-                            obj.stimulus{ww}.Velocity  = obj.stimlus_velocity(obj.stimulus{ww}.Index);
+                                obj.stimulus{ww}.Index     = (obj.SACD.EndIdx(ww-1):obj.SACD.StartIdx(ww))';
+                                obj.stimulus{ww}.Time      = obj.time(obj.stimulus{ww}.Index);
+                                obj.stimulus{ww}.Position  = obj.stimlus_position(obj.stimulus{ww}.Index);
+                                obj.stimulus{ww}.Velocity  = obj.stimlus_velocity(obj.stimulus{ww}.Index);
+                            else
+                                warning('Saccades too close together to find intervals')
+                                obj.stimulus{ww} = splitvars(table(nan(4,4)));
+                                obj.stimulus{ww}.Properties.VariableNames = {'Index','Time','Position','Velocity'};
+
+                                obj.stimulus{ww}.Index     = (1:4)';
+                                obj.stimulus{ww}.Time      = nan*obj.time(obj.stimulus{ww}.Index);
+                                obj.stimulus{ww}.Position  = nan*obj.stimlus_position(obj.stimulus{ww}.Index);
+                                obj.stimulus{ww}.Velocity  = nan*obj.stimlus_velocity(obj.stimulus{ww}.Index);
+                            end
+
                         else % store 1st interval as nan's because we don't know the start of this interval
                             n_stim_idx = obj.SACD.StartIdx(ww);
                             obj.stimulus{ww} = splitvars(table(nan(n_stim_idx,4)));

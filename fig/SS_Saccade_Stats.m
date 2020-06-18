@@ -9,7 +9,7 @@ root = 'H:\DATA\Rigid_Data\';
 load(fullfile(PATH,FILE),'PATH','COUNT','SACCADE','SACCADE_STATS','FLY','GRAND','D','I','U','N')
 
 clms = N.freq;
-CC = jet(clms);
+CC = hsv(clms);
 
 %% Saccade Statistics %%
 absflag = true;
@@ -97,7 +97,7 @@ set(ax,'LineWidth',1,'FontWeight','bold')
 %% Saccade Count
 count.stats = cellfun(@(x) basic_stats(x,1), COUNT, 'UniformOutput', true);
 for f  = 1:N.freq
-    count.all{f,1} = cat(1,COUNT{:,f});
+    count.all{f,1}  = cat(1,COUNT{:,f});
     count.med(:,f)  = cat(1,count.stats(:,f).median);
     count.mean(:,f) = cat(1,count.stats(:,f).mean);
 end
@@ -107,7 +107,6 @@ for f = 1:N.freq
    G = [G ; f*ones(n_length(f),1)]; 
 end
 count_all = cat(1,count.all{:});
-
 
 FIG = figure (3) ; clf
 FIG.Color = 'w';
@@ -132,6 +131,6 @@ set(findobj(ax,'tag','Lower Whisker'), 'Color', 'k','LineStyle','-');
 ax.Children = ax.Children([end 1:end-1]);
 
 set(ax,'LineWidth',1,'FontWeight','bold')
-
+ylim([-0.1 3])
 
 end

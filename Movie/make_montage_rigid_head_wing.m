@@ -19,9 +19,9 @@ function [MOV] = make_montage_rigid_head_wing(rootdir,rootpat,vidFs,export)
 clear ; clc ; close all 
 export = true;
 vidFs = 50;
-% rootdir = 'H:\EXPERIMENTS\RIGID\Experiment_Static_Wave';
+rootdir = 'H:\EXPERIMENTS\RIGID\Experiment_Static_Wave';
 % rootdir = 'H:\EXPERIMENTS\RIGID\Experiment_Asymmetry_Control_Verification\HighContrast\30';
-rootdir = 'H:\EXPERIMENTS\RIGID\Experiment_Sinusoid\3.75';
+% rootdir = 'H:\EXPERIMENTS\RIGID\Experiment_Sinusoid\3.75';
 rootpat = 'C:\Users\BC\Box\Git\Arena\Patterns';
 pat_ypos = 5;
 
@@ -43,8 +43,8 @@ end
 
 % Create data paths
 PATH.raw            = rootdir;
-PATH.vid            = fullfile(PATH.raw,'Vid');
-PATH.head_track     = fullfile(PATH.raw,'Vid','tracked_head');
+PATH.vid            = fullfile(PATH.raw);
+PATH.head_track     = fullfile(PATH.raw,'tracked_head');
 PATH.beninfly_track	= fullfile(PATH.vid,'vid_filt','tracked_head_wing');
 PATH.mask           = fullfile(PATH.beninfly_track,'mask');
 
@@ -82,7 +82,7 @@ disp('DONE')
 pattern_total_time = 10; % [s]
 reg = true; % use interp times
 start_idx = nan; % use first frame
-add1 = true; % add 1st frame
+add1 = false; % add 1st frame
 debug = false;
 
 [TRIG,PAT] = sync_pattern_trigger(raw_data.t_p, raw_data.data(:,2), pattern_total_time, ... 

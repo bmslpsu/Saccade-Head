@@ -9,7 +9,7 @@ function [] = MakeData_Sine_HeadFree_Sacd(amp,Fc,direction)
 %       -
 %
 
-amp = 7.5;
+amp = 15;
 Fc = 40;
 direction = 0; % get saccades in all directions
 
@@ -34,7 +34,7 @@ filename = ['SS_HeadFree_SACCD_' dirlabel '_filt=' num2str(Fc) '_Amp=' num2str(a
 PATH.daq = rootdir; % DAQ data location
 PATH.vid = fullfile(PATH.daq,'\Vid'); % video data location
 % PATH.ang = fullfile(PATH.daq,'\Vid\tracked'); % tracked kinematic data location
-PATH.ang = fullfile(PATH.daq,'\Vid\Angles'); % tracked kinematic data location
+PATH.ang = fullfile(PATH.daq,'\Vid\tracked_head'); % tracked kinematic data location
 
 % Select files
 [D,I,N,U,T,~,~,basename] = GetFileData(PATH.ang,'*.mat',false);
@@ -42,6 +42,7 @@ PATH.ang = fullfile(PATH.daq,'\Vid\Angles'); % tracked kinematic data location
 %% Get Data %%
 disp('Loading...')
 showplot = false;
+thresh = 300;
 amp_cut = 7;
 tintrp = (0:(1/200):(10 - 1/200))';
 SACCADE = [I , table(num2cell(zeros(N.file,1)))]; % store saccade objects
@@ -75,7 +76,7 @@ for kk = 1:N.file
     
     % Get Saccade Stats
     peaks = [];
-    head_saccade = saccade(Head.X(:,1), Head.Time, 300, amp_cut, direction, peaks, nan, showplot);
+    head_saccade = saccade(Head.X(:,1), Head.Time, thresh, amp_cut, direction, peaks, nan, showplot);
     % figure (1) ; suptitle(num2str(D.freq(kk)))
     head_saccade = stimSaccade(head_saccade, pat.pos, false); % with actual pattern position
     
@@ -105,7 +106,10 @@ end
 empty_idx = cellfun(@(x) isempty(x), ALL_DATA);
 ALL_DATA(empty_idx) = {saccade(nan*Head.X(:,1), nan*Head.Time, 300, 0, 0, [], [], false)};
 
-%% Extract & group saccades & intervals by speed & by fly
+all = cellfun(@(x) x.velocity, SACCADE.saccade, 'UniformOutput', false);
+all = cat(1,all{:});
+
+ %% Extract & group saccades & intervals by speed & by fly
 fields = {'normpeak_saccade','norm_interval','normstart_interval','normend_interval',...
     'normstart_stimulus','error','int_error'};
 nfield = length(fields);

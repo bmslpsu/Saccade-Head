@@ -1,11 +1,21 @@
 %% Example detetction of wing saccades from WBA
 clear ; close all ; clc
-load ('Example_1') % note this data has clear periods of fixation and saccades
+% load ('Example_1') % note this data has clear periods of fixation and saccades
 
-time = t_p; % time vector
+% time = t_p; % time vector
+% Fs = 1 / mean(diff(time)); % sampling frequency [Hz]
+% wing_left = data(:,4); % left wing
+% wing_right = data(:,5); % right wing
+% dwba = wing_left - wing_right; % delta-wba
+
+root = 'H:\EXPERIMENTS\RIGID\Experiment_Asymmetry_Control_Verification\HighContrast\30\Vid\vid_filt\tracked_head_wing';
+[FILE,PATH] = uigetfile({'*.csv'},'Select data file', root, 'MultiSelect','off');
+benifly_data = ImportBenifly(fullfile(PATH, FILE)); % load head & wing angles
+%%
+time = linspace(0,10,size(benifly_data,1)); % time vector
 Fs = 1 / mean(diff(time)); % sampling frequency [Hz]
-wing_left = data(:,4); % left wing
-wing_right = data(:,5); % right wing
+wing_left = benifly_data.LWing; % left wing
+wing_right = benifly_data.RWing; % right wing
 dwba = wing_left - wing_right; % delta-wba
 
 % Filter (tune these based on data properties)
@@ -18,7 +28,7 @@ Fc = 0.5; % high-pass
 filt_dwba = filtfilt(b, a, filt_dwba);
 
 filt_dwba = filt_dwba - max(filt_dwba);
-filt_dwba = filt_dwba / max(abs(filt_dwba));
+filt_dwba = 10 * filt_dwba / max(abs(filt_dwba));
 
 abs_filt_wba = abs(filt_dwba); % take absolute value of dWBA
 
@@ -26,8 +36,8 @@ abs_filt_wba = abs(filt_dwba); % take absolute value of dWBA
 min_peak_dist_time = 0.3; % [s]
 min_peak_width_time = 0.3; % [s]
 [abs_pks,pks_idx] = findpeaks(abs_filt_wba, ...  % https://www.mathworks.com/help/signal/ref/findpeaks.html#namevaluepairarguments
-                        'MinPeakProminence', 0.2, ...
-                        'MinPeakHeight', 0.4, ...
+                        'MinPeakProminence', 5, ...
+                        'MinPeakHeight', 5, ...
                         'MinPeakDistance', min_peak_dist_time*Fs, ...
                         'MaxPeakWidth', min_peak_width_time*Fs);
 
@@ -62,7 +72,6 @@ linkaxes(ax,'x')
 thresh = 0;
 amp_cut = 0;
 direction = -1;
-peaks = [];
 sacd_length = 0.5;
 showplot = true;
 obj = saccade(filt_dwba, time, thresh, amp_cut, direction, pks_idx, sacd_length, showplot);
