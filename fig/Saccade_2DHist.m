@@ -42,6 +42,7 @@ ax(2) = subplot(3,2,2);
     Y = abs(Static.SACCADE_STATS.PeakVel);
     X = X(~isnan(X));
     Y = Y(~isnan(Y));
+    [rho_static.amp_pkv,pval_static.amp_pkv] = corr(X,Y);
     h(2) = histogram2(X, Y, edges.amp, edges.pkv, 'FaceColor', 'flat', 'EdgeColor', 'none', ...
         'ShowEmptyBins','on', 'Normalization','Probability','DisplayStyle','tile');
     grid off
@@ -68,6 +69,7 @@ ax(4) = subplot(3,2,4);
     Y = 1000*abs(Static.SACCADE_STATS.Duration);
     X = X(~isnan(X));
     Y = Y(~isnan(Y));
+    [rho_static.amp_dur,pval_static.amp_dur] = corr(X,Y);
     h(4) = histogram2(X, Y, edges.amp, edges.dur, 'FaceColor', 'flat', 'EdgeColor', 'none', ...
         'ShowEmptyBins','on', 'Normalization','Probability','DisplayStyle','tile');
     grid off
@@ -93,6 +95,7 @@ ax(6) = subplot(3,2,6);
     Y = 1000*abs(Static.SACCADE_STATS.Duration);
     X = X(~isnan(X));
     Y = Y(~isnan(Y));
+    [rho_static.pkv_dur,pval_static.pkv_dur] = corr(X,Y);
     h(6) = histogram2(X, Y, edges.pkv, edges.dur, 'FaceColor', 'flat', 'EdgeColor', 'none', ...
         'ShowEmptyBins','on', 'Normalization','Probability','DisplayStyle','tile');
     grid off
@@ -128,7 +131,6 @@ clc
 [xq,yq] = meshgrid(edges.dur, edges.amp);
 vq = griddata(x, y, z, edges.dur, edges.amp');
 
-
 surface(xq,yq,vq, 'EdgeColor', 'none')
 
 hold on
@@ -136,8 +138,5 @@ view(3)
 xlabel('Duration (s)')
 ylabel('Ampltitude (°)')
 zlabel('Peak Velocity (°/s)')
-
-
-
 
 end

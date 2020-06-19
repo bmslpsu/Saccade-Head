@@ -170,7 +170,7 @@ classdef saccade
             %   N   : # of stds for threshold
             %
             
-            obj.nstd_thresh = N;
+            obj.nstd_thresh = N(1);
             obj.threshold = obj.median.abs_velocity + obj.nstd_thresh*obj.std.abs_velocity;
             
             if length(N) == 2

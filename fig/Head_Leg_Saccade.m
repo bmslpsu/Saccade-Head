@@ -43,7 +43,7 @@ for v = 1:n_speed
     sacd_leg_ratio_vel{v} = sacd_leg_ratio(sacd_leg_ratio(:,4)==v,:);
 end
 
-percet_sacd_leg_ext = 100 * sum(sacd_leg_ratio(:,2)) / sum(sacd_leg_ratio(:,1));
+% percet_sacd_leg_ext = 100 * sum(sacd_leg_ratio(:,2)) / sum(sacd_leg_ratio(:,1));
 
 percent_leg_ext = cellfun(@(x) basic_stats(100*x(:,3),1), sacd_leg_ratio_vel, 'UniformOutput', true);
 percet_sacd_leg_ext = cellfun(@(x) 100 * sum(x(:,2)) / sum(x(:,1)), sacd_leg_ratio_vel, 'UniformOutput', true);
