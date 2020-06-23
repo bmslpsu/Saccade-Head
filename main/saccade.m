@@ -531,6 +531,8 @@ classdef saccade
                 end
 
                 % Extract stimulus intervals
+                co_anti = nan(obj.count,1); % anti- or co-directional saccade
+                mean_win_co_anti = round(0.05 * obj.Fs); % mean stimulus window size
                 if ~isempty(stim) % if any saccades are detected and a stimulus if given
                     for ww = 1:obj.count % every saccade
                         % Create stimulus table
@@ -565,7 +567,17 @@ classdef saccade
                             obj.stimulus{ww}.Position  = nan*obj.stimlus_position(obj.stimulus{ww}.Index);
                             obj.stimulus{ww}.Velocity  = nan*obj.stimlus_velocity(obj.stimulus{ww}.Index);
                         end
+                        int_length = length(obj.stimulus{ww}.Velocity);
+                        if int_length >= mean_win_co_anti
+                            co_anti(ww) = mean(obj.stimulus{ww}.Velocity(1 + int_length-mean_win_co_anti:int_length));
+                        else
+                            co_anti(ww) = mean(obj.stimulus{ww}.Velocity);
+                        end
                     end
+                    
+                    % Classify saccades as anti- or co-directional based on stimulus velocity
+                    co_anti = obj.SACD.Direction .* sign(co_anti);
+                    
                     % Assign times
                     obj.normstart_stimulus.time = obj.normstart_interval.time;
                     obj.normend_stimulus.time   = obj.normend_interval.time;
@@ -627,8 +639,8 @@ classdef saccade
 
                     % Make table of finals erros & combine with SACD table
                     ERR = table(obj.error.position_end',     obj.error.velocity_end', ...
-                                obj.int_error.position_end', obj.int_error.velocity_end', ...
-                                'VariableNames', {'ErrorPos','ErrorVel','IntErrorPos','IntErrorVel'});
+                                obj.int_error.position_end', obj.int_error.velocity_end', co_anti, ...
+                                'VariableNames', {'ErrorPos','ErrorVel','IntErrorPos','IntErrorVel','CoAnti'});
                     obj.SACD = [obj.SACD , ERR];
 
                     % Compute interval stats
@@ -650,9 +662,9 @@ classdef saccade
                 
             else
                 % Saccade table
-                obj.SACD = splitvars(table([obj.SACD , splitvars(table(nan(1,4)))]));
+                obj.SACD = splitvars(table([obj.SACD , splitvars(table(nan(1,5)))]));
                 obj.SACD.Properties.VariableNames = [obj.tablenames, ...
-                    {'IntTime','ErrorPos','ErrorVel','IntErrorPos','IntErrorVel'}];
+                    {'IntTime','ErrorPos','ErrorVel','IntErrorPos','IntErrorVel','CoAnti'}];
             end
         end
         
@@ -779,56 +791,57 @@ classdef saccade
             FIG.Color = 'w';
             FIG.Name = 'Stimulus & Error';
             set(FIG,'WindowStyle','docked')
+            if obj.count > 1
+                ax(1) = subplot(2,3,1) ; hold on ; title('Stimulus')
+                    ylabel('Position')
+                    h.stimpos = plot(obj.normstart_interval.time, obj.normstart_stimulus.position);
 
-            ax(1) = subplot(2,3,1) ; hold on ; title('Stimulus')
-                ylabel('Position')
-                h.stimpos = plot(obj.normstart_interval.time, obj.normstart_stimulus.position);
-                
-          	ax(2) = subplot(2,3,4) ; hold on
-                ylabel('Velocity')
-                h.stimvel = plot(obj.normstart_interval.time, obj.normstart_stimulus.velocity);
-                ax(2).YLim = 1.1*abs(max(max(obj.normstart_stimulus.velocity)))*[-1 1];
-                
-          	ax(3) = subplot(2,3,2) ; hold on ; title('Error')
-                h.errpos = plot(obj.normstart_interval.time,obj.error.position);
-               	[hstd(1),~] = PlotPatch(obj.error.position_stats.median, ...
-                                        obj.error.position_stats.std, ...
-                                        obj.normstart_interval.time_stats.median,...
-                                        1,1,'k',[0.4 0.4 0.6],0.3,2); uistack(hstd(1),'bottom')
-                            
-          	ax(4) = subplot(2,3,5) ; hold on
-                h.errvel = plot(obj.normstart_interval.time,obj.error.velocity);
-               	[hstd(2),~] = PlotPatch(obj.error.velocity_stats.median, ...
-                                        obj.error.velocity_stats.std, ...
-                                        obj.normstart_interval.time_stats.median,...
-                                        1,1,'k',[0.4 0.4 0.6],0.3,2); uistack(hstd(2),'bottom')
-                                    
-          	ax(5) = subplot(2,3,3) ; hold on ; title('Integrated Error')
-                h.interrpos = plot(obj.normstart_interval.time,obj.int_error.position);
-               	[hstd(3),~] = PlotPatch(obj.int_error.position_stats.median, ...
-                                        obj.int_error.position_stats.std, ...
-                                        obj.normstart_interval.time_stats.median,...
-                                        1,1,'k',[0.4 0.4 0.6],0.3,2); uistack(hstd(3),'bottom')
-                                    
-          	ax(6) = subplot(2,3,6) ; hold on
-                h.interrvel = plot(obj.normstart_interval.time,obj.int_error.velocity);
-               	[hstd(4),~] = PlotPatch(obj.int_error.velocity_stats.median, ...
-                                        obj.int_error.velocity_stats.std, ...
-                                        obj.normstart_interval.time_stats.median,...
-                                        1,1,'k',[0.4 0.4 0.6],0.3,2); uistack(hstd(4),'bottom')
-                                    
-            set(h.stimpos,      {'color'}, num2cell(obj.cmap,2))
-            set(h.stimvel,      {'color'}, num2cell(obj.cmap,2))
-            set(h.errpos,       {'color'}, num2cell(obj.cmap,2))
-            set(h.errvel,       {'color'}, num2cell(obj.cmap,2))
-            set(h.interrpos,    {'color'}, num2cell(obj.cmap,2))
-            set(h.interrvel,    {'color'}, num2cell(obj.cmap,2))
-            
-          	set([h.stimpos h.stimvel h.errpos h.errvel h.interrpos h.interrvel],'LineWidth',1)
-            set(ax,'LineWidth',1,'FontWeight','bold')
-            linkaxes(ax,'x')
-            linkaxes(ax([1,3,6]),'y')
-            align_Ylabels(FIG)
+                ax(2) = subplot(2,3,4) ; hold on
+                    ylabel('Velocity')
+                    h.stimvel = plot(obj.normstart_interval.time, obj.normstart_stimulus.velocity);
+                    ax(2).YLim = 1.1*abs(max(max(obj.normstart_stimulus.velocity)))*[-1 1];
+
+                ax(3) = subplot(2,3,2) ; hold on ; title('Error')
+                    h.errpos = plot(obj.normstart_interval.time,obj.error.position);
+                    [hstd(1),~] = PlotPatch(obj.error.position_stats.median, ...
+                                            obj.error.position_stats.std, ...
+                                            obj.normstart_interval.time_stats.median,...
+                                            1,1,'k',[0.4 0.4 0.6],0.3,2); uistack(hstd(1),'bottom')
+
+                ax(4) = subplot(2,3,5) ; hold on
+                    h.errvel = plot(obj.normstart_interval.time,obj.error.velocity);
+                    [hstd(2),~] = PlotPatch(obj.error.velocity_stats.median, ...
+                                            obj.error.velocity_stats.std, ...
+                                            obj.normstart_interval.time_stats.median,...
+                                            1,1,'k',[0.4 0.4 0.6],0.3,2); uistack(hstd(2),'bottom')
+
+                ax(5) = subplot(2,3,3) ; hold on ; title('Integrated Error')
+                    h.interrpos = plot(obj.normstart_interval.time,obj.int_error.position);
+                    [hstd(3),~] = PlotPatch(obj.int_error.position_stats.median, ...
+                                            obj.int_error.position_stats.std, ...
+                                            obj.normstart_interval.time_stats.median,...
+                                            1,1,'k',[0.4 0.4 0.6],0.3,2); uistack(hstd(3),'bottom')
+
+                ax(6) = subplot(2,3,6) ; hold on
+                    h.interrvel = plot(obj.normstart_interval.time,obj.int_error.velocity);
+                    [hstd(4),~] = PlotPatch(obj.int_error.velocity_stats.median, ...
+                                            obj.int_error.velocity_stats.std, ...
+                                            obj.normstart_interval.time_stats.median,...
+                                            1,1,'k',[0.4 0.4 0.6],0.3,2); uistack(hstd(4),'bottom')
+
+                set(h.stimpos,      {'color'}, num2cell(obj.cmap,2))
+                set(h.stimvel,      {'color'}, num2cell(obj.cmap,2))
+                set(h.errpos,       {'color'}, num2cell(obj.cmap,2))
+                set(h.errvel,       {'color'}, num2cell(obj.cmap,2))
+                set(h.interrpos,    {'color'}, num2cell(obj.cmap,2))
+                set(h.interrvel,    {'color'}, num2cell(obj.cmap,2))
+
+                set([h.stimpos h.stimvel h.errpos h.errvel h.interrpos h.interrvel],'LineWidth',1)
+                set(ax,'LineWidth',1,'FontWeight','bold')
+                linkaxes(ax,'x')
+                linkaxes(ax([1,3,6]),'y')
+                align_Ylabels(FIG)
+            end
         end
         
     end

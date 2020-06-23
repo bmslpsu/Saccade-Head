@@ -41,7 +41,7 @@ PATH.ang = fullfile(PATH.daq,'\Vid\tracked_head'); % tracked kinematic data loca
 
 %% Get Data %%
 disp('Loading...')
-showplot = false;
+showplot = true;
 thresh = 300;
 amp_cut = 7;
 tintrp = (0:(1/200):(10 - 1/200))';
@@ -66,9 +66,20 @@ for kk = 1:N.file
     
   	% Get pattern data
     pat.time = t_p;
+    pat.Fs = 1 / mean(diff(pat.time));
+    pat.Fc = 2.5*D.freq(kk);
+    [pat.b,pat.a] = butter(3, pat.Fc/(pat.Fs/2),'low');
     pat.pos = 3.75*round((96/10)*data(:,2));
-    pat.pos = interp1(pat.time, pat.pos, tintrp, 'nearest');
-   	pat.pos = pat.pos - pat.pos(1);
+    temp = pat.pos - mean(pat.pos);
+    pat.pos = filtfilt(pat.b, pat.a, pat.pos);
+    pat.pos = interp1(pat.time, pat.pos, tintrp, 'linear');
+   	pat.pos = pat.pos - mean(pat.pos);
+    
+%     cla ; hold on
+%     % plot(tintrp, [0 ; diff(pat.pos)*200])
+%     plot(pat.time, temp)
+%     plot(tintrp, pat.pos)
+%     pause
     
     % Get head data
     % benifly.Head(1) = benifly.Head(2);
@@ -79,6 +90,7 @@ for kk = 1:N.file
     head_saccade = saccade(Head.X(:,1), Head.Time, thresh, amp_cut, direction, peaks, nan, showplot);
     % figure (1) ; suptitle(num2str(D.freq(kk)))
     head_saccade = stimSaccade(head_saccade, pat.pos, false); % with actual pattern position
+    %plotStimulus(head_saccade)
     
     COUNT{I.fly(kk),I.freq(kk)}(end+1,1) = head_saccade.count;
     

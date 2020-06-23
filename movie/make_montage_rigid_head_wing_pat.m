@@ -94,7 +94,7 @@ FLY.Fs      = round(1/mean(diff(FLY.time))); % video sampling rate
 FLY.Fc      = 15; % cut off frequency for lpf
 [b,a]       = butter(2,FLY.Fc/(FLY.Fs/2),'low'); % make lpf
 FLY.head    = filtfilt(b,a,head_data.hAngles); % head angles [deg]
-FLY.head    = filtfilt(b,a,rad2deg(benifly_data.Head)); % head angles [deg]
+% FLY.head    = filtfilt(b,a,rad2deg(benifly_data.Head)); % head angles [deg]
 % FLY.head    = FLY.head - mean(FLY.head); % head angles [deg]
 FLY.lwing   = rad2deg(hampel(FLY.time,benifly_data.LWing)); % left wing angles [deg]
 FLY.rwing   = rad2deg(hampel(FLY.time,benifly_data.RWing)); % right wing angles [deg]
@@ -121,7 +121,7 @@ FLY.nframe = size(FLY.raw,3);
 
 [FLY.raw_yP,FLY.raw_xP,~] = size(FLY.raw_crop); % get size of raw video
 FLY.raw_center = [round(FLY.raw_xP/2) , 1.25*round(FLY.raw_yP/2)]; % center point for pattern & fly
-radius = floor(max([FLY.raw_yP FLY.raw_xP])/1.5); % radius of pattern
+radius = floor(max([FLY.raw_yP FLY.raw_xP])/1.0); % radius of pattern
 thickness = 8; % radius display width
 
 %% Get benifly parameters/mask
@@ -226,7 +226,7 @@ for jj = 1:FLY.nframe % for each frame
             plot(FLY.rwing_hinge(1), FLY.rwing_hinge(2), 'r.', 'MarkerSize',20)
             
             % Make pattern ring
-            ax_pat = axes;
+            ax_pat = axes; axis image
             set(ax_pat, 'Color', 'none', 'XColor', 'none', 'YColor', 'none', ...
                             'Position', ax(1) .Position)
            	cla

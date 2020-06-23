@@ -22,7 +22,7 @@ wing_color = [0.7 0 0]; % wing color
 
 % Compute cross-corr and set window for max value
 [acor,lags] = xcorr(head, wing, 'normalized'); % full cross-corr
-timelags = lags / Fs; % time lags
+timelags = lags' / Fs; % time lags
 maxlag_time = 0.1; % window time to find max cross-corr [s]
 maxlag = round(maxlag_time * Fs); % window in samples to find max cross-corr
 cent = ceil(length(lags) / 2); % center index
@@ -45,21 +45,35 @@ int_lags = nan(lag_size,head_saccade.count);
 sync = head_saccade.SACD.PeakIdx; % sync to end of head saccade
 for s = 1:head_saccade.count
     interval = (sync(s) - span):(sync(s) + span); % interval around head saccade
-    hint = head(interval); % head interval
-    wint = wing(interval); % wing interval
-    [acor_int,lags_int] = xcorr(hint, wint, 'normalized'); % cross-corr within interval
-    timelags_int = lags_int / Fs; % time lags within interval
     
-    % Store cross-corr in matric columns
-    int_acor(:,s) = acor_int;
-    int_lags(:,s) = timelags_int;
+    if (max(interval) > length(head)) || (min(interval) < 1)
+        % skip because interval is not complete
+    	int_acor(:,s) = nan;
+        int_lags(:,s) = nan;
+    else
+        hint = head(interval); % head interval
+        wint = wing(interval); % wing interval
+        [acor_int,lags_int] = xcorr(hint, wint, 'normalized'); % cross-corr within interval
+        timelags_int = lags_int / Fs; % time lags within interval
+
+        % Store cross-corr in matric columns
+        int_acor(:,s) = acor_int;
+        int_lags(:,s) = timelags_int;
+    end
 end
 
 % Find mean cross-corr acorss all saccades and find max
-int_lags = int_lags(:,1);
-int_acor_stats = basic_stats(int_acor, 2);
-[int_maxcor,idx] = max(int_acor_stats.mean);
-int_timediff = int_lags(idx);
+if isempty(int_lags)
+    int_lags = nan;
+    int_acor_stats = nan;
+    int_maxcor = nan;
+    int_timediff = nan;
+else
+    int_lags = int_lags(:,1);
+    int_acor_stats = basic_stats(int_acor, 2);
+    [int_maxcor,idx] = max(int_acor_stats.mean);
+    int_timediff = int_lags(idx);
+end
 
 % Assign output properties
 head2wing.acor          = acor;
@@ -95,10 +109,14 @@ if showplot
 
             for s = 1:head_saccade.count
                 interval = (sync(s) - span):(sync(s) + span);
-                tint = time(interval);
-                xx = [tint(1), tint(1), tint(end), tint(end)];
-                pp = [ax(1).YLim(1), ax(1).YLim(2), ax(1).YLim(2), ax(1).YLim(1)];
-                patch(xx, pp, 'g', 'FaceAlpha', 0.2, 'EdgeColor', 'none');
+                if (max(interval) > length(head)) || (min(interval) < 1)
+                    % skip
+                else
+                    tint = time(interval);
+                    xx = [tint(1), tint(1), tint(end), tint(end)];
+                    pp = [ax(1).YLim(1), ax(1).YLim(2), ax(1).YLim(2), ax(1).YLim(1)];
+                    patch(xx, pp, 'g', 'FaceAlpha', 0.2, 'EdgeColor', 'none');
+                end
             end
 
         ax(2) = subplot(2,1,2) ; cla ; hold on

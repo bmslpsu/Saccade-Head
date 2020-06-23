@@ -128,7 +128,7 @@ FLY.nframe = size(FLY.raw,3);
 
 [FLY.raw_yP,FLY.raw_xP,~] = size(FLY.raw_crop); % get size of raw video
 FLY.raw_center = [round(FLY.raw_xP/2) , 1.25*round(FLY.raw_yP/2)]; % center point for pattern & fly
-radius = floor(max([FLY.raw_yP FLY.raw_xP])/1.5); % radius of pattern
+radius = floor(max([FLY.raw_yP FLY.raw_xP])/1); % radius of pattern
 thickness = 8; % radius display width
 
 %% Get benifly parameters/mask
@@ -233,7 +233,7 @@ for jj = 1:FLY.nframe % for each frame
             plot(mean(FLY.int_leg_right(win,1)), mean(FLY.int_leg_right(win,2)), 'y.', 'MarkerSize',20)
             
             % Make pattern ring
-            ax_pat = axes;
+            ax_pat = axes; axis image
             set(ax_pat, 'Color', 'none', 'XColor', 'none', 'YColor', 'none', ...
                             'Position', ax(1) .Position)
            	cla

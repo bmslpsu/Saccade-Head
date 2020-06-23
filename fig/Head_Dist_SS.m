@@ -1,5 +1,5 @@
-function [] = Saccade_Threshold()
-%% Saccade_Threshold:
+function [] = Head_Dist_SS()
+%% Head_Dist_SS:
 root = 'H:\DATA\Rigid_Data\';
 
 [FILE,PATH] = uigetfile({'*.mat', 'DAQ-files'}, ...
@@ -7,32 +7,27 @@ root = 'H:\DATA\Rigid_Data\';
 
 load(fullfile(PATH,FILE),'PATH','COUNT','SACCADE','SACCADE_STATS','FLY','GRAND','Stim','D','I','U','N')
 
-clms = N.vel/2;
-CC = repmat(hsv(clms),2,1);
+CC = hsv(N.freq);
+Freq = U{1,3}{1};
 
-Vel = U{1,3}{1};
-
-clearvars -except clms CC Vel PATH COUNT SACCADE SACCADE_STATS FLY GRAND Stim D I U N
+% clearvars -except clms CC Vel PATH COUNT SACCADE SACCADE_STATS FLY GRAND Stim D I U N
 
 %% Velocity Histogram
 clear head
-head.all = cell(N.fly,N.vel);
+head.all = cell(N.fly,N.freq);
 for n = 1:N.file
-    head.all{SACCADE.fly(n),SACCADE.vel(n)}(end+1,1) = SACCADE.head_saccade{n};
+    head.all{SACCADE.fly(n),SACCADE.freq(n)}(end+1,1) = SACCADE.saccade{n};
 end
 
 head.fly = cellfun(@(x) cat(2,x.velocity), head.all, 'UniformOutput', false);
-head.vel = cell(N.vel/2,2);
-for v = 1:N.vel
+head.vel = cell(N.freq,1);
+for v = 1:N.freq
     for f = 1:N.fly
         head.vel{v} = cat(2, head.vel{v}, head.fly{f,v});
     end
 end
 
-head.speed = cell(N.vel/2,1);
-for s = 1:N.vel/2
-    head.speed{s} = cat(2, head.vel{s,1}, head.vel{s,2});
-end
+head.speed = head.vel;
 head.vel_all = cat(2,head.speed{:});
 
 head.vel_mean = cellfun(@(x) mean(x,'all'), head.vel, 'UniformOutput', true);
@@ -41,12 +36,12 @@ head.vel_std = cellfun(@(x) std(x,[],'all'), head.vel, 'UniformOutput', true);
 
 fig = figure (1) ; clf
 set(fig, 'Color', 'w','Units', 'inches', 'Position', [2 2 4 6])
-ax = gobjects(N.vel,1);
+ax = gobjects(N.freq,1);
 bins = -1000:5:1000;
 % bins = [-1000:50:-350 -350:5:350 350:50:1000];
 pp = 1;
-for v = [1 6 2 7 3 8 4 9 5 10]
-    ax(v) = subplot(N.vel/2,2,pp); hold on ; title([ num2str(Vel(v)) '(°/s)'])
+for v = 1:N.freq
+    ax(v) = subplot(N.freq/2,2,pp); hold on ; title([ num2str(Freq(v)) '(°/s)'])
         h = histogram(head.vel{v}, bins, 'Normalization', 'probability', ...
             'FaceColor', CC(v,:), 'FaceAlpha', 1, 'EdgeColor', 'none');
         xlabel('Velocity (°/s)')
@@ -73,23 +68,20 @@ set(ax, 'LineWidth', 1.5, 'FontSize', 8, 'Box', 'on', 'XLim', 1000*[-1 1], 'YLim
 
 %% Position Histogram
 clear head
-head.all = cell(N.fly,N.vel);
+head.all = cell(N.fly,N.freq);
 for n = 1:N.file
-    head.all{SACCADE.fly(n),SACCADE.vel(n)}(end+1,1) = SACCADE.head_saccade{n};
+    head.all{SACCADE.fly(n),SACCADE.freq(n)}(end+1,1) = SACCADE.saccade{n};
 end
 
 head.fly = cellfun(@(x) cat(2,x.position), head.all, 'UniformOutput', false);
-head.pos = cell(N.vel/2,2);
-for v = 1:N.vel
+head.pos = cell(N.freq,1);
+for v = 1:N.freq
     for f = 1:N.fly
         head.pos{v} = cat(2, head.pos{v}, head.fly{f,v});
     end
 end
 
-head.speed = cell(N.vel/2,1);
-for s = 1:N.vel/2
-    head.speed{s} = cat(2, head.pos{s,1}, head.pos{s,2});
-end
+head.speed = head.pos;
 head.pos_all = cat(2,head.speed{:});
 
 head.pos_mean = cellfun(@(x) mean(x,'all'), head.pos, 'UniformOutput', true);
@@ -98,12 +90,11 @@ head.pos_std = cellfun(@(x) std(x,[],'all'), head.pos, 'UniformOutput', true);
 
 fig = figure (1) ; clf
 set(fig, 'Color', 'w','Units', 'inches', 'Position', [2 2 4 6])
-ax = gobjects(N.vel,1);
+ax = gobjects(N.freq,1);
 bins = -25:0.5:25;
-% bins = [-1000:50:-350 -350:5:350 350:50:1000];
 pp = 1;
-for v = [1 6 2 7 3 8 4 9 5 10]
-    ax(v) = subplot(N.vel/2,2,pp); hold on ; title([ num2str(Vel(v)) '(°/s)'])
+for v = 1:N.freq
+    ax(v) = subplot(N.freq/2,2,pp); hold on ; title([ num2str(Freq(v)) '(°/s)'])
         h = histogram(head.pos{v} - mean(head.pos{v}), bins, 'Normalization', 'probability', ...
             'FaceColor', CC(v,:), 'FaceAlpha', 1, 'EdgeColor', 'none');
         xlabel('Position (°)')
@@ -124,6 +115,6 @@ ax(1) = subplot(1,1,1); hold on
     ylabel('Probability')
     
 set(ax, 'LineWidth', 1.5, 'FontSize', 8, 'Box', 'on', 'XLim', 25*[-1 1], 'YLim', [-0.005 ax.YLim(2)])
-
+ylim([0 0.05])
 
 end

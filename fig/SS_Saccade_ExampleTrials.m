@@ -36,27 +36,34 @@ idx_35 = 70;
 idx_65 = 6;
 idx_12 = 1;
 
-idx = idx_12;
+% 18.75
+% idx_1 = 10;
+% idx_2 = 102;
+% idx_35 = 9;
+% idx_65 = 3;
+% idx_12 = 4;
+
+idx = idx_2;
 trial = SACCADE.saccade{idx};
 
 ax(1) = subplot(4,1,1) ; hold on ; title(['Stimulus: ' num2str(D.freq(idx)) ' (Hz)'])
     ylabel('Position (°)')
     stim = trial.stimlus_position;
     stim = stim - mean(stim);
-    h(1) = plot(trial.time, stim, 'Color', [0.5 0.5 0.5]);
+    h(1) = plot(trial.time, stim, 'Color', [0.0 0.9 0.0]);
     plot(trial.time, trial.position - mean(trial.position),'k');
-    plot(trial.time, zeros(trial.n,1),'--','Color',[0.5 0.5 0.5])
-    if trial.count~=0
-        for ww = 1:trial.count
-           plot(trial.saccades{ww}.Time,trial.saccades{ww}.Position,...
-               'LineWidth', 1, 'Color', trial.cmap(ww,:))
-           plot(trial.intervals{ww}.Time,trial.intervals{ww}.Position,...
-               'LineWidth', 1, 'Color', 0.7*trial.cmap(ww,:))
-        end
-        plot(trial.starts.time , trial.starts.position , '*g')
-        plot(trial.peaks.time  , trial.peaks.position  , '*b')
-        plot(trial.ends.time   , trial.ends.position   , '*r')
-    end
+%     plot(trial.time, zeros(trial.n,1),'--','Color',[0.5 0.5 0.5])
+%     if trial.count~=0
+%         for ww = 1:trial.count
+%            plot(trial.saccades{ww}.Time,trial.saccades{ww}.Position,...
+%                'LineWidth', 1, 'Color', trial.cmap(ww,:))
+%            plot(trial.intervals{ww}.Time,trial.intervals{ww}.Position,...
+%                'LineWidth', 1, 'Color', 0.7*trial.cmap(ww,:))
+%         end
+%         plot(trial.starts.time , trial.starts.position , '*g')
+%         plot(trial.peaks.time  , trial.peaks.position  , '*b')
+%         plot(trial.ends.time   , trial.ends.position   , '*r')
+%     end
 
     ax(1).YLim = 20*[-1 1];
 

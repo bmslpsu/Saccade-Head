@@ -21,7 +21,7 @@ export = true;
 vidFs = 50;
 rootdir = 'H:\EXPERIMENTS\RIGID\Experiment_Static_Wave';
 rootpat = 'C:\Users\BC\Box\Git\Arena\Patterns';
-pat_ypos = 1;
+pat_ypos = 5;
 
 if ~isfolder(rootdir)
     dirflag = false;
@@ -220,7 +220,7 @@ for jj = 1:FLY.nframe % for each frame
             plot(FLY.rwing_hinge(1), FLY.rwing_hinge(2), 'r.', 'MarkerSize',20)
             
             % Make pattern ring
-            ax_pat = axes;
+            ax_pat = axes; axis image
             set(ax_pat, 'Color', 'none', 'XColor', 'none', 'YColor', 'none', ...
                             'Position', ax(1) .Position)
            	cla

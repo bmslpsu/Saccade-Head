@@ -15,7 +15,7 @@ Fc = 10;
 rootdir = ['H:\EXPERIMENTS\RIGID\Experiment_Asymmetry_Control_Verification\HighContrast\' num2str(wave)];
 
 % Output file name
-filename = ['NewRamp_HeadFree_SACCD_Anti_filt=' num2str(Fc) '_Wave=' num2str(wave)];
+% filename = ['NewRamp_HeadFree_SACCD_Anti_filt=' num2str(Fc) '_Wave=' num2str(wave)];
 
 % Setup Directories 
 PATH.daq  = rootdir; % DAQ data location
@@ -28,22 +28,17 @@ PATH.wing = fullfile(PATH.vid,'tracked_head_wing'); % tracked kinematic data loc
 
 %% Get Data %%
 disp('Loading...')
-showplot = true;
+showplot = false;
 amp_cut = 7;
-
-CrossCorr_all = [];
-
 Fs = 200;
 tintrp = (0:(1/Fs):(10 - 1/Fs))';
-[wing.b,wing.a] = butter(2,10/(Fs/2),'low');
+[wing.b,wing.a] = butter(2,Fc/(Fs/2),'low');
 [head.b,head.a] = butter(2,40/(Fs/2),'low');
 Vel = U.vel{1};
 Stim = (Vel*tintrp')';
-SACCADE = [I , splitvars(table(num2cell(zeros(N.file,2))))]; % store saccade objects
-SACCADE.Properties.VariableNames(5:6) = {'head_saccade','wing_saccade'}; 
-HEAD_DATA = cell(N.fly,N.vel);
-COUNT = cell(N.fly,N.vel);
-SACCADE_STATS = []; % store saccade stats
+SACCADE = [I , splitvars(table(num2cell(zeros(N.file,3))))]; % store saccade objects
+SACCADE.Properties.VariableNames(5:7) = {'head_saccade','wing_saccade','head2wing'}; 
+Head_Wing = cell(N.fly,N.vel);
 for kk = 1:N.file
     disp(kk)
     % Load HEAD & DAQ data
@@ -79,7 +74,6 @@ for kk = 1:N.file
     direction = -sign(D.vel(kk)); % only get saccades in the opposite direction of visual motion
     head_saccade = saccade(head.pos, tintrp, 250, amp_cut, direction, peaks, nan, showplot);
     head_saccade = stimSaccade(head_saccade, Stim(:,I.vel(kk)), false); % with approximate pattern position   
-    COUNT{I.fly(kk),I.vel(kk)}(end+1,1) = head_saccade.count;
     
     % Get wing saccades
     [dwba_pks,~,~] = wingSaccade(wing.dwba, tintrp, direction, showplot);
@@ -87,23 +81,22 @@ for kk = 1:N.file
     
     % head2wing
     win = 0.2; % [s]
-    head2wing = head_wing_saccade(head_saccade,wing_saccade,win,true);
+    head2wing = head_wing_saccade(head_saccade, wing_saccade, win, true);
     pause
     
     if head_saccade.count==0
-        rep = 1;
-        SACCADE{kk,5} = {head_saccade};
+        % skip
+     	SACCADE{kk,5} = {[]};
+        SACCADE{kk,6} = {[]};
+        SACCADE{kk,7} = {[]};
     else
+        Head_Wing{I.fly(kk),I.vel(kk)}(end+1,1) = head2wing;
         SACCADE{kk,5} = {head_saccade};
-        HEAD_DATA{I.fly(kk),I.vel(kk)}(end+1,1) = head_saccade;
-        rep = head_saccade.count;
+        SACCADE{kk,6} = {wing_saccade};
+        SACCADE{kk,7} = {head2wing};
     end
-    SACCADE{kk,6} = {wing_saccade};
-    VTable = table(D.vel(kk),'VariableNames',{'Vel'});
-    ITable = [I(kk,:),VTable];
-    ITable = repmat(ITable,rep,1);
-    SACCADE_STATS = [SACCADE_STATS ; [ITable , head_saccade.SACD]];
-    
+
+
     if showplot
         pause
         close all
@@ -111,37 +104,40 @@ for kk = 1:N.file
 end
 
 % Fill in empty saccade trials
-empty_idx = cellfun(@(x) isempty(x), HEAD_DATA);
-HEAD_DATA(empty_idx) = {saccade(nan*head.pos, nan*head.pos, 300, 0, 0, [], [], false)};
+empty_idx = cellfun(@(x) isempty(x), Head_Wing);
+Head_Wing(empty_idx) = {saccade(nan*head.pos, nan*head.pos, 300, 0, 0, [], [], false)};
+
+empty_idx = cellfun(@(x) isempty(x), SACCADE.head2wing);
+SACCADE = SACCADE(~empty_idx,:);
 
 %% Extract & group saccades & intervals by speed & by fly
-fields = {'normpeak_saccade','norm_interval','normstart_interval','normend_interval',...
-    'normstart_stimulus','error','int_error'};
-nfield = length(fields);
-norm_fields = {'time','position','velocity'};
+Tlag_all = cellfun(@(x) x.timelags, SACCADE.head2wing, 'UniformOutput', false);
+Tlag_all = mean(cat(2,Tlag_all{:}),2);
 
-center = 0; % normalization center for saccades & inter-saccade intervals
-dim = 1; % dimension to center
+Acor_all = cellfun(@(x) x.acor, SACCADE.head2wing, 'UniformOutput', false);
+Acor_all = cat(2,Acor_all{:});
 
-FLY = []; % all trials per speed per fly
-GRAND = []; % all trials per speed
-for kk = 1:nfield % for each field in the saccade structure
-    if kk < 2 % even padding around center only for saccades (not intervals)
-        even = true;
-    else
-        even = false;
-    end
+Tlag_sacd_all = cellfun(@(x) x.int_lags, SACCADE.head2wing, 'UniformOutput', false);
+Tlag_sacd_all = mean(cat(2,Tlag_sacd_all{:}),2);
+
+Acor_sacd_all = cellfun(@(x) x.int_acor, SACCADE.head2wing, 'UniformOutput', false);
+Acor_sacd_all = cat(2,Acor_sacd_all{:});
+
+fig = figure (1);
+set(fig, 'Color', 'w')
+    ax(1) = subplot(2,1,1) ; cla ; hold on ; ylabel('Cross Correlation')
+            plot(Tlag_all, Acor_all, 'Color', [0.5 0.5 0.5 0.5], 'LineWidth', 1)
+            plot(Tlag_all, mean(Acor_all,2), 'Color', 'k', 'LineWidth', 2)
+    ax(2) = subplot(2,1,2) ; cla ; hold on ; ylabel('Cross Correlation')
+            plot(Tlag_sacd_all, Acor_sacd_all, 'Color', [0.5 0.5 0.5 0.5], 'LineWidth', 1)
+            plot(Tlag_sacd_all, nanmean(Acor_sacd_all,2), 'Color', 'green', 'LineWidth', 2)
+            xlabel('Time Lag (ms)')
+
+ 	set(ax, 'LineWidth', 1.5, 'XLim', 0.5*[-1 1], 'YLim', [-1 1])
     
-    FLY.(fields{kk}) = cellfun(@(x) struct_center([x.(fields{kk})], center, even, dim, norm_fields), ...
-                            HEAD_DATA, 'UniformOutput', true);
-    for jj = 1:N.vel
-        GRAND.(fields{kk})(:,jj) = struct_center(FLY.(fields{kk})(:,jj), center, even , dim, norm_fields);
-    end
-end
-
 %% SAVE %%
-disp('Saving...')
-save(['H:\DATA\Rigid_Data\' filename '_' datestr(now,'mm-dd-yyyy') '.mat'],...
-      'PATH','ALL_DATA','COUNT','SACCADE','SACCADE_STATS','FLY','GRAND','Stim','D','I','U','N','T','-v7.3')
-disp('SAVING DONE')
+% disp('Saving...')
+% save(['H:\DATA\Rigid_Data\' filename '_' datestr(now,'mm-dd-yyyy') '.mat'],...
+%       'PATH','ALL_DATA','COUNT','SACCADE','SACCADE_STATS','FLY','GRAND','Stim','D','I','U','N','T','-v7.3')
+% disp('SAVING DONE')
 end

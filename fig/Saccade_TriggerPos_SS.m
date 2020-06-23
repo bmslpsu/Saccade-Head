@@ -74,8 +74,8 @@ CCW = dir == -1;
 edges = deg2rad(-20:1:20);
 
 ax(1) = subplot(1,1,1,polaraxes); grid off ; axis tight
-    Trig_Positive = [ SACCADE_STATS.StartPos(CW); -SACCADE_STATS.StartPos(CCW)];
-    Trig_Negative = [ SACCADE_STATS.EndPos(CW);  -SACCADE_STATS.EndPos(CCW)];
+    Trig_Positive = -[ SACCADE_STATS.StartPos(CW); -SACCADE_STATS.StartPos(CCW)];
+    Trig_Negative = -[ SACCADE_STATS.EndPos(CW);  -SACCADE_STATS.EndPos(CCW)];
     h(1) = polarhistogram(deg2rad(Trig_Positive),edges,...
         'FaceColor','g','FaceAlpha',0.7,'Normalization','Probability'); hold on
     h(2) = polarhistogram(deg2rad(Trig_Negative),'BinEdges', edges, ...
