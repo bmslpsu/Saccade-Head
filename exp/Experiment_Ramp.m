@@ -80,7 +80,7 @@ for kk = 1:n_trial
     T = timer('StartDelay',0.5,'TimerFcn',@(src,evt) Panel_com('start'));
     start(T)
     tic
-        Panel_com('start')  % run trial
+        %Panel_com('start')  % run trial
         [data, t_p ] = s.startForeground; % data collection
         Panel_com('stop') % stop stimulus
         stop(vid) % stop video buffer

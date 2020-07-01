@@ -16,6 +16,10 @@ time = head_saccade.time; % time vector [s]
 Fs = head_saccade.Fs; % sampling frequency [Hz]
 span = round(win * Fs); % window in samples around each head saccade
 head = head_saccade.position; % head signal
+head_Fc = 20;
+[b,a] = butter(3, head_Fc/(Fs/2), 'low');
+head = filtfilt(b, a, head);
+
 wing = wing_saccade.position; % wing signal
 head_color = [0 0 0.7]; % head color
 wing_color = [0.7 0 0]; % wing color
@@ -43,6 +47,8 @@ lag_size = 4*span + 1;
 int_acor = nan(lag_size,head_saccade.count);
 int_lags = nan(lag_size,head_saccade.count);
 sync = head_saccade.SACD.PeakIdx; % sync to end of head saccade
+hint = nan(2*span+1,head_saccade.count); % head intervals
+wint = nan(2*span+1,head_saccade.count); % wing intervals
 for s = 1:head_saccade.count
     interval = (sync(s) - span):(sync(s) + span); % interval around head saccade
     
@@ -50,10 +56,11 @@ for s = 1:head_saccade.count
         % skip because interval is not complete
     	int_acor(:,s) = nan;
         int_lags(:,s) = nan;
+        hint(:,s) = nan;
     else
-        hint = head(interval); % head interval
-        wint = wing(interval); % wing interval
-        [acor_int,lags_int] = xcorr(hint, wint, 'normalized'); % cross-corr within interval
+        hint(:,s) = head(interval); % head interval
+        wint(:,s) = wing(interval); % wing interval
+        [acor_int,lags_int] = xcorr(hint(:,s), wint(:,s), 'normalized'); % cross-corr within interval
         timelags_int = lags_int / Fs; % time lags within interval
 
         % Store cross-corr in matric columns
@@ -76,6 +83,9 @@ else
 end
 
 % Assign output properties
+head2wing.hint          = hint;
+head2wing.wint          = wint;
+
 head2wing.acor          = acor;
 head2wing.timelags      = timelags;
 
@@ -106,6 +116,7 @@ if showplot
                 xlabel('Time (s)')
             ax(1).YAxis(1).Color = head_color;
             ax(1).YAxis(2).Color = wing_color;
+            %ax(1).YLim = ceil(max(abs(ax(1).YLim)))*[-1 1];
 
             for s = 1:head_saccade.count
                 interval = (sync(s) - span):(sync(s) + span);

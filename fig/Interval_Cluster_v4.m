@@ -210,12 +210,15 @@ end
 % Stats
 Mean_Gain_Stats = cellfun(@(x) basic_stats(x,2), {IntProp.Mean_Gain});
 Peak_Gain_Stats = cellfun(@(x) basic_stats(x,2), {IntProp.Peak_Gain});
+Mean_Vel_Stats = cellfun(@(x) basic_stats(x,2), {IntProp.Mean_Vel});
+Peak_Vel_Stats = cellfun(@(x) basic_stats(x,2), {IntProp.Peak_Vel});
 Temp_Freq = Speed / U.wave;
 
 %% Save
 savedir = 'C:\Users\BC\Box\Research\Manuscripts\Head Saccade\Data';
 fname = ['Int_Gain_Stats_wave=' num2str(U.wave) '.mat'];
-% save(fullfile(savedir,fname), 'IntProp', 'Mean_Gain_Stats', 'Peak_Gain_Stats', 'Temp_Freq', 'U')
+save(fullfile(savedir,fname), 'IntProp', 'Mean_Gain_Stats', 'Peak_Gain_Stats', ...
+                              'Mean_Vel_Stats', 'Peak_Vel_Stats', 'Temp_Freq', 'U', 'Speed', 'IntProp')
 
 %% Interval Position Norm
 FIG = figure (1) ; clf

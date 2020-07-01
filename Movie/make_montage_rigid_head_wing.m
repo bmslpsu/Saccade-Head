@@ -1,5 +1,5 @@
 function [MOV] = make_montage_rigid_head_wing(rootdir,rootpat,vidFs,export)
-%% make_montage_rigid_head_wing_leg: makes movie for fly in rigid tether
+%% make_montage_rigid_head_wing: makes movie for fly in rigid tether
 %
 % 	Includes fly video, head tracking, wing tracking, leg tracking 
 %   & pattern position
@@ -20,7 +20,7 @@ clear ; clc ; close all
 export = true;
 vidFs = 50;
 % rootdir = 'H:\EXPERIMENTS\RIGID\Experiment_Static_Wave';
-rootdir = 'H:\EXPERIMENTS\RIGID\Experiment_Asymmetry_Control_Verification\HighContrast\22.5';
+rootdir = 'H:\EXPERIMENTS\RIGID\Experiment_Asymmetry_Control_Verification\HighContrast\30';
 % rootdir = 'H:\EXPERIMENTS\RIGID\Experiment_Sinusoid\3.75';
 rootpat = 'C:\Users\BC\Box\Git\Arena\Patterns';
 pat_ypos = 5;
@@ -45,7 +45,7 @@ end
 PATH.raw            = rootdir;
 PATH.vid            = fullfile(PATH.raw,'Vid');
 PATH.head_track     = fullfile(PATH.vid,'tracked_head');
-PATH.beninfly_track	= fullfile(PATH.vid,'vid_filt','tracked_head_wing');
+PATH.beninfly_track	= fullfile(PATH.vid,'wing_filt','tracked_head_wing');
 PATH.mask           = fullfile(PATH.beninfly_track,'mask');
 
 if dirflag
@@ -94,7 +94,7 @@ FLY.Fs      = round(1/mean(diff(FLY.time))); % video sampling rate
 FLY.Fc      = 15; % cut off frequency for lpf
 [b,a]       = butter(2,FLY.Fc/(FLY.Fs/2),'low'); % make lpf
 FLY.head    = filtfilt(b,a,head_data.hAngles); % head angles [deg]
-FLY.head    = filtfilt(b,a,rad2deg(benifly_data.Head)); % head angles [deg]
+% FLY.head    = filtfilt(b,a,rad2deg(benifly_data.Head)); % head angles [deg]
 % FLY.head    = FLY.head - mean(FLY.head); % head angles [deg]
 FLY.lwing   = rad2deg(hampel(FLY.time,benifly_data.LWing)); % left wing angles [deg]
 FLY.rwing   = rad2deg(hampel(FLY.time,benifly_data.RWing)); % right wing angles [deg]
