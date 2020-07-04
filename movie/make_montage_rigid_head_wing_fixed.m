@@ -17,7 +17,7 @@ function [MOV] = make_montage_rigid_head_wing_fixed(root_free,rootpat,vidFs,expo
 
 % Example Input %
 clear ; clc ; close all
-export = false;
+export = true;
 vidFs = 50;
 root_free = 'H:\EXPERIMENTS\RIGID\Experiment_Asymmetry_Control_Verification\HighContrast\30';
 root_fixed = 'H:\EXPERIMENTS\RIGID\Experiment_Ramp_30_HeadFixed';
@@ -58,7 +58,7 @@ FILE.benifly_fixed = [FILE.basename_fixed '.csv'];
 FILE.mask_free 	= [FILE.basename_free '.json'];
 FILE.mask_fixed = [FILE.basename_fixed '.json'];
 
-FILE.montage  = ['Free=' FILE.basename_free '_Fxed=' FILE.basename_fixed 'Montage.mp4'];
+FILE.montage  = ['Free=' FILE.basename_free '_Fxed=' FILE.basename_fixed '_Montage.mp4'];
 
 % Load data
 disp('Loading Data ...')
@@ -81,10 +81,10 @@ reg = true; % use interp times
 debug = false;
 
 [TRIG_free,PAT_free] = sync_pattern_trigger(raw_free.t_p, raw_free.data(:,2), pattern_total_time, ... 
-                                raw_free.data(:,1), reg, nan, true, true);
+                                raw_free.data(:,1), reg, nan, true, false);
 
 [TRIG_fixed,PAT_fixed] = sync_pattern_trigger(raw_fixed.t_p, raw_fixed.data(:,2), pattern_total_time, ... 
-                                raw_fixed.data(:,1), reg, [], false, true);
+                                raw_fixed.data(:,1), reg, [], false, false);
                             
 %% Get kinematic data
 FLY.Fc = 20; % cut off frequency for lpf
@@ -93,26 +93,26 @@ FLY.Fc = 20; % cut off frequency for lpf
 FLY.time_free 	= TRIG_free.time_sync; % video time
 FLY.Fs_free   	= round(1/mean(diff(FLY.time_free))); % video sampling rate
 [b_free,a_free]	= butter(2,FLY.Fc/(FLY.Fs_free/2),'low'); % make lpf
-FLY.head_free  	= filtfilt(b_free,a_free,head_free.hAngles); % head angles [deg]
-FLY.lwing_free	= rad2deg(hampel(FLY.time_free,benifly_free.LWing)); % left wing angles [deg]
-FLY.rwing_free 	= rad2deg(hampel(FLY.time_free,benifly_free.RWing)); % right wing angles [deg]
-FLY.lwing_free 	= filtfilt(b_free,a_free,FLY.lwing_free); % left wing angles [deg]
-FLY.rwing_free 	= filtfilt(b_free,a_free,FLY.rwing_free); % right wing angles [deg]
-FLY.wba_free   	= FLY.lwing_free - FLY.rwing_free; % delta wing-beat-amplitude [deg]
-FLY.wba_free  	= filtfilt(b_free,a_free,FLY.wba_free); % delta wing-beat-amplitude [deg]
-% FLY.wba_free 	= FLY.wba_free - mean(FLY.wba_free); % delta wing-beat-amplitude [deg]
+FLY.head_free  	= filtfilt(b_free,a_free,head_free.hAngles); % head angles [°]
+FLY.lwing_free	= rad2deg(hampel(FLY.time_free,benifly_free.LWing)); % left wing angles [°]
+FLY.rwing_free 	= rad2deg(hampel(FLY.time_free,benifly_free.RWing)); % right wing angles [°]
+FLY.lwing_free 	= filtfilt(b_free,a_free,FLY.lwing_free); % left wing angles [°]
+FLY.rwing_free 	= filtfilt(b_free,a_free,FLY.rwing_free); % right wing angles [°]
+FLY.wba_free   	= FLY.lwing_free - FLY.rwing_free; % delta wing-beat-amplitude [°]
+FLY.wba_free  	= filtfilt(b_free,a_free,FLY.wba_free); % delta wing-beat-amplitude [°]
+% FLY.wba_free 	= FLY.wba_free - mean(FLY.wba_free); % delta wing-beat-amplitude [°]
 
 % Fixed
 FLY.time_fixed      = TRIG_fixed.time_sync; % video time
 FLY.Fs_fixed        = round(1/mean(diff(FLY.time_fixed))); % video sampling rate
 [b_fixed,a_fixed]   = butter(2,FLY.Fc/(FLY.Fs_fixed/2),'low'); % make lpf
-FLY.lwing_fixed     = rad2deg(hampel(FLY.time_fixed,benifly_fixed.LWing)); % left wing angles [deg]
-FLY.rwing_fixed 	= rad2deg(hampel(FLY.time_fixed,benifly_fixed.RWing)); % right wing angles [deg]
-FLY.lwing_fixed 	= filtfilt(b_fixed,a_fixed,FLY.lwing_fixed); % left wing angles [deg]
-FLY.rwing_fixed 	= filtfilt(b_fixed,a_fixed,FLY.rwing_fixed); % right wing angles [deg]
-FLY.wba_fixed   	= FLY.lwing_fixed - FLY.rwing_fixed; % delta wing-beat-amplitude [deg]
-FLY.wba_fixed       = filtfilt(b_fixed,a_fixed,FLY.wba_fixed); % delta wing-beat-amplitude [deg]
-% FLY.wba_fixed 	= FLY.wba_fixed - mean(FLY.wba_fixed); % delta wing-beat-amplitude [deg]
+FLY.lwing_fixed     = rad2deg(hampel(FLY.time_fixed,benifly_fixed.LWing)); % left wing angles [°]
+FLY.rwing_fixed 	= rad2deg(hampel(FLY.time_fixed,benifly_fixed.RWing)); % right wing angles [°]
+FLY.lwing_fixed 	= filtfilt(b_fixed,a_fixed,FLY.lwing_fixed); % left wing angles [°]
+FLY.rwing_fixed 	= filtfilt(b_fixed,a_fixed,FLY.rwing_fixed); % right wing angles [°]
+FLY.wba_fixed   	= FLY.lwing_fixed - FLY.rwing_fixed; % delta wing-beat-amplitude [°]
+FLY.wba_fixed       = filtfilt(b_fixed,a_fixed,FLY.wba_fixed); % delta wing-beat-amplitude [°]
+% FLY.wba_fixed       = FLY.wba_fixed - mean(FLY.wba_fixed); % delta wing-beat-amplitude [°]
 
 % Normalize fly kinematics for experimental window
 FLY.int_time_free       = TRIG_free.time_sync_exp;
@@ -122,16 +122,30 @@ FLY.int_rwing_free      = FLY.rwing_free(TRIG_free.range);
 FLY.int_wba_free        = FLY.wba_free(TRIG_free.range);
 
 FLY.int_time_fixed      = TRIG_fixed.time_sync_exp;
+FLY.int_time_fixed      = interp1(1:length(FLY.int_time_fixed),FLY.int_time_fixed, ...
+                                1:0.5:length(FLY.int_time_fixed)-0.5)';
+
 FLY.int_lwing_fixed 	= FLY.lwing_fixed(TRIG_fixed.range);
 FLY.int_rwing_fixed     = FLY.rwing_fixed(TRIG_fixed.range);
 FLY.int_wba_fixed   	= FLY.wba_fixed(TRIG_fixed.range);
 
+FLY.int_lwing_fixed 	= interp1(TRIG_fixed.time_sync_exp,FLY.int_lwing_fixed,FLY.int_time_fixed);
+FLY.int_rwing_fixed 	= interp1(TRIG_fixed.time_sync_exp,FLY.int_rwing_fixed,FLY.int_time_fixed);
+FLY.int_wba_fixed       = interp1(TRIG_fixed.time_sync_exp,FLY.int_wba_fixed,FLY.int_time_fixed);
 
 %% Get video data
 FLY.raw_free = squeeze(vid_free.vidData(:,:,TRIG_free.range)); % raw free video data
 FLY.nframe_free = size(FLY.raw_free,3);
 FLY.raw_fixed = squeeze(raw_fixed.vidData(:,:,TRIG_fixed.range)); % raw fixed video data
 FLY.nframe_fixed = size(FLY.raw_fixed,3);
+
+FLY.raw_fixed_norm = FLY.raw_free;
+shft = 2;
+pp = 0;
+for n = 1:FLY.nframe_fixed-1
+    FLY.raw_fixed_norm(:,:,pp+(n:n+shft-1)) = repmat(FLY.raw_fixed(:,:,n),1,1,shft);
+    pp = pp + shft-1;
+end
 
 [FLY.raw_yP,FLY.raw_xP,~] = size(FLY.raw_free); % get size of raw video
 FLY.raw_center = [round(FLY.raw_xP/2) , 1.25*round(FLY.raw_yP/2)]; % center point for pattern & fly
@@ -154,10 +168,17 @@ params_fixed = jsondecode(str);
 
 FLY.wing_length = 150;
 
+FLY.body_free = 90 + rad2deg(atan2(params_free.gui.head.hinge.y -params_free.gui.abdomen.hinge.y, ...
+                            params_free.gui.head.hinge.x - params_free.gui.abdomen.hinge.x));
+FLY.body_fixed = 90 + rad2deg(atan2(params_fixed.gui.head.hinge.y -params_fixed.gui.abdomen.hinge.y, ...
+                            params_fixed.gui.head.hinge.x - params_fixed.gui.abdomen.hinge.x));
+                        
 FLY.lwing_hinge_free = [params_free.gui.left.hinge.x  , params_free.gui.left.hinge.y];
 FLY.rwing_hinge_free = [params_free.gui.right.hinge.x , params_free.gui.right.hinge.y];
-FLY.lwing_tip_free = FLY.lwing_hinge_free - FLY.wing_length*[cosd(FLY.int_lwing_free),  sind(FLY.int_lwing_free)];
-FLY.rwing_tip_free = FLY.rwing_hinge_free + FLY.wing_length*[cosd(FLY.int_rwing_free), -sind(FLY.int_rwing_free)];
+FLY.lwing_tip_free = FLY.lwing_hinge_free - FLY.wing_length*[cosd(FLY.int_lwing_free + FLY.body_free),  ...
+                                                             sind(FLY.int_lwing_free + FLY.body_free)];
+FLY.rwing_tip_free = FLY.rwing_hinge_free + FLY.wing_length*[cosd(FLY.int_rwing_free + FLY.body_free), ...
+                                                            -sind(FLY.int_rwing_free + FLY.body_free)];
 
 FLY.head_length = 40;
 % FLY.head_hinge = [head_data.cPoint.X  , head_data.cPoint.Y];
@@ -166,8 +187,10 @@ FLY.head_tip = FLY.head_hinge + FLY.head_length*[sind(FLY.int_head_free) , -cosd
 
 FLY.lwing_hinge_fixed = [params_fixed.gui.left.hinge.x  , params_fixed.gui.left.hinge.y];
 FLY.rwing_hinge_fixed = [params_fixed.gui.right.hinge.x , params_fixed.gui.right.hinge.y];
-FLY.lwing_tip_fixed = FLY.lwing_hinge_fixed - FLY.wing_length*[cosd(FLY.int_lwing_fixed),  sind(FLY.int_lwing_fixed)];
-FLY.rwing_tip_fixed = FLY.rwing_hinge_fixed + FLY.wing_length*[cosd(FLY.int_rwing_fixed), -sind(FLY.int_rwing_fixed)];
+FLY.lwing_tip_fixed = FLY.lwing_hinge_fixed - FLY.wing_length*[cosd(FLY.int_lwing_fixed +  + FLY.body_fixed), ...
+                                                               sind(FLY.int_lwing_fixed +  + FLY.body_fixed)];
+FLY.rwing_tip_fixed = FLY.rwing_hinge_fixed + FLY.wing_length*[cosd(FLY.int_rwing_fixed +  + FLY.body_fixed), ...
+                                                              -sind(FLY.int_rwing_fixed +  + FLY.body_fixed)];
 
 %% Make Movie
 % Create structure to store frames
@@ -210,12 +233,12 @@ set(ax(3:end), 'FontSize', 12, 'Color', 'k', 'YColor', 'w', 'XColor', 'w', 'Font
     'LineWidth', 1.5,'XLim', [0 round(FLY.int_time_free(end))])
 set(ax(end),'XTick', 0:2:round(FLY.time_free(end)))
 set(ax(3), 'XTickLabel', [], 'XColor', 'none')
-set(ax(3), 'YLim', 21*[-1 1], 'YTick', 15*[-1 0 1])
 
-% w_ylim = 5*ceil(max(abs([FLY.int_wba_free ; FLY.int_wba_fixed])) / 5);
-% set(ax(3), 'YLim', w_ylim*[-1 1], 'YTick', (w_ylim-5)*[-1 0 1])
+max_y = 5*ceil(max(abs([FLY.int_wba_free;FLY.int_wba_fixed]))/5);
 
-linkaxes(ax(3:end),'x')
+set(ax(3:4), 'YLim', max_y*[-1 1], 'YTick', 20*[-1 0 1])
+
+linkaxes(ax(3:end),'xy')
 align_Ylabels_ax(ax(3:end)')
 
 iter = round(FLY.Fs_free/vidFs); % # of frames to skip per iteration to acheive desired frame rate
@@ -224,7 +247,7 @@ disp('Exporting Video...')
 tic
 pat_image = 255*pattern_data.pattern.Pats(1,:,1,pat_ypos);
 for jj = 1:FLY.nframe_free % for each frame
-    if expframe(jj) % if we want to display this frame
+    if expframe(jj) % if we want to display this frame`
         % Get frames
         disp(jj)
         if jj >= iter
@@ -232,12 +255,12 @@ for jj = 1:FLY.nframe_free % for each frame
         else
             win = jj;
         end
-        Frame.raw = median(FLY.raw_free(:,:,win),3); % current raw frame median across frames
+        Frame.free  = median(FLY.raw_free(:,:,win),iter-1); % current raw frame median across frames
+        Frame.fixed = 1.1*median(FLY.raw_fixed_norm(:,:,win),iter-1); % current raw frame median across frames
         
-        % Display raw video
+        % Display free video
         subplot(2,4,[1:2]); cla; hold on; axis image
-            imshow(Frame.raw)
-            %surf(Frame.raw,  'linestyle', 'none')
+            imshow(Frame.free)
           	plot([FLY.head_hinge(1), mean(FLY.head_tip(win,1))], ... % update line drawn to head
                  [FLY.head_hinge(2), mean(FLY.head_tip(win,2))], 'Color', 'c', 'LineWidth', 2.5)
                          
@@ -253,7 +276,7 @@ for jj = 1:FLY.nframe_free % for each frame
             % Make pattern ring
             ax_pat = axes; axis image
             set(ax_pat, 'Color', 'none', 'XColor', 'none', 'YColor', 'none', ...
-                            'Position', ax(1) .Position)
+                            'Position', ax(1).Position)
            	cla
             
             pat_pos = 3.75*round(mean(PAT_free.pos_exp(win)));
@@ -263,10 +286,36 @@ for jj = 1:FLY.nframe_free % for each frame
             z = zeros(1,length(x));
             hs = surface(ax_pat,[x;x],[y;y],[z;z],[pat_image;pat_image], ...
                 'FaceColor', 'none', 'EdgeColor', 'interp', 'LineWidth', thickness);
-            %ax_pat.XLim = ax(1).XLim;
-            %ax_pat.YLim = ax(1).YLim;
             ax(1).XLim = [-100 600];
             ax(1).YLim = [-100 350];
+            
+        % Display raw video
+        subplot(2,4,[5:6]); cla; hold on; axis image
+            imshow(Frame.fixed)                         
+          	plot([FLY.lwing_hinge_fixed(1) , mean(FLY.lwing_tip_fixed(win,1))], ... % update line drawn to left wing
+                [FLY.lwing_hinge_fixed(2) , mean(FLY.lwing_tip_fixed(win,2))], 'Color', 'm', 'LineWidth', 2.5)
+            
+        	plot([FLY.rwing_hinge_fixed(1) , mean(FLY.rwing_tip_fixed(win,1))], ... % update line drawn to right wing
+                [FLY.rwing_hinge_fixed(2) , mean(FLY.rwing_tip_fixed(win,2))], 'Color', 'm', 'LineWidth', 2.5)
+            
+            plot(FLY.lwing_hinge_fixed(1), FLY.lwing_hinge_fixed(2), 'm.', 'MarkerSize',20)
+            plot(FLY.rwing_hinge_fixed(1), FLY.rwing_hinge_fixed(2), 'm.', 'MarkerSize',20)
+            
+            % Make pattern ring
+            ax_pat = axes; axis image
+            set(ax_pat, 'Color', 'none', 'XColor', 'none', 'YColor', 'none', ...
+                            'Position', ax(2).Position)
+           	cla
+            
+            pat_pos = 3.75*round(mean(PAT_free.pos_exp(win)));
+            theta = -deg2rad(pat_pos) + -(pi/2 + linspace(0, 2*pi, size(pat_image,2)));
+            x = radius * cos(theta) + FLY.raw_center(1);
+            y = radius * sin(theta) + FLY.raw_center(2);
+            z = zeros(1,length(x));
+            hs = surface(ax_pat,[x;x],[y;y],[z;z],[pat_image;pat_image], ...
+                'FaceColor', 'none', 'EdgeColor', 'interp', 'LineWidth', thickness);
+            ax(2).XLim = [-100 600];
+            ax(2).YLim = [-100 350];
     end
     
     % Head plot & WBA plot free

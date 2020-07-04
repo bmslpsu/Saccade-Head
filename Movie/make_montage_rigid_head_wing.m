@@ -45,7 +45,7 @@ end
 PATH.raw            = rootdir;
 PATH.vid            = fullfile(PATH.raw,'Vid');
 PATH.head_track     = fullfile(PATH.vid,'tracked_head');
-PATH.beninfly_track	= fullfile(PATH.vid,'wing_filt','tracked_head_wing');
+PATH.beninfly_track	= fullfile(PATH.vid,'vid_filt','tracked_head_wing');
 PATH.mask           = fullfile(PATH.beninfly_track,'mask');
 
 if dirflag
@@ -95,7 +95,7 @@ FLY.Fc      = 15; % cut off frequency for lpf
 [b,a]       = butter(2,FLY.Fc/(FLY.Fs/2),'low'); % make lpf
 FLY.head    = filtfilt(b,a,head_data.hAngles); % head angles [deg]
 % FLY.head    = filtfilt(b,a,rad2deg(benifly_data.Head)); % head angles [deg]
-% FLY.head    = FLY.head - mean(FLY.head); % head angles [deg]
+FLY.head    = FLY.head - mean(FLY.head); % head angles [deg]
 FLY.lwing   = rad2deg(hampel(FLY.time,benifly_data.LWing)); % left wing angles [deg]
 FLY.rwing   = rad2deg(hampel(FLY.time,benifly_data.RWing)); % right wing angles [deg]
 FLY.lwing   = filtfilt(b,a,FLY.lwing); % left wing angles [deg]
@@ -103,7 +103,7 @@ FLY.rwing   = filtfilt(b,a,FLY.rwing); % right wing angles [deg]
 FLY.wba     = FLY.lwing - FLY.rwing; % delta wing-beat-amplitude [deg]
 [b,a]       = butter(2,20/(FLY.Fs/2),'low'); % make lpf
 FLY.wba     = filtfilt(b,a,FLY.wba); % delta wing-beat-amplitude [deg]
-FLY.wba     = FLY.wba - mean(FLY.wba); % delta wing-beat-amplitude [deg]
+% FLY.wba     = FLY.wba - mean(FLY.wba); % delta wing-beat-amplitude [deg]
 
 % Normalize fly kinematics for experimental window
 FLY.int_time    = TRIG.time_sync_exp; % video time

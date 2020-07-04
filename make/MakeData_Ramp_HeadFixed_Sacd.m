@@ -7,7 +7,7 @@ function [] = MakeData_Ramp_HeadFixed_Sacd(Fc)
 %       -
 %
 
-Fc = 20;
+Fc = 10;
 
 % Data location
 rootdir = 'H:\EXPERIMENTS\RIGID\Experiment_Ramp_30_HeadFixed';
@@ -56,7 +56,7 @@ for kk = 1:N.file
     wing.left  = filtfilt(wing.b, wing.a, wing.left);
     wing.right = filtfilt(wing.b, wing.a, wing.right);
     wing.wba = wing.left - wing.right;
-    wing.wba = filtfilt(b_high, a_high, wing.wba);
+%     wing.wba = filtfilt(b_high, a_high, wing.wba);
     
     fig = figure (1) ; cla ; hold on ; title(num2str(D.vel(kk)))
     xlabel('Time (s)')
@@ -65,7 +65,7 @@ for kk = 1:N.file
 %     plot(tintrp, wing.left, 'Color', [0.7 0 0], 'LineWidth', 1)
 %     plot(tintrp, wing.right, 'Color', [0 0 0.7], 'LineWidth', 1)
     plot(tintrp, wing.wba, 'Color', [0 0 0], 'LineWidth', 1)
-    ylim(20*[-1 1])
+    %ylim(20*[-1 1])
     pause
     
     % Get Saccade Stats

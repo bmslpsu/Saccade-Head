@@ -40,13 +40,17 @@ PATH.benifly = fullfile(PATH.daq,'\tracked_head_wing'); % tracked benifly data l
 %% Get Data %%
 disp('Loading...')
 showplot = true;
+peaks = []; % find peaks automatically
+amp_cut = 7;
+thresh = 300;
+    
 tintp = (0:(1/200):(10 - 1/200))';
 SACCADE = [I , table(num2cell(zeros(N.file,1)))]; % store saccade objects
 SACCADE.Properties.VariableNames{5} = 'saccade';
 ALL_DATA = cell(N.fly,N.wave);
 COUNT = cell(N.fly,N.wave);
 SACCADE_STATS = []; % store saccade stats
-for kk = 16:N.file
+for kk = 1:N.file
     disp(kk)
     disp(basename{kk})
     
@@ -68,9 +72,8 @@ for kk = 16:N.file
     Head = process_signal(trig.time, hAngles, Fc, tintp, [4 8 16 32 64]);
     
     % Get Saccade Stats
-    peaks = []; % find peaks automatically
-    amp_cut = 7;
-    head_saccade = saccade(Head.X(:,1), Head.Time, 300, direction, peaks, showplot, amp_cut);
+
+    head_saccade = saccade(Head.X(:,1), Head.Time, thresh, amp_cut, direction, peaks, nan, showplot);
     
     %figure (1)
     
@@ -99,7 +102,7 @@ end
 
 % Fill in empty saccade trials
 empty_idx = cellfun(@(x) isempty(x), ALL_DATA);
-ALL_DATA(empty_idx) = {saccade(nan*Head.X(:,1), nan*Head.Time, 350, 0, [], false)};
+ALL_DATA(empty_idx) = {saccade(nan*Head.X(:,1), nan*Head.Time, thresh, amp_cut, 0, [], nan, false)};
 
 %% Extract & group saccades & intervals by speed & by fly
 fields = {'normpeak_saccade','norm_interval','normstart_interval','normend_interval'};
