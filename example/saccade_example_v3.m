@@ -2,9 +2,12 @@
 clear ; close all ; clc
 % load ('Example_1') % note this data has clear periods of fixation and saccades
 % fly 11 tiral 25
-root = 'H:\EXPERIMENTS\RIGID\Experiment_Asymmetry_Control_Verification\HighContrast\30\Vid\wing_filt\tracked_head_wing';
+% root = 'H:\EXPERIMENTS\RIGID\Experiment_Asymmetry_Control_Verification\HighContrast\30\Vid\wing_filt\tracked_head_wing';
+root = "C:\Users\Lenovo\Documents\GitHub\Saccade-Head\example\";
 [FILE,PATH] = uigetfile({'*.csv'},'Select data file', root, 'MultiSelect','off');
 benifly_data = ImportBenifly(fullfile(PATH, FILE)); % load head & wing angles
+
+load("C:\Users\Lenovo\Documents\GitHub\Saccade-Head\example\Fly_11_Trial_25_Vel_-30_SpatFreq_30.mat")
 
 %%
 time = linspace(0,10,size(benifly_data,1)); % time vector
@@ -20,6 +23,12 @@ wing_left_filt = filtfilt(b, a, wing_left); % left wing
 wing_right_filt = filtfilt(b, a, wing_right); % right wing
 filt_dwba = filtfilt(b, a, wing_left_filt - wing_right_filt);
 
+Fc = 10; % low-pass
+[b,a] = butter(3, Fc/(Fs/2), 'low');
+wing_left_filt = filtfilt(b, a, wing_left); % left wing
+wing_right_filt = filtfilt(b, a, wing_right); % right wing
+dwba_in = filtfilt(b, a, wing_left_filt - wing_right_filt);
+
 Fc = 0.3; % high-pass
 [b,a] = butter(3, Fc/(Fs/2), 'high');
 filt_dwba = filtfilt(b, a, filt_dwba);
@@ -28,6 +37,11 @@ wba_vel = diff(filt_dwba) * Fs;
 wba_vel = [wba_vel(1) ; wba_vel];
 
 wba_vel_norm = max(filt_dwba) * wba_vel / max(wba_vel);
+
+% Filter
+Fc = 10; % low-pass
+[b,a] = butter(3, Fc/(Fs/2), 'low');
+head = filtfilt(b, a, hAngles);
 
 %% Find peaks (need to tune these properties too)
 min_peak_dist_time = 0.5; % [s]
@@ -60,6 +74,7 @@ ax(1) = subplot(3,1,1) ; cla ; hold on ; title('Raw')
     ylabel('\DeltaWBA (V)')
     plot([0 time(end)], [0 0], '--', 'Color', [0.5 0.5 0.5])
     plot(time, dwba, 'k')
+    plot(time, head, 'g', 'LineWidth', 1)
     plot(time_pks, dwba_pks, '.r', 'MarkerSize', 15)
     plot(time_vly, dwba_vly, '.b', 'MarkerSize', 15)
     
@@ -67,6 +82,7 @@ ax(2) = subplot(3,1,2) ; cla ; hold on ; title('Filtered')
     ylabel('\DeltaWBA (V)')
     plot([0 time(end)], [0 0], '--', 'Color', [0.5 0.5 0.5])
     plot(time, filt_dwba, 'k', 'LineWidth', 1)
+    plot(time, head, 'g', 'LineWidth', 1)
     plot(time_pks, filt_dwba_pks, '.r', 'MarkerSize', 15)
   	plot(time_vly, filt_dwba_vly, '.b', 'MarkerSize', 15)
     
@@ -88,4 +104,17 @@ amp_cut = 0;
 direction = 0;
 sacd_length = nan;
 showplot = true;
-obj = saccade(filt_dwba, time, thresh, amp_cut, direction, pks_idx, sacd_length, showplot);
+wing_saccade = saccade(dwba_in, time, thresh, amp_cut, direction, pks_idx, sacd_length, showplot);
+
+head_saccade = saccade(head, time, 140, 7, 1, [], nan, true);
+
+%%
+
+td_start = head_saccade.SACD.StartTime - wing_saccade.SACD.StartTime
+
+td_peak = head_saccade.SACD.PeakTime - wing_saccade.SACD.PeakTime
+
+td_end = head_saccade.SACD.EndTime - wing_saccade.SACD.EndTime
+
+
+
