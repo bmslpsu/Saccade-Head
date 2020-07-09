@@ -2,12 +2,12 @@
 clear ; close all ; clc
 % load ('Example_1') % note this data has clear periods of fixation and saccades
 % fly 11 tiral 25
-% root = 'H:\EXPERIMENTS\RIGID\Experiment_Asymmetry_Control_Verification\HighContrast\30\Vid\wing_filt\tracked_head_wing';
-root = "C:\Users\Lenovo\Documents\GitHub\Saccade-Head\example\";
+root = 'H:\EXPERIMENTS\RIGID\Experiment_Asymmetry_Control_Verification\HighContrast\30\Vid\wing_filt\tracked_head_wing';
+% root = "C:\Users\Lenovo\Documents\GitHub\Saccade-Head\example\";
 [FILE,PATH] = uigetfile({'*.csv'},'Select data file', root, 'MultiSelect','off');
 benifly_data = ImportBenifly(fullfile(PATH, FILE)); % load head & wing angles
 
-load("C:\Users\Lenovo\Documents\GitHub\Saccade-Head\example\Fly_11_Trial_25_Vel_-30_SpatFreq_30.mat")
+load("H:\EXPERIMENTS\RIGID\Experiment_Asymmetry_Control_Verification\HighContrast\30\Vid\tracked_head\Fly_11_Trial_25_Vel_-30_SpatFreq_30.mat")
 
 %%
 time = linspace(0,10,size(benifly_data,1)); % time vector
