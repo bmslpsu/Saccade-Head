@@ -1,30 +1,40 @@
-function [] = MakeData_Ramp_HeadFree_Sacd_HeadWing(wave)
-%% MakeData_Ramp_HeadFree_Sacd_HeadWing:
+function [] = MakeData_Static_HeadFree_Sacd_HeadWing()
+%% MakeData_Static_HeadFree_Sacd_HeadWing:
 %   INPUTS:
-%       wave    :   spatial wavelength of data
+%       -
 %
 %   OUTPUTS:
 %       -
 %
 
-wave = 30;
+direction = 0; % get saccades in all directions
+
+switch direction
+    case 0
+        dirlabel = 'ALL';
+    case 1
+        dirlabel = 'CW';
+    case -1
+        dirlabel = 'CCW';
+    otherwise
+        error('direction must be 0,1, or -1')
+end
 
 % Data location
-rootdir = ['H:\EXPERIMENTS\RIGID\Experiment_Asymmetry_Control_Verification\HighContrast\' num2str(wave)];
+rootdir = 'H:\EXPERIMENTS\RIGID\Experiment_Static_Wave';
 
 % Output file name
-filename = ['Ramp_HeadFree_SACCD_Anti_HeadWingALL_Wave=' num2str(wave)];
-% filename = ['Ramp_HeadFree_SACCD_Anti_HeadWing_Wave=' num2str(wave)];
+filename = ['Static_HeadFree_SACCD_' dirlabel '_HeadWingALL_Wave'];
 
 % Setup Directories 
-PATH.daq  = rootdir; % DAQ data location
-PATH.vid  = fullfile(PATH.daq,'Vid'); % video data location
-PATH.head = fullfile(PATH.vid,'tracked_head'); % tracked kinematic data location
-PATH.wing = fullfile(PATH.vid,'wing_filt', 'tracked_head_wing'); % tracked kinematic data location
+PATH.daq  = rootdir;
+PATH.vid  = fullfile(PATH.daq,'');
+PATH.head = fullfile(PATH.vid,'tracked_head');
+PATH.wing = fullfile(PATH.vid,'wing_filt', 'tracked_head_wing');
 
 % Select files
-[D,I,N,U,T,~,~,basename] = GetFileData(PATH.head,'*.mat',false,'fly','trial','vel','wave');
-% [D,I,N,U,T,~,~,basename] = GetFileData(PATH.wing,'*.csv',false,'fly','trial','vel','wave');
+[D,I,N,U,T,~,~,basename] = GetFileData(PATH.head,'*.mat',false,'fly','trial','wave','vel');
+% [D,I,N,U,T,~,~,basename] = GetFileData(PATH.wing,'*.csv',false,'fly','trial','wave','vel');
 
 %% Get Data %%
 clc
@@ -63,16 +73,14 @@ wing.min_pkwidth = 0.03;
 wing.min_pkprom = 20;
 wing.min_pkthresh = 0;
 wing.boundThresh = 0.35;
-wing.Fc = 5;
+wing.Fc = 8;
 [wing.b, wing.a] = butter(3, wing.Fc / (Fs/2) ,'low');
 wing_carry.Fc = 40;
 [wing_carry.b, wing_carry.a] = butter(3, wing_carry.Fc / (Fs/2) ,'low');
 
-Vel = U.vel{1}; % velocities
-Stim = (Vel*tintrp')'; % stimuli
 SACCADE = [I , splitvars(table(num2cell(zeros(N.file,4))))]; % store saccade objects
 SACCADE.Properties.VariableNames(5:8) = {'head_saccade','wing_saccade','head2wing','head2wing_align_wing'};
-HEAD_DATA = cell(N.fly,N.vel);
+HEAD_DATA = cell(N.fly,N.wave);
 HEAD_SACCADE_STATS = []; % store saccade stats
 WING_SACCADE_STATS = []; % store saccade stats
 for kk = 1:N.file
@@ -82,7 +90,7 @@ for kk = 1:N.file
     load(fullfile(PATH.head, [basename{kk} '.mat']),'hAngles'); % load head angles % time arrays
  
   	% Sync frames and get pattern data
-	[trig,~] = sync_pattern_trigger(t_p, data(:,2), 10, data(:,1), true, 1, true, false);
+	[trig,~] = sync_pattern_trigger(t_p, data(:,2), 10, data(:,1), true, 1, false, false);
     
     % Get head data
     head.pos = interp1(trig.time_sync, hAngles, tintrp, 'pchip');
@@ -91,21 +99,19 @@ for kk = 1:N.file
  	head.pos_filt = filtfilt(head_carry.b, head_carry.a, head.pos);
        
     % Extract head saccades
-    direction = -sign(D.vel(kk)); % only get saccades in the opposite direction of visual motion
     head_saccade = saccade_all(head.pos_filt, tintrp, head.thresh, head.true_thresh, head.Fc_detect, ...
                                 head.Fc_ss, head.amp_cut, direction, head.pks, head.sacd_length, ...
                                 head.min_pkdist, head.min_pkwidth, head.min_pkprom, ...
                                 head.min_pkthresh, head.boundThresh, head.showplot);
-    head_saccade = stimSaccade(head_saccade, Stim(:,I.vel(kk)), false); % with approximate pattern position
     SACCADE{kk,5} = {head_saccade}; % store data in cell
     
     if head_saccade.count == 0
         rep = 1;
     else
-        HEAD_DATA{I.fly(kk),I.vel(kk)}(end+1,1) = head_saccade;
+        HEAD_DATA{I.fly(kk),I.wave(kk)}(end+1,1) = head_saccade;
         rep = head_saccade.count;
     end
-    VTable = table(D.vel(kk),'VariableNames',{'Vel'});
+    VTable = table(D.wave(kk),'VariableNames',{'Wave'});
     ITable = [I(kk,:),VTable];
     ITable = repmat(ITable,rep,1);
     HEAD_SACCADE_STATS = [HEAD_SACCADE_STATS ; [ITable , head_saccade.SACD]];
@@ -147,7 +153,7 @@ for kk = 1:N.file
         else
             rep = wing_saccade.count;
         end
-        VTable = table(D.vel(kk),'VariableNames',{'Vel'});
+        VTable = table(D.wave(kk),'VariableNames',{'Vel'});
         ITable = [I(kk,:),VTable];
         ITable = repmat(ITable,rep,1);
         WING_SACCADE_STATS = [WING_SACCADE_STATS ; [ITable , wing_saccade.SACD]];
@@ -177,8 +183,7 @@ HEAD_DATA(empty_idx) = {saccade_all(0*head.pos, tintrp, head.thresh, head.true_t
                                 head.min_pkthresh, head.boundThresh, false)};
 
 %% Extract & group saccades & intervals by speed & by fly
-fields = {'normpeak_saccade','norm_interval','normstart_interval','normend_interval',...
-    'normstart_stimulus','error','int_error'};
+fields = {'normpeak_saccade','norm_interval','normstart_interval','normend_interval'};
 nfield = length(fields);
 norm_fields = {'time','position','velocity'};
 norm_fields_stats = string(norm_fields) + "_stats";
@@ -198,7 +203,7 @@ for kk = 1:nfield % for each field in saccade structure
     
     FLY.(fields{kk}) = cellfun(@(x) struct_center([x.(fields{kk})], center, even, dim, norm_fields), ...
                             HEAD_DATA, 'UniformOutput', true);
-    for jj = 1:N.vel
+    for jj = 1:N.wave
         GRAND.(fields{kk})(jj) = struct_center(FLY.(fields{kk})(:,jj), center, even , dim, norm_fields);
         
         % Calculate stats by fly
@@ -213,18 +218,18 @@ end
 
 % Calculate stats for all
 for kk = 1:nfield % for each field in saccade structure
-    for jj = 1:N.vel
+    for jj = 1:N.wave
         for ff = 1:length(norm_fields)
             GRAND.(fields{kk})(jj).(norm_fields_stats(ff)) = basic_stats( ...
                 GRAND.(fields{kk})(jj).(norm_fields{ff}), dim_stats);
         end
     end
 end
-
+                        
 %% SAVE %%
 disp('Saving...')
 save(['H:\DATA\Rigid_Data\' filename '_' datestr(now,'mm-dd-yyyy') '.mat'],...
       'PATH','HEAD_DATA','SACCADE','HEAD_SACCADE_STATS','WING_SACCADE_STATS','FLY','GRAND',...
-      'Stim','D','I','U','N','T','-v7.3')
+      'D','I','U','N','T','-v7.3')
 disp('SAVING DONE')
 end

@@ -1,5 +1,5 @@
-function [] = MakeData_Ramp_HeadFree_Sacd_HeadWing(wave)
-%% MakeData_Ramp_HeadFree_Sacd_HeadWing:
+function [] = MakeData_Ramp_HeadFree_Sacd_HeadLeg(wave)
+%% MakeData_Ramp_HeadFree_Sacd_HeadLeg:
 %   INPUTS:
 %       wave    :   spatial wavelength of data
 %
@@ -11,20 +11,20 @@ wave = 30;
 
 % Data location
 rootdir = ['H:\EXPERIMENTS\RIGID\Experiment_Asymmetry_Control_Verification\HighContrast\' num2str(wave)];
+rootdlc = 'Q:\Google Drive PSU\Experiment_Data';
 
 % Output file name
-filename = ['Ramp_HeadFree_SACCD_Anti_HeadWingALL_Wave=' num2str(wave)];
-% filename = ['Ramp_HeadFree_SACCD_Anti_HeadWing_Wave=' num2str(wave)];
+filename = ['Ramp_HeadFree_SACCD_Anti_HeadWingLeg_Wave=' num2str(wave)];
 
 % Setup Directories 
 PATH.daq  = rootdir; % DAQ data location
 PATH.vid  = fullfile(PATH.daq,'Vid'); % video data location
 PATH.head = fullfile(PATH.vid,'tracked_head'); % tracked kinematic data location
 PATH.wing = fullfile(PATH.vid,'wing_filt', 'tracked_head_wing'); % tracked kinematic data location
+PATH.dlc  = rootdlc; % DLC data location
 
 % Select files
 [D,I,N,U,T,~,~,basename] = GetFileData(PATH.head,'*.mat',false,'fly','trial','vel','wave');
-% [D,I,N,U,T,~,~,basename] = GetFileData(PATH.wing,'*.csv',false,'fly','trial','vel','wave');
 
 %% Get Data %%
 clc
@@ -59,19 +59,20 @@ wing.true_thresh = [];
 wing.sacd_length = nan;
 wing.pks = [];
 wing.min_pkdist = 0.5;
-wing.min_pkwidth = 0.03;
+wing.min_pkwidth = 0.2;
 wing.min_pkprom = 20;
 wing.min_pkthresh = 0;
 wing.boundThresh = 0.35;
-wing.Fc = 5;
+wing.Fc = 8;
 [wing.b, wing.a] = butter(3, wing.Fc / (Fs/2) ,'low');
 wing_carry.Fc = 40;
 [wing_carry.b, wing_carry.a] = butter(3, wing_carry.Fc / (Fs/2) ,'low');
 
 Vel = U.vel{1}; % velocities
 Stim = (Vel*tintrp')'; % stimuli
-SACCADE = [I , splitvars(table(num2cell(zeros(N.file,4))))]; % store saccade objects
-SACCADE.Properties.VariableNames(5:8) = {'head_saccade','wing_saccade','head2wing','head2wing_align_wing'};
+SACCADE = [I , splitvars(table(num2cell(zeros(N.file,5))))]; % store saccade objects
+SACCADE.Properties.VariableNames(5:9) = ...
+    {'head_saccade','wing_saccade','head2wing','head2wing_align_wing','leg'};
 HEAD_DATA = cell(N.fly,N.vel);
 HEAD_SACCADE_STATS = []; % store saccade stats
 WING_SACCADE_STATS = []; % store saccade stats
@@ -83,6 +84,15 @@ for kk = 1:N.file
  
   	% Sync frames and get pattern data
 	[trig,~] = sync_pattern_trigger(t_p, data(:,2), 10, data(:,1), true, 1, true, false);
+    
+    % DLC data
+    dlc_file        = dir(PATH.dlc);
+    dlc_file    	= string({dlc_file.name}');
+    dlc_file        = start_end_string(dlc_file, basename{kk}, '.csv');
+    dlc_data        = readDLC(fullfile(PATH.dlc,dlc_file)); % load DLC data
+    leg_prob        = [dlc_data.front_leg_left_prob , dlc_data.front_leg_right_prob];
+    
+    SACCADE{kk,9} = {leg_prob};
     
     % Get head data
     head.pos = interp1(trig.time_sync, hAngles, tintrp, 'pchip');

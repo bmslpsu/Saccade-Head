@@ -7,14 +7,13 @@ root = 'H:\DATA\Rigid_Data\';
 
 load(fullfile(PATH,FILE),'SACCADE','U','N')
 
-clms = N.vel/2;
-CC = repmat(hsv(clms),2,1);
-
-Vel = U.vel{1};
-
 clearvars -except U N SACCADE
 
 %% Velocity Histogram
+n_speed = N.vel/2;
+CC = repmat(hsv(n_speed),2,1);
+Vel = U.vel{1};
+
 clear head
 head.all = cell(N.fly,N.vel);
 for n = 1:N.file
@@ -66,7 +65,7 @@ ax(1) = subplot(1,1,1); hold on
     xlabel('Head Velocity (°/s)')
     ylabel('Probability')
     
-thresh = 350;
+thresh = 300;
 plot(thresh*[-1 -1],[0 ax.YLim(2)], 'm', 'LineWidth', 1)
 plot(thresh*[ 1  1],[0 ax.YLim(2)], 'm', 'LineWidth', 1)
 set(ax, 'LineWidth', 1.5, 'FontSize', 8, 'Box', 'on', 'XLim', 1000*[-1 1], 'YLim', [-0.005 ax.YLim(2)])
@@ -99,7 +98,7 @@ head.pos_std = cellfun(@(x) std(x,[],'all'), head.pos, 'UniformOutput', true);
 fig = figure (1) ; clf
 set(fig, 'Color', 'w','Units', 'inches', 'Position', [2 2 4 6])
 ax = gobjects(N.vel,1);
-bins = -25:0.5:25;
+bins = -20:0.5:20;
 % bins = [-1000:50:-350 -350:5:350 350:50:1000];
 pp = 1;
 for v = [1 6 2 7 3 8 4 9 5 10]
