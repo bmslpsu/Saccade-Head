@@ -93,8 +93,8 @@ CCW = stim_dir == -1;
 edges = deg2rad(-20:1:20);
 
 ax(1) = subplot(1,1,1,polaraxes); grid off ; axis tight
-    Trig_Positive = [ All_Stats.StartPos(CW); -All_Stats.StartPos(CCW)];
-    Trig_Negative = [ All_Stats.EndPos(CW);  -All_Stats.EndPos(CCW)];
+    Trig_Positive = [ -All_Stats.StartPos(CW); All_Stats.StartPos(CCW)];
+    Trig_Negative = [ -All_Stats.EndPos(CW);  All_Stats.EndPos(CCW)];
     h(1) = polarhistogram(deg2rad(Trig_Positive),edges,...
         'FaceColor','g','FaceAlpha',0.5,'Normalization','Probability'); hold on
     h(2) = polarhistogram(deg2rad(Trig_Negative),'BinEdges', edges, ...

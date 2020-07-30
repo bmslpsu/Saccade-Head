@@ -87,7 +87,7 @@ end
 
 head.speed = cell(N.vel/2,1);
 for s = 1:N.vel/2
-    head.speed{s} = cat(2, head.pos{s,1}, head.pos{s,2});
+    head.speed{s} = cat(2, head.pos{s,1}, -head.pos{s,2});
 end
 head.pos_all = cat(2,head.speed{:});
 

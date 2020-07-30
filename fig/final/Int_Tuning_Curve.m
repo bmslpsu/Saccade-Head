@@ -228,7 +228,7 @@ linkaxes(ax, 'xy')
 
 set(ax, 'LineWidth', 1, 'Box', 'off')
 axis tight
-set(ax,'YLim', [-0.5 10])
+set(ax,'YLim', [-0.5 4])
 YLabelHC = get(ax(1), 'YLabel');
 set([YLabelHC], 'String', 'Interval Times (s)')
 XLabelHC = get(ax(1), 'XLabel');

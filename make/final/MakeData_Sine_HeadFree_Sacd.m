@@ -1,16 +1,14 @@
-function [] = MakeData_Sine_HeadFree_Sacd(amp,Fc,direction)
+function [] = MakeData_Sine_HeadFree_Sacd(amp,direction)
 %% MakeData_Ramp_HeadFree_Sacd:
 %   INPUTS:
 %       amp         :   amplitude of sineusoid stimulus
-%       Fc          :   head data low-pass filter cutoff frequency [Hz]
 %       direction   :   only get saccades in this direction
 %
 %   OUTPUTS:
 %       -
 %
 
-amp = 3.75;
-Fc = 40;
+amp = 15;
 direction = 0; % get saccades in all directions
 
 switch direction
@@ -28,7 +26,7 @@ end
 rootdir = ['H:\EXPERIMENTS\RIGID\Experiment_Sinusoid\' num2str(amp)];
 
 % Output file name
-filename = ['SS_HeadFree_SACCD_' dirlabel '_filt=' num2str(Fc) '_Amp=' num2str(amp)];
+filename = ['SS_HeadFree_SACCD_' dirlabel '_Amp=' num2str(amp)];
 
 % Setup Directories 
 PATH.daq = rootdir;
@@ -49,23 +47,24 @@ head.showplot = false;
 head.Fc_detect = [10 nan];
 head.Fc_ss = [40 nan];
 head.amp_cut = 4;
-head.thresh = 80;
+head.thresh = [-1.5 80];
 head.true_thresh = 250;
 head.sacd_length = nan;
 head.pks = [];
-head.min_pkdist = 0.1;
+head.min_pkdist = 0.5;
 head.min_pkwidth = 0.03;
 head.min_pkprom = 75;
 head.min_pkthresh = 0;
 head.boundThresh = [0.25 50];
-head_carry.Fc = 60;
+head_carry.Fc = 40;
 [head_carry.b, head_carry.a] = butter(3, head_carry.Fc / (Fs/2) ,'low');
 
-SACCADE = [I , splitvars(table(num2cell(zeros(N.file,1))))]; % store saccade objects
-SACCADE.Properties.VariableNames(4) = {'head_saccade'};
+AmpT = table(amp*ones(size(I,1),1), 'VariableNames', {'amp'});
+SACCADE = [I , AmpT, splitvars(table(num2cell(zeros(N.file,1))))]; % store saccade objects
+SACCADE.Properties.VariableNames(5) = {'head_saccade'};
 HEAD_DATA = cell(N.fly,N.freq);
 HEAD_SACCADE_STATS = []; % store saccade stats
-for kk = 1:N.file
+for kk = 100:N.file
     disp(kk)
     % Load HEAD & DAQ data
 	load(fullfile(PATH.daq, [basename{kk} '.mat']),'data','t_p'); % load head angles % time arrays
@@ -96,7 +95,16 @@ for kk = 1:N.file
                                 head.min_pkdist, head.min_pkwidth, head.min_pkprom, ...
                                 head.min_pkthresh, head.boundThresh, head.showplot);
     head_saccade = stimSaccade(head_saccade, pat.pos, false); % with approximate pattern position
-    SACCADE{kk,4} = {head_saccade}; % store data in cell
+    SACCADE{kk,5} = {head_saccade}; % store data in cell
+    
+    if head_saccade.count > 10
+        test = saccade_all(head.pos_filt, tintrp, head.thresh, head.true_thresh, head.Fc_detect, ...
+                                head.Fc_ss, head.amp_cut, direction, head.pks, head.sacd_length, ...
+                                head.min_pkdist, head.min_pkwidth, head.min_pkprom, ...
+                                head.min_pkthresh, head.boundThresh, true);
+      	pause
+        close all
+    end
     
     if head_saccade.count == 0
         rep = 1;
@@ -105,7 +113,7 @@ for kk = 1:N.file
         rep = head_saccade.count;
     end
     VTable = table(D.freq(kk),'VariableNames',{'Freq'});
-    ITable = [I(kk,:),VTable];
+    ITable = [I(kk,:),VTable, table(amp,'VariableNames',{'amp'})];
     ITable = repmat(ITable,rep,1);
     HEAD_SACCADE_STATS = [HEAD_SACCADE_STATS ; [ITable , head_saccade.SACD]];
     

@@ -43,10 +43,10 @@ head.boundThresh = 0.25;
 
 % WING saccade detection parameters
 wing.showplot = false;
-wing.Fc_detect = [4 0.5];
-wing.Fc_ss = [4 nan];
+wing.Fc_detect = [5 0.5];
+wing.Fc_ss = [5 nan];
 wing.amp_cut = 7;
-wing.thresh = 25;
+wing.thresh = 40;
 wing.sacd_length = nan;
 wing.pks = [];
 wing.min_pkdist = 0.5;

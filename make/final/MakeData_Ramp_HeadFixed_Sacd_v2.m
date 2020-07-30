@@ -16,7 +16,7 @@ filename = 'Ramp_HeadFixed_SACCD_Anti';
 % Setup Directories
 PATH.daq  = rootdir; % DAQ data location
 PATH.vid  = fullfile(PATH.daq,''); % video data location
-PATH.wing = fullfile(PATH.vid,'wing_filt', 'tracked_wing'); % tracked kinematic data location
+PATH.wing = fullfile(PATH.vid,'wing_filt', 'tracked_wing_new'); % tracked kinematic data location
 
 % Select files
 [D,I,N,U,T,~,~,basename] = GetFileData(PATH.wing,'*.csv',false,'fly','trial','vel');
@@ -33,15 +33,18 @@ wing.Fc_detect = [5 nan];
 wing.Fc_ss = [5 nan];
 wing.amp_cut = 7;
 wing.thresh = 40;
+wing.true_thresh = [];
 wing.sacd_length = nan;
 wing.pks = [];
 wing.min_pkdist = 0.5;
-wing.min_pkwidth = 0.1;
+wing.min_pkwidth = 0.03;
 wing.min_pkprom = 20;
 wing.min_pkthresh = 0;
 wing.boundThresh = 0.35;
 wing.Fc = 8;
 [wing.b, wing.a] = butter(3, wing.Fc / (Fs/2) ,'low');
+wing_carry.Fc = 40;
+[wing_carry.b, wing_carry.a] = butter(3, wing_carry.Fc / (Fs/2) ,'low');
 
 Vel = U.vel{1}; % velocities
 Stim = (Vel*tintrp')'; % stimuli
@@ -68,14 +71,16 @@ for kk = 1:N.file
     wing.left       = rad2deg(interp1(trig.time, wing.left, tintrp, 'pchip'));
     wing.right      = rad2deg(interp1(trig.time, wing.right, tintrp, 'pchip'));
     wing.dwba       = wing.left - wing.right;
-
-    wing.left_filt  = filtfilt(wing.b, wing.a, wing.left);
-    wing.right_filt = filtfilt(wing.b, wing.a, wing.right);
-    wing.dwba_filt 	= wing.left_filt - wing.right_filt;
+    wing.dwba       = filtfilt(wing_carry.b, wing_carry.a, wing.dwba);
+    wing.dwba_vel   = diff(wing.dwba) * Fs;
+    wing.dwba_vel   = [wing.dwba_vel(1) ; wing.dwba_vel];
+    wing.left_filt	= filtfilt(wing.b, wing.a, wing.left);
+    wing.right_filt	= filtfilt(wing.b, wing.a, wing.right);
+    wing.dwba_filt	= wing.left_filt - wing.right_filt;
 
     % Extract wing saccades
-    wing_saccade = saccade_all(wing.dwba_filt, tintrp, wing.thresh, wing.Fc_detect, wing.Fc_ss, ...
-                            wing.amp_cut, direction, wing.pks, wing.sacd_length, ...
+    wing_saccade = saccade_all(wing.dwba_filt, tintrp, wing.thresh, wing.true_thresh, wing.Fc_detect, ...
+                            wing.Fc_ss, wing.amp_cut, direction, wing.pks, wing.sacd_length, ...
                             wing.min_pkdist, wing.min_pkwidth, wing.min_pkprom, ...
                             wing.min_pkthresh, wing.boundThresh, wing.showplot);
     wing_saccade.extra.dwba = wing.dwba; % carry unfiltered dwba singal
@@ -84,6 +89,13 @@ for kk = 1:N.file
         pause
         close all
     end
+    
+%     figure (100) ; cla ; hold on
+%     plot(wing.dwba, 'k', 'LineWidth', 0.5)
+%     plot(wing.dwba_filt, 'r', 'LineWidth', 1)
+%     ylim(50*[-1 1])
+%     xlim([1 1000])
+%     pause
 
     % Store data in cells
     SACCADE{kk,4} = {wing_saccade};
@@ -102,8 +114,8 @@ end
 
 
 %% SAVE %%
-% disp('Saving...')
-% save(['H:\DATA\Rigid_Data\' filename '_' datestr(now,'mm-dd-yyyy') '.mat'],...
-%       'PATH','WING_DATA','SACCADE','WING_SACCADE_STATS','FLY','GRAND','Stim','D','I','U','N','T','-v7.3')
-% disp('SAVING DONE')
+disp('Saving...')
+save(['H:\DATA\Rigid_Data\' filename '_' datestr(now,'mm-dd-yyyy') '.mat'],...
+      'PATH','WING_DATA','SACCADE','WING_SACCADE_STATS','Stim','D','I','U','N','T','-v7.3')
+disp('SAVING DONE')
 end

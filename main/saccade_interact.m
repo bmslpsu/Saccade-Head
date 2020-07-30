@@ -214,15 +214,15 @@ classdef saccade_interact
                 end
             end
             
-            % Remove false detections
-            reverse_cond = isnan(peaks) | (out.direction*peaks < 100);
-            if any(reverse_cond)
-                warning('Possible false detection')
-            end
-            pos_out(:,reverse_cond) = nan;
-            vel_out(:,reverse_cond) = nan;
-            time(:,reverse_cond) = nan;
-            time_align(:,reverse_cond) = nan;
+%             % Remove false detections
+%             reverse_cond = isnan(peaks) | (out.direction*peaks < 100);
+%             if any(reverse_cond)
+%                 warning('Possible false detection')
+%             end
+%             pos_out(:,reverse_cond) = nan;
+%             vel_out(:,reverse_cond) = nan;
+%             time(:,reverse_cond) = nan;
+%             time_align(:,reverse_cond) = nan;
        end
         
        function [obj] = pull_sync(obj, in, out, win_sync, win, dirflag)

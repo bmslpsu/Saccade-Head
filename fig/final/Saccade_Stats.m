@@ -6,9 +6,7 @@ root = 'H:\DATA\Rigid_Data\';
 [FILE,PATH] = uigetfile({'*.mat', 'DAQ-files'}, ...
     'Select head angle trials', root, 'MultiSelect','off');
 
-load(fullfile(PATH,FILE),'SACCADE','HEAD_SACCADE_STATS','U','N')
-
-% clearvars -except clms CC Vel PATH COUNT SACCADE SACCADE_STATS FLY GRAND Stim D I U N
+load(fullfile(PATH,FILE),'SACCADE','HEAD_SACCADE_STATS','WING_SACCADE_STATS','U','N')
 
 n_speed = N.vel/2;
 CC = repmat(hsv(n_speed),2,1);

@@ -144,8 +144,8 @@ end
 disp('Done')
 
 %%
-files = 1;
-keepI = cellfun(@(x) isstruct(x) | isobject(x), SACCADE.head2body);
+name = 'head2wing_align_wing';
+keepI = cellfun(@(x) isstruct(x) | isobject(x), SACCADE.(name));
 Saccade = SACCADE(keepI,:);
 Saccade = Saccade(:,:);
 
@@ -153,18 +153,20 @@ velI = Saccade.vel;
 cw = velI <= 5;
 clear Head Body Time
 
-Time.align = cellfun(@(x) x.interval.time_align, Saccade.head2body, 'UniformOutput', false);
+name = 'head2wing_align_wing';
+
+Time.align = cellfun(@(x) x.interval.time_align, Saccade.(name), 'UniformOutput', false);
 Time.align = nanmean(cat(2,Time.align{:}),2);
 
-Head.pos = cellfun(@(x) x.interval_rel.in.pos , Saccade.head2body, 'UniformOutput', false);
-Head.vel = cellfun(@(x) x.interval_rel.in.vel , Saccade.head2body, 'UniformOutput', false);
+Head.pos = cellfun(@(x) x.interval.in.pos , Saccade.(name), 'UniformOutput', false);
+Head.vel = cellfun(@(x) x.interval.in.vel , Saccade.(name), 'UniformOutput', false);
 Head.pos(cw) = cellfun(@(x) -x , Head.pos(cw), 'UniformOutput', false);
 Head.vel(cw) = cellfun(@(x) -x , Head.vel(cw), 'UniformOutput', false);
 Head = structfun(@(x) cat(2,x{:}), Head, 'UniformOutput', false);
 Head.stats = structfun(@(x) basic_stats(x,2), Head, 'UniformOutput', false);
 
-Body.pos = cellfun(@(x) x.interval.out.pos , Saccade.head2body, 'UniformOutput', false);
-Body.vel = cellfun(@(x) x.interval.out.vel , Saccade.head2body, 'UniformOutput', false);
+Body.pos = cellfun(@(x) x.interval_rel.out.pos , Saccade.(name), 'UniformOutput', false);
+Body.vel = cellfun(@(x) x.interval_rel.out.vel , Saccade.(name), 'UniformOutput', false);
 Body.pos(cw) = cellfun(@(x) -x , Body.pos(cw), 'UniformOutput', false);
 Body.vel(cw) = cellfun(@(x) -x , Body.vel(cw), 'UniformOutput', false);
 Body = structfun(@(x) cat(2,x{:}), Body, 'UniformOutput', false);
@@ -202,7 +204,7 @@ set(ax(2), 'YLim', [-600 1600])
 linkaxes(ax,'x')
 
 %%
-TD = cellfun(@(x) x.TimeDiff, Saccade.head2body, 'UniformOutput', false);
+TD = cellfun(@(x) x.TimeDiff, Saccade.(name), 'UniformOutput', false);
 TD = cat(1,TD{:});
 
 

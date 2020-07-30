@@ -181,7 +181,7 @@ classdef saccade_all
                 filter_lo_hi(obj, position_new_filt, obj.Fc_ss);
             
             obj.median.abs_velocity	= median(abs(obj.velocity_filt_detect ));	% median absolute velocity
-            obj.std.abs_velocity 	= std(abs(obj.velocity_filt_detect ));      % STD absolute velocity
+            obj.std.abs_velocity 	= std((obj.velocity_filt_detect ));      % STD absolute velocity
             
             % Calculate saccade detcetion threshold
             if threshold(1) < 0 % calculate threshold based on # of standard deviations from mean
@@ -934,7 +934,7 @@ classdef saccade_all
             end
         end
         
-        function [scds,ints] = getSaccade(obj,new_signal)
+        function [scds,ints] = getSaccade(obj, new_signal)
             % getSaccade: use start/stop times of saccades to pullout saccade and 
             %             interval data from an external signal
             %  

@@ -33,11 +33,11 @@ Fs = 200; % sampling frequency [s]
 tintrp = (0:(1/Fs):(10 - 1/Fs))'; % time vector for interpolation
 
 % HEAD saccade detection parameters
-head.showplot = false;
+head.showplot = true;
 head.Fc_detect = [10 nan];
 head.Fc_ss = [40 nan];
 head.amp_cut = 4;
-head.thresh = 80;
+head.thresh = [80];
 head.true_thresh = 250;
 head.sacd_length = nan;
 head.pks = [];
@@ -53,7 +53,7 @@ head_carry.Fc = 60;
 wing.showplot = false;
 wing.Fc_detect = [5 nan];
 wing.Fc_ss = [5 nan];
-wing.amp_cut = 7;
+wing.amp_cut = 10;
 wing.thresh = 40;
 wing.true_thresh = [];
 wing.sacd_length = nan;
@@ -63,7 +63,7 @@ wing.min_pkwidth = 0.03;
 wing.min_pkprom = 20;
 wing.min_pkthresh = 0;
 wing.boundThresh = 0.35;
-wing.Fc = 5;
+wing.Fc = 8;
 [wing.b, wing.a] = butter(3, wing.Fc / (Fs/2) ,'low');
 wing_carry.Fc = 40;
 [wing_carry.b, wing_carry.a] = butter(3, wing_carry.Fc / (Fs/2) ,'low');
@@ -82,7 +82,7 @@ for kk = 1:N.file
     load(fullfile(PATH.head, [basename{kk} '.mat']),'hAngles'); % load head angles % time arrays
  
   	% Sync frames and get pattern data
-	[trig,~] = sync_pattern_trigger(t_p, data(:,2), 10, data(:,1), true, 1, true, false);
+	[trig,pat] = sync_pattern_trigger(t_p, data(:,2), 10, data(:,1), true, 1, true, false);
     
     % Get head data
     head.pos = interp1(trig.time_sync, hAngles, tintrp, 'pchip');
@@ -122,10 +122,16 @@ for kk = 1:N.file
         benifly = ImportBenifly(wfile); % load wing angles
         
         % Get wing data
-        wing.left       = hampel(trig.time_sync, benifly.LWing);
-        wing.right      = hampel(trig.time_sync, benifly.RWing);
-        wing.left       = rad2deg(interp1(trig.time, wing.left, tintrp, 'pchip'));
-        wing.right      = rad2deg(interp1(trig.time, wing.right, tintrp, 'pchip'));
+        wing.left       = rad2deg(hampel(trig.time_sync, benifly.LWing));
+        wing.right      = rad2deg(hampel(trig.time_sync, benifly.RWing));
+        wing.left       = interp1(trig.time, wing.left, tintrp, 'pchip');
+        wing.right      = interp1(trig.time, wing.right, tintrp, 'pchip');
+
+        %wing.left       = hampel(pat.time_sync, data(:,4));
+        %wing.right      = hampel(pat.time_sync, data(:,5));
+        %wing.left       = interp1(pat.time_sync, wing.left, tintrp, 'pchip');
+        %wing.right      = interp1(pat.time_sync, wing.right, tintrp, 'pchip');
+
         wing.dwba       = wing.left - wing.right;
         wing.dwba       = filtfilt(wing_carry.b, wing_carry.a, wing.dwba);
         wing.dwba_vel   = diff(wing.dwba) * Fs;
@@ -141,6 +147,8 @@ for kk = 1:N.file
                                 wing.min_pkthresh, wing.boundThresh, wing.showplot);
      	wing_saccade.extra.dwba = wing.dwba; % carry unfiltered dwba singal
         wing_saccade.extra.dwba_vel = wing.dwba_vel; % carry unfiltered dwba velocity singal
+        wing_saccade.extra.lwing = wing.left; % carry unfiltered left wba singal
+        wing_saccade.extra.rwing = wing.right; % carry unfiltered left wba singal
         
         if wing_saccade.count == 0
             rep = 1;
@@ -159,12 +167,20 @@ for kk = 1:N.file
             close all
         end
         
+%         figure (100) ; cla ; hold on
+%         plot(tintrp, wing.dwba, 'k', 'LineWidth', 0.5)
+%         plot(tintrp, wing.dwba_filt, 'r', 'LineWidth', 1)
+%         ylim(50*[-1 1])
+%         xlim([-0.2 tintrp(end)])
+%         pause
+        
         if head_saccade.count > 0
             head2wing = head_wing_saccade_cc(head_saccade, wing_saccade, 0.15, 0.5, 0.5, false, false);
-            head2wing_align_wing = head_wing_saccade_cc(head_saccade, wing_saccade, 0.15, 0.5, 0.5, true, false);
+            %head2wing_align_wing = head_wing_saccade_cc(head_saccade, wing_saccade, 0.15, 0.5, 0.5, true, false);
+            head2wing_all = saccade_interact(head_saccade, wing_saccade, 0.5, 0.1, true);
             %pause
         	SACCADE{kk,7} = {head2wing};
-            SACCADE{kk,8} = {head2wing_align_wing};
+            SACCADE{kk,8} = {head2wing_all};
         end
     end
 end
