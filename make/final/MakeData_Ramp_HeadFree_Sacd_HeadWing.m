@@ -23,8 +23,8 @@ PATH.head = fullfile(PATH.vid,'tracked_head'); % tracked kinematic data location
 PATH.wing = fullfile(PATH.vid,'wing_filt', 'tracked_head_wing'); % tracked kinematic data location
 
 % Select files
-[D,I,N,U,T,~,~,basename] = GetFileData(PATH.head,'*.mat',false,'fly','trial','vel','wave');
-% [D,I,N,U,T,~,~,basename] = GetFileData(PATH.wing,'*.csv',false,'fly','trial','vel','wave');
+% [D,I,N,U,T,~,~,basename] = GetFileData(PATH.head,'*.mat',false,'fly','trial','vel','wave');
+[D,I,N,U,T,~,~,basename] = GetFileData(PATH.wing,'*.csv',false,'fly','trial','vel','wave');
 
 %% Get Data %%
 clc
@@ -33,7 +33,7 @@ Fs = 200; % sampling frequency [s]
 tintrp = (0:(1/Fs):(10 - 1/Fs))'; % time vector for interpolation
 
 % HEAD saccade detection parameters
-head.showplot = true;
+head.showplot = false;
 head.Fc_detect = [10 nan];
 head.Fc_ss = [40 nan];
 head.amp_cut = 4;
@@ -75,7 +75,7 @@ SACCADE.Properties.VariableNames(5:8) = {'head_saccade','wing_saccade','head2win
 HEAD_DATA = cell(N.fly,N.vel);
 HEAD_SACCADE_STATS = []; % store saccade stats
 WING_SACCADE_STATS = []; % store saccade stats
-for kk = 1:N.file
+for kk = 50:N.file
     disp(kk)
     % Load HEAD & DAQ data
 	load(fullfile(PATH.daq, [basename{kk} '.mat']),'data','t_p'); % load head angles % time arrays
@@ -112,6 +112,13 @@ for kk = 1:N.file
     
     if head.showplot
         figure (1)
+        pause
+        close all
+    end
+    
+    if any(head_saccade.SACD.Duration > 0.09)
+        plotSaccade(head_saccade)
+        plotInterval(head_saccade)
         pause
         close all
     end
@@ -166,19 +173,12 @@ for kk = 1:N.file
             pause
             close all
         end
-        
-%         figure (100) ; cla ; hold on
-%         plot(tintrp, wing.dwba, 'k', 'LineWidth', 0.5)
-%         plot(tintrp, wing.dwba_filt, 'r', 'LineWidth', 1)
-%         ylim(50*[-1 1])
-%         xlim([-0.2 tintrp(end)])
-%         pause
-        
+
         if head_saccade.count > 0
-            head2wing = head_wing_saccade_cc(head_saccade, wing_saccade, 0.15, 0.5, 0.5, false, false);
+            head2wing = head_wing_saccade_cc(head_saccade, wing_saccade, 0.15, 0.5, 0.5, false, true);
             %head2wing_align_wing = head_wing_saccade_cc(head_saccade, wing_saccade, 0.15, 0.5, 0.5, true, false);
             head2wing_all = saccade_interact(head_saccade, wing_saccade, 0.5, 0.1, true);
-            %pause
+            pause
         	SACCADE{kk,7} = {head2wing};
             SACCADE{kk,8} = {head2wing_all};
         end

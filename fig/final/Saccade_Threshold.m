@@ -5,9 +5,9 @@ root = 'H:\DATA\Rigid_Data\';
 [FILE,PATH] = uigetfile({'*.mat', 'DAQ-files'}, ...
     'Select head angle trials', root, 'MultiSelect','off');
 
-load(fullfile(PATH,FILE),'SACCADE','U','N')
+load(fullfile(PATH,FILE),'SACCADE','HEAD_SACCADE_STATS','U','N')
 
-clearvars -except U N SACCADE
+clearvars -except U N SACCADE HEAD_SACCADE_STATS
 
 %% Velocity Histogram
 n_speed = N.vel/2;
@@ -65,7 +65,7 @@ ax(1) = subplot(1,1,1); hold on
     xlabel('Head Velocity (°/s)')
     ylabel('Probability')
     
-thresh = 300;
+thresh = 3*std(head.vel_all(:));
 plot(thresh*[-1 -1],[0 ax.YLim(2)], 'm', 'LineWidth', 1)
 plot(thresh*[ 1  1],[0 ax.YLim(2)], 'm', 'LineWidth', 1)
 set(ax, 'LineWidth', 1.5, 'FontSize', 8, 'Box', 'on', 'XLim', 1000*[-1 1], 'YLim', [-0.005 ax.YLim(2)])
@@ -98,12 +98,12 @@ head.pos_std = cellfun(@(x) std(x,[],'all'), head.pos, 'UniformOutput', true);
 fig = figure (1) ; clf
 set(fig, 'Color', 'w','Units', 'inches', 'Position', [2 2 4 6])
 ax = gobjects(N.vel,1);
-bins = -20:0.5:20;
+bins = -20:1:20;
 % bins = [-1000:50:-350 -350:5:350 350:50:1000];
 pp = 1;
 for v = [1 6 2 7 3 8 4 9 5 10]
     ax(v) = subplot(N.vel/2,2,pp); hold on ; title([ num2str(Vel(v)) '(°/s)'])
-        h = histogram(head.pos{v} - mean(head.pos{v}), bins, 'Normalization', 'probability', ...
+        h = histogram(head.pos{v}, bins, 'Normalization', 'probability', ...
             'FaceColor', CC(v,:), 'FaceAlpha', 1, 'EdgeColor', 'none');
         xlabel('Position (°)')
         ylabel('Probability')
@@ -116,9 +116,23 @@ set(ax, 'LineWidth', 1.5, 'Box', 'on', 'XLim', 25*[-1 1], 'YLim', [-0.005 ax(1).
 fig = figure (2) ; clf
 set(fig, 'Color', 'w', 'Units', 'inches', 'Position', [3 3 3 3])
 clear ax
+
+start_pos = -HEAD_SACCADE_STATS.StartPos.*HEAD_SACCADE_STATS.Direction;
+start_pos = start_pos(~isnan(start_pos));
+end_pos = -HEAD_SACCADE_STATS.EndPos.*HEAD_SACCADE_STATS.Direction;
+end_pos = end_pos(~isnan(end_pos));
+
 ax(1) = subplot(1,1,1); hold on
-    h = histogram(head.pos_all - mean(head.pos_all), bins, 'Normalization', 'probability', ...
+    h(1) = histogram(head.pos_all, bins, 'Normalization', 'probability', ...
         'FaceColor', 'k', 'FaceAlpha', 1, 'EdgeColor', 'none');
+%     for s = [1,6]
+%         histogram(head.pos{s}, bins, 'Normalization', 'probability', ...
+%             'FaceColor', CC(s,:), 'FaceAlpha', 0.5, 'EdgeColor', 'none');
+    h(2) = histogram(start_pos, bins, 'Normalization', 'probability', ...
+        'FaceColor', 'g', 'FaceAlpha', 0.5, 'EdgeColor', 'none');
+    h(3) = histogram(end_pos, bins, 'Normalization', 'probability', ...
+        'FaceColor', 'r', 'FaceAlpha', 0.5, 'EdgeColor', 'none');
+    
     xlabel('Head Position (°)')
     ylabel('Probability')
     

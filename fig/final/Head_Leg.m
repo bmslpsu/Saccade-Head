@@ -13,7 +13,7 @@ clearvars -except U N SACCADE
 leg_thresh = 0.9;
 n_speed = N.vel/2;
 n_trial = size(SACCADE,1);
-sacd_leg_ratio = cell(N.fly,n_speed);
+sacd_leg = cell(N.fly,n_speed);
 vel_idx = SACCADE.vel;
 vel_idx(vel_idx > n_speed) = vel_idx(vel_idx > n_speed) - n_speed; % speeds
 for n = 1:n_trial
@@ -27,27 +27,67 @@ for n = 1:n_trial
         sacd_locs = false(length(all_times),1); % saccade class vector
         sacd_locs(sacd_idx) = true; % classify saccades
         sacd_class = sacd_locs & leg_class; % saccades during leg extension
-        sacd_leg_ratio{SACCADE.fly(n),vel_idx(n)}(end+1,1) = length(sacd_idx); % # of saccades in trial
+        sacd_leg{SACCADE.fly(n),vel_idx(n)}(end+1,1) = length(sacd_idx); % # of saccades in trial
         
-        pp = size(sacd_leg_ratio{SACCADE.fly(n),vel_idx(n)},1);
-        sacd_leg_ratio{SACCADE.fly(n),vel_idx(n)}(pp,2) = sum(sacd_class); % # of saccades occuring with leg extension
-        sacd_leg_ratio{SACCADE.fly(n),vel_idx(n)}(pp,3) = sum(leg_class); % leg extension data points
-        sacd_leg_ratio{SACCADE.fly(n),vel_idx(n)}(pp,4) = length(leg_class); % total data points
+        pp = size(sacd_leg{SACCADE.fly(n),vel_idx(n)},1);
+        sacd_leg{SACCADE.fly(n),vel_idx(n)}(pp,2) = sum(sacd_class); % # of saccades occuring with leg extension
+        sacd_leg{SACCADE.fly(n),vel_idx(n)}(pp,3) = sum(leg_class); % leg extension data points
+        sacd_leg{SACCADE.fly(n),vel_idx(n)}(pp,4) = length(leg_class); % total data points
+        sacd_leg{SACCADE.fly(n),vel_idx(n)}(pp,5) = sum(sacd_class) / length(sacd_idx); % percent saccd during leg extension
+        sacd_leg{SACCADE.fly(n),vel_idx(n)}(pp,6) = sum(leg_class) / length(leg_class); % percent leg extension per trial
     else
         % no saccades
     end
 end
 
-comb_vel_sacd_leg_percent = cell(N.fly,1);
+comb_vel_sacd_leg = cell(N.fly,1);
 for f = 1:N.fly
-   comb_vel_sacd_leg_percent{f} = cat(1,sacd_leg_ratio{f,:}); % combine speeds 
+   comb_vel_sacd_leg{f} = cat(1,sacd_leg{f,:}); % combine speeds 
 end
 
-percent_leg_ext = cellfun(@(x) 100*sum(x(:,3))/sum(x(:,4)), sacd_leg_ratio, 'UniformOutput', true);
-percent_leg_ext_stats = basic_stats(percent_leg_ext,1);
+comb_fly_sacd_leg = cell(n_speed,1);
+for v = 1:n_speed
+   comb_fly_sacd_leg{v} = cat(1,sacd_leg{:,v}); % combine speeds 
+end
 
-percet_sacd_leg_ext = cellfun(@(x) 100 * sum(x(:,2)) / sum(x(:,1)), comb_vel_sacd_leg_percent, 'UniformOutput', true);
-percet_sacd_leg_ext_stats = basic_stats(percet_sacd_leg_ext,1);
+percent_leg_ext = cellfun(@(x) 100*sum(x(:,3))/sum(x(:,4)), sacd_leg, 'UniformOutput', true);
+percent_leg_ext_stats = basic_stats(percent_leg_ext,1);
+percent_leg_ext_trial = cat(1,comb_fly_sacd_leg{:});
+
+percent_sacd_leg_ext = cellfun(@(x) 100 * sum(x(:,2)) / sum(x(:,1)), comb_vel_sacd_leg, 'UniformOutput', true);
+percent_sacd_leg_ext_stats = basic_stats(percent_sacd_leg_ext,1);
+
+percent_sacd_leg_ext = cellfun(@(x) 100 * sum(x(:,2)) / sum(x(:,1)), comb_fly_sacd_leg, 'UniformOutput', true);
+
+vel_group = cellfun(@(x,y) y*ones(size(x,1),1), comb_fly_sacd_leg, num2cell(1:n_speed)', ...
+    'UniformOutput', false);
+vel_group = cat(1, vel_group{:});
+
+%% Percent Leg Extension
+fig = figure (1) ; clf
+set(fig, 'Color', 'w','Units', 'inches', 'Position', [2 2 2 2])
+ax(1) = subplot(1,1,1); cla ; hold on ; axis tight
+    speeds = U.vel{1}(1:n_speed);
+    CC = hsv(n_speed);
+
+    bx = boxplot(100*percent_leg_ext_trial(:,6), vel_group, 'Labels', {speeds}, ...
+        'Width', 0.5, 'Symbol', '.', 'Whisker', 2);
+    xlabel('Stimulus Speed (°/s)')
+    ylabel('Percentage Leg Extension')
+
+    h = get(bx(5,:),{'XData','YData'});
+    for kk = 1:size(h,1)
+       patch(h{kk,1},h{kk,2},CC(kk,:));
+    end
+
+    set(findobj(ax(1),'tag','Median'), 'Color', 'k','LineWidth',1.5);
+    set(findobj(ax(1),'tag','Box'), 'Color', 'none');
+    set(findobj(ax(1),'tag','Upper Whisker'), 'Color', 'k','LineStyle','-');
+    set(findobj(ax(1),'tag','Lower Whisker'), 'Color', 'k','LineStyle','-');
+    ax(1).Children = ax(1).Children([end 1:end-1]);
+    ylim([-5 100])
+
+    set(ax , 'LineWidth', 1, 'Box', 'off')
 
 %% Percent Leg Extension
 fig = figure (1) ; clf
@@ -59,11 +99,11 @@ ax(1) = subplot(1,1,1); cla ; hold on ; axis tight
 %     [h1,h2] = PlotPatch(percent_leg_ext_stats.mean, percent_leg_ext_stats.std, speeds, 1, 1, ...
 %         'k', [0.5 0.5 0.5], 0.5, 2);
 %     scatter(speeds, percent_leg_ext_stats.mean, 200, CC, '.');
-%     
-%     set(ax , 'LineWidth', 1, 'YLim', [0 100])
-%     xlabel('Stimulus Speed (°/s)')
-%     ylabel('Leg Extension Percent')
-%     xticks(speeds)
+    
+    set(ax , 'LineWidth', 1, 'YLim', [0 100])
+    xlabel('Stimulus Speed (°/s)')
+    ylabel('Leg Extension Percent')
+    xticks(speeds)
     
     bx = boxplot(percent_leg_ext, 'Labels', {speeds}, 'Width', 0.5, 'Symbol', '.', 'Whisker', 2);
     xlabel('Stimulus Speed (°/s)')
@@ -74,26 +114,21 @@ ax(1) = subplot(1,1,1); cla ; hold on ; axis tight
        patch(h{kk,1},h{kk,2},CC(kk,:));
     end
 
-    set(findobj(ax(1),'tag','Median'), 'Color', 'w','LineWidth',1.5);
+    set(findobj(ax(1),'tag','Median'), 'Color', 'k','LineWidth',1.5);
     set(findobj(ax(1),'tag','Box'), 'Color', 'none');
     set(findobj(ax(1),'tag','Upper Whisker'), 'Color', 'k','LineStyle','-');
     set(findobj(ax(1),'tag','Lower Whisker'), 'Color', 'k','LineStyle','-');
     ax(1).Children = ax(1).Children([end 1:end-1]);
-    %ax(1).YLim(1) = -0.1;
-    %ax(1).YLim(2) = ylim_list(1);
-
-
-%% Percent Leg Extension Violin
-
-        [h(pp),L,~,~,bw(pp)] = violin(int_times{v}, 'facecolor', vel_color(v,:), ...
-                                    'mc', 'k', 'medc', 'g');
+    ylim([-5 100])
 
 
 %% Percent Leg Extension Saccades
 fig = figure (2) ; clf
 set(fig, 'Color', 'w','Units', 'inches', 'Position', [2 2 2 2])
 ax(1) = subplot(1,1,1); cla ; hold on ; axis tight   
-    bx = boxplot(percet_sacd_leg_ext, 'Width', 0.5, 'Symbol', '.', 'Whisker', 2);
+    %bx = boxplot(percent_sacd_leg_ext, 'Width', 0.5, 'Symbol', '.', 'Whisker', 2);
+    bx = boxplot(100*percent_leg_ext_trial(:,5), vel_group, 'Width', 0.5, 'Symbol', '.', 'Whisker', 2);
+    
     ylabel('Saccades During Leg Extension (%)')
 
     h = get(bx(5,:),{'XData','YData'});
@@ -101,7 +136,7 @@ ax(1) = subplot(1,1,1); cla ; hold on ; axis tight
        patch(h{kk,1},h{kk,2}, [0.5 0.5 0.5]);
     end
 
-    set(findobj(ax(1),'tag','Median'), 'Color', 'w','LineWidth',1.5);
+    set(findobj(ax(1),'tag','Median'), 'Color', 'k','LineWidth',1.5);
     set(findobj(ax(1),'tag','Box'), 'Color', 'none');
     set(findobj(ax(1),'tag','Upper Whisker'), 'Color', 'k','LineStyle','-');
     set(findobj(ax(1),'tag','Lower Whisker'), 'Color', 'k','LineStyle','-');

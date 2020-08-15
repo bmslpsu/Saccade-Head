@@ -87,6 +87,8 @@ for v = 1:nvel/2
     for k = 1:size(head.grand(v).(get_fields(f)),2)
         head.grand(v).('pos')(:,k) = head.grand(v).('pos')(:,k) - ...
             mean(head.grand(v).('pos')(:,k));
+        head.grand(v).('pos_desync')(:,k) = head.grand(v).('pos_desync')(:,k) - ...
+            mean(head.grand(v).('pos_desync')(:,k));
     end
     
     for f = 1:length(stats_fields)

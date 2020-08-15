@@ -8,7 +8,7 @@ function [] = MakeData_Sine_HeadFree_Sacd(amp,direction)
 %       -
 %
 
-amp = 15;
+amp = 18.75;
 direction = 0; % get saccades in all directions
 
 switch direction
@@ -43,7 +43,7 @@ Fs = 200; % sampling frequency [s]
 tintrp = (0:(1/Fs):(10 - 1/Fs))'; % time vector for interpolation
 
 % HEAD saccade true parameters
-head.showplot = false;
+head.showplot = true;
 head.Fc_detect = [10 nan];
 head.Fc_ss = [40 nan];
 head.amp_cut = 4;
@@ -64,8 +64,9 @@ SACCADE = [I , AmpT, splitvars(table(num2cell(zeros(N.file,1))))]; % store sacca
 SACCADE.Properties.VariableNames(5) = {'head_saccade'};
 HEAD_DATA = cell(N.fly,N.freq);
 HEAD_SACCADE_STATS = []; % store saccade stats
-for kk = 100:N.file
+for kk = 116:N.file
     disp(kk)
+    disp(basename{kk})
     % Load HEAD & DAQ data
 	load(fullfile(PATH.daq, [basename{kk} '.mat']),'data','t_p'); % load head angles % time arrays
     load(fullfile(PATH.head, [basename{kk} '.mat']),'hAngles'); % load head angles % time arrays

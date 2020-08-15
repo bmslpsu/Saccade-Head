@@ -201,7 +201,7 @@ for jj = 1:FLY.nframe % for each frame
         else
             win = jj;
         end
-        Frame.raw = median(FLY.raw(:,:,win),3); % current raw frame median across frames
+        Frame.raw = 1.5*median(FLY.raw(:,:,win),3); % current raw frame median across frames
         
         % Display raw video
         subplot(2,4,[1:2,5:6]); cla; hold on; axis image

@@ -682,6 +682,9 @@ classdef saccade_all
         % normSaccade: align saccades to peak time & align intervals to
         % start and end time.
         %  
+        
+            int_varnames = {'IntTime','IntAmp','IntRange','IntMeanVel'};
+            int_after_varnames = cellstr(string(int_varnames) + "_after");
             if obj.count~=0 % if there are any saccades
                 % Normalize saccade times to saccade peak times
                 obj.normpeak_saccade.time = cellfun(@(x,y) x.Time - y, obj.saccades, ...
@@ -740,15 +743,28 @@ classdef saccade_all
                 
                 obj.norm_interval.position_stats = basic_stats(obj.norm_interval.position,2);
 
-                % Get interval times
+                % Get interval times, ampltitudes, & range
                 obj.normstart_interval.endidx = sum(~isnan(obj.normstart_interval.time));
                 
                 zeroIdx = obj.normstart_interval.endidx(1,:) == 0;
                 obj.normstart_interval.endidx(zeroIdx) = obj.normstart_interval.endidx(zeroIdx) + 1;
                 
-                IntTime = table(max(obj.normstart_interval.time(obj.normstart_interval.endidx,:))',...
-                    'VariableNames',{'IntTime'});
-                obj.SACD = [obj.SACD , IntTime];
+                IntTime = max(obj.normstart_interval.time(obj.normstart_interval.endidx,:))';
+                IntRange = range(obj.norm_interval.position,1)';
+                IntMeanVel = nanmean(obj.norm_interval.velocity,1)';
+                
+                IntAmp = nan(obj.count,1);
+                for ww = 1:obj.count
+                    IntAmp(ww,1) = obj.normstart_interval.position(obj.normstart_interval.endidx(ww),ww);
+                end
+                
+                Int_All = table(IntTime, IntAmp, IntRange, IntMeanVel, ...
+                    'VariableNames', int_varnames);
+                
+                Int_All_after = circshift(Int_All, -1, 1);
+                Int_All_after.Properties.VariableNames = int_after_varnames;
+                
+                obj.SACD = [obj.SACD , Int_All, Int_All_after];
 
                 %-------------------------------------------
 
@@ -774,8 +790,10 @@ classdef saccade_all
                 obj.normend_interval.position_stats = basic_stats(obj.normstart_interval.position,2);
                 obj.normend_interval.velocity_stats = basic_stats(obj.normstart_interval.velocity,2);
             else
-             	IntTime = table(nan,'VariableNames',{'IntTime'});
-                obj.SACD = [obj.SACD , IntTime];
+                all_varnames = [int_varnames, int_after_varnames];
+                Int_All = splitvars(table(nan(size(all_varnames))));
+             	Int_All.Properties.VariableNames = all_varnames;
+                obj.SACD = [obj.SACD , Int_All];
                 obj = setDeafults(obj);
             end
         end
@@ -928,9 +946,9 @@ classdef saccade_all
                 
             else
                 % Saccade table
-                obj.SACD = splitvars(table([obj.SACD , splitvars(table(nan(1,5)))]));
-                obj.SACD.Properties.VariableNames = [obj.tablenames, ...
-                    {'IntTime','ErrorPos','ErrorVel','IntErrorPos','IntErrorVel','CoAnti'}];
+                err_table = table(nan, nan, nan, nan, nan, 'VariableNames', ...
+                     {'ErrorPos','ErrorVel','IntErrorPos','IntErrorVel','CoAnti'});
+                obj.SACD = [obj.SACD , err_table];
             end
         end
         

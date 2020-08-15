@@ -36,6 +36,7 @@ head.Fc_detect = [10 nan];
 head.Fc_ss = [30 nan];
 head.amp_cut = 4;
 head.thresh = 70;
+head.true_thresh = 100;
 head.sacd_length = nan;
 head.pks = [];
 head.min_pkdist = 0.05;
@@ -50,6 +51,7 @@ body.Fc_detect = [10 nan];
 body.Fc_ss = [30 nan];
 body.amp_cut = 7;
 body.thresh = 50;
+body.true_thresh = 100;
 body.sacd_length = nan;
 body.pks = [];
 body.min_pkdist = 0.05;
@@ -85,22 +87,22 @@ for kk = 1:N.file
     % Extract saccades
     direction = -sign(D.vel(kk)); % only get saccades in the opposite direction of visual motion
     %direction = 0;
-    head_saccade = saccade_all(head.pos, tintrp, head.thresh, head.Fc_detect, head.Fc_ss, head.amp_cut, ...
-                                direction, head.pks, head.sacd_length, ...
+    head_saccade = saccade_all(head.pos, tintrp, head.thresh, head.true_thresh, head.Fc_detect, ...
+                                head.Fc_ss, head.amp_cut, direction, head.pks, head.sacd_length, ...
                                 head.min_pkdist, head.min_pkwidth, head.min_pkprom, ...
                                 head.min_pkthresh, head.boundThresh, head.showplot);
     head_saccade = stimSaccade(head_saccade, Stim(:,I.vel(kk)), false);
     
     % Extract body saccades
-    body_saccade = saccade_all(body.pos, tintrp, body.thresh, body.Fc_detect, body.Fc_ss, ...
-                            body.amp_cut, direction, body.pks, body.sacd_length, ...
+    body_saccade = saccade_all(body.pos, tintrp, body.thresh, body.true_thresh, body.Fc_detect, ...
+                            body.Fc_ss, body.amp_cut, direction, body.pks, body.sacd_length, ...
                             body.min_pkdist, body.min_pkwidth, body.min_pkprom, ...
                             body.min_pkthresh, body.boundThresh, body.showplot);
  	body_saccade = stimSaccade(body_saccade, Stim(:,I.vel(kk)), false);
     
     % Store saccade objects
     SACCADE.head_saccade(kk) = {head_saccade};
-    SACCADE.body_saccade(kk)  = {body_saccade};
+    SACCADE.body_saccade(kk) = {body_saccade};
 
     % Create STAT tables
     if head_saccade.count == 0
@@ -144,7 +146,7 @@ end
 disp('Done')
 
 %%
-name = 'head2wing_align_wing';
+name = 'head2body';
 keepI = cellfun(@(x) isstruct(x) | isobject(x), SACCADE.(name));
 Saccade = SACCADE(keepI,:);
 Saccade = Saccade(:,:);
@@ -153,20 +155,20 @@ velI = Saccade.vel;
 cw = velI <= 5;
 clear Head Body Time
 
-name = 'head2wing_align_wing';
+name = 'head2body';
 
 Time.align = cellfun(@(x) x.interval.time_align, Saccade.(name), 'UniformOutput', false);
 Time.align = nanmean(cat(2,Time.align{:}),2);
 
-Head.pos = cellfun(@(x) x.interval.in.pos , Saccade.(name), 'UniformOutput', false);
-Head.vel = cellfun(@(x) x.interval.in.vel , Saccade.(name), 'UniformOutput', false);
+Head.pos = cellfun(@(x) x.interval_rel.in.pos , Saccade.(name), 'UniformOutput', false);
+Head.vel = cellfun(@(x) x.interval_rel.in.vel , Saccade.(name), 'UniformOutput', false);
 Head.pos(cw) = cellfun(@(x) -x , Head.pos(cw), 'UniformOutput', false);
 Head.vel(cw) = cellfun(@(x) -x , Head.vel(cw), 'UniformOutput', false);
 Head = structfun(@(x) cat(2,x{:}), Head, 'UniformOutput', false);
 Head.stats = structfun(@(x) basic_stats(x,2), Head, 'UniformOutput', false);
 
-Body.pos = cellfun(@(x) x.interval_rel.out.pos , Saccade.(name), 'UniformOutput', false);
-Body.vel = cellfun(@(x) x.interval_rel.out.vel , Saccade.(name), 'UniformOutput', false);
+Body.pos = cellfun(@(x) x.interval.out.pos , Saccade.(name), 'UniformOutput', false);
+Body.vel = cellfun(@(x) x.interval.out.vel , Saccade.(name), 'UniformOutput', false);
 Body.pos(cw) = cellfun(@(x) -x , Body.pos(cw), 'UniformOutput', false);
 Body.vel(cw) = cellfun(@(x) -x , Body.vel(cw), 'UniformOutput', false);
 Body = structfun(@(x) cat(2,x{:}), Body, 'UniformOutput', false);

@@ -7,7 +7,7 @@ root = 'H:\DATA\Rigid_Data\';
 
 load(fullfile(PATH,FILE),'SACCADE','U','N')
 
-clearvars -except clms CC Vel PATH COUNT SACCADE SACCADE_STATS FLY GRAND Stim D I U N
+clearvars -except SACCADE D I U N
 
 %% Land %%
 Vel = U.vel{1};
@@ -26,13 +26,12 @@ head_data = filtfilt(b, a, head_data);
 leg_data = cellfun(@(x) max(x,[],2), SACCADE.leg, 'UniformOutput', false);
 leg_data = cat(2,leg_data{:});
 leg_class = leg_data > leg_thresh;
-% leg_class_filt = leg_data;
 leg_class_filt = logical(ceil(medfilt2(double(leg_class),[100,1])));
 
 stable_head = head_data;
 land_head = head_data;
-stable_head(leg_class_filt) = nan;
-land_head(~leg_class_filt) = nan;
+stable_head(~leg_class_filt) = nan;
+land_head(leg_class_filt) = nan;
 
 stable_head_vel = cell(n_vel,1);
 land_head_vel = cell(n_vel,1);
@@ -58,14 +57,14 @@ land_ratio = cellfun(@(x,y) length(y) / (length(x) + length(y)), stable_head_vel
                             land_head_vel, 'UniformOutput', true);
 
 vel_idx = 1:5;
-stable_head_all = cat(1,land_head_vel{vel_idx});
-land_head_all = cat(1,stable_head_vel{vel_idx});
+stable_head_all = cat(1,stable_head_vel{vel_idx});
+land_head_all = cat(1,land_head_vel{vel_idx});
 
 %% Speeds
 fig = figure (1) ; clf
 set(fig, 'Color', 'w','Units', 'inches', 'Position', [2 2 3 8])
 ax = gobjects(N.vel/2,1);
-bins = 0:5:300;
+bins = -300:5:300;
 bins = -25:0.5:25;
 pp = 1;
 for v = 1:n_vel/2
@@ -89,11 +88,11 @@ set(ax, 'LineWidth', 1.5, 'Box', 'on', 'YLim', [-0.005 ax(1).YLim(2)])
 fig = figure (2) ; clf
 set(fig, 'Color', 'w','Units', 'inches', 'Position', [2 2 3 3])
 bins = -300:5:300;
-bins = 0:0.5:25;
+bins = -25:1:25;
 ax = subplot(1,1,1); hold on
-    h_stable = histogram(abs(stable_head_all), bins, 'Normalization', 'probability', ...
+    h_stable = histogram(stable_head_all, bins, 'Normalization', 'probability', ...
         'FaceColor', 'k', 'FaceAlpha', 0.5, 'EdgeColor', 'none');
-    h_land = histogram(abs(land_head_all), bins, 'Normalization', 'probability', ...
+    h_land = histogram(land_head_all, bins, 'Normalization', 'probability', ...
         'FaceColor', 'r', 'FaceAlpha', 0.5, 'EdgeColor', 'none');
 
     xlabel('Position (°)')
@@ -101,8 +100,10 @@ ax = subplot(1,1,1); hold on
     
     ylabel('Probability')
     axis tight
+    xlim(25*[-1 1])
+    xticks([-25:5:25])
     
-    legend('Landing State', 'Stabilizing State')
+    %legend('Landing State', 'Stabilizing State')
 
 set(ax, 'LineWidth', 1.5, 'Box', 'on', 'YLim', [-0.005 1.1*ax(1).YLim(2)])
 

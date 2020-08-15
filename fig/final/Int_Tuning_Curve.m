@@ -163,6 +163,10 @@ for kk = 1:n_plot
         set(findobj(ax(kk),'tag','Lower Whisker'), 'Color', 'k','LineStyle','-');
         ax(kk).Children = ax(kk).Children([end 1:end-1]); 
         ax(kk).YLim = ylim_list(kk,:);
+        
+        if any(kk == [2,4])
+            plot(1:n_speed, Speed, '--k')
+        end
 end
 set(ax, 'LineWidth', 1, 'Box', 'off')
 
@@ -172,12 +176,13 @@ set(fig, 'Color', 'w', 'Units', 'inches', 'Position', [2 2 6 2])
 clear ax h
 ax = gobjects(1,1);
 h = gobjects(n_speed,1);
-edges = (-0.2:0.1:3)+0.001;
+edges = (-0.2:0.1:8)+0.001;
 pp = 1;
 int_times = cell(n_speed,1);
 for v = 1:n_speed
     for n = 1:n_wave
         data = wave_data{n}.Int.all.time_end{v}(:);
+        data = data(~isnan(data));
         int_times{v} = [int_times{v} ; data];
     end
     
@@ -191,7 +196,7 @@ linkaxes(ax, 'xy')
 
 set(ax, 'LineWidth', 1)
 axis tight
-% set(ax,'YLim', [-0.01 0.6])
+set(ax,'YLim', [-0.005 0.11])
 YLabelHC = get(ax(1), 'YLabel');
 set([YLabelHC], 'String', 'Probability')
 XLabelHC = get(ax(1), 'XLabel');
@@ -200,7 +205,7 @@ set(ax(2:end),'XTickLabels',[],'YTickLabels',[])
 
 %% Interval Times Violin
 fig = figure (7); clf
-set(fig, 'Color', 'w', 'Units', 'inches', 'Position', [2 2 6 5])
+set(fig, 'Color', 'w', 'Units', 'inches', 'Position', [2 2 7 4])
 clear ax h bw
 ax = gobjects(1,1);
 h = gobjects(n_speed,1);
@@ -210,6 +215,7 @@ int_times = cell(n_speed,1);
 for v = 1:n_speed
     for n = 1:n_wave
         data = wave_data{n}.Int.all.time_end{v}(:);
+        data = data(~isnan(data));
         int_times{v} = [int_times{v} ; data];
     end
     
@@ -228,7 +234,7 @@ linkaxes(ax, 'xy')
 
 set(ax, 'LineWidth', 1, 'Box', 'off')
 axis tight
-set(ax,'YLim', [-0.5 4])
+set(ax,'YLim', [-0.5 3])
 YLabelHC = get(ax(1), 'YLabel');
 set([YLabelHC], 'String', 'Interval Times (s)')
 XLabelHC = get(ax(1), 'XLabel');

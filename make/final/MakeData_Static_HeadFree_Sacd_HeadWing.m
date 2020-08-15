@@ -122,6 +122,13 @@ for kk = 1:N.file
         close all
     end
     
+    if any(head_saccade.SACD.Duration > 0.09)
+        plotSaccade(head_saccade)
+        plotInterval(head_saccade)
+        pause
+        close all
+    end
+    
 	% Load WING data if we have it
     wfile = fullfile(PATH.wing, [basename{kk} '.csv']);
     if exist(wfile,'file') == 2
@@ -167,10 +174,10 @@ for kk = 1:N.file
         
         if head_saccade.count > 0
             head2wing = head_wing_saccade_cc(head_saccade, wing_saccade, 0.15, 0.5, 0.5, false, false);
-            head2wing_align_wing = head_wing_saccade_cc(head_saccade, wing_saccade, 0.15, 0.5, 0.5, true, false);
+            %head2wing_align_wing = head_wing_saccade_cc(head_saccade, wing_saccade, 0.15, 0.5, 0.5, true, false);
             %pause
         	SACCADE{kk,7} = {head2wing};
-            SACCADE{kk,8} = {head2wing_align_wing};
+            %SACCADE{kk,8} = {head2wing_align_wing};
         end
     end
 end
@@ -190,7 +197,7 @@ norm_fields_stats = string(norm_fields) + "_stats";
 
 center = 0; % normalization center for saccades & inter-saccade intervals
 dim = 1; % dimension to center
-dim_stats = 2; % dimension for statistics
+dim_stats = 2; % dimension for statisticsHEAD_SACCADE_STATS
 
 FLY = []; % all trials per speed per fly
 GRAND = []; % all trials per speed
