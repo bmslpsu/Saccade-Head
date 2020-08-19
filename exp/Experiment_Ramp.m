@@ -10,8 +10,7 @@ function [] = Experiment_Ramp(Fn)
 %% Set directories & experimental parameters
 daqreset
 imaqreset
-%root = 'C:\BC\Rigid_data\Experiment_Ramp_Head_Fixed';
-root = 'C:\BC\Rigid_data\Experiment_Ramp_forRoll';
+root = 'C:\BC\Rigid_data\Experiment_Ramp_Head_Fixed';
 
 % EXPERIMENTAL PARAMETERS
 speed = 30;                 % stimulus speed [°/s]
@@ -20,7 +19,7 @@ n_tracktime = 10 + 1;       % length(func)/fps; seconds for each EXPERIMENT
 n_resttime = 1;             % seconds for each REST
 n_pause = 0.2;              % seconds for each pause between panel commands
 n_rep = 15;                	% number of cycles through spatial frequencies for each fly
-FPS = 200;                  % camera frame rate
+FPS = 100;                  % camera frame rate
 nFrame = FPS*n_tracktime;   % # of frames to log
 Gain = 550;               	% camera gain
 Fs = 5000;                  % DAQ sampling rate [Hz]
@@ -78,10 +77,12 @@ for kk = 1:n_trial
 
     % START EXPERIMENT & DATA COLLECTION %
     queueOutputData(s,TRIG) % set trigger AO signal
-    T = timer('StartDelay',0.7,'TimerFcn',@(src,evt) Panel_com('start'));
+    T = timer('StartDelay',0.5,'TimerFcn',@(src,evt) Panel_com('start'));
     start(T)
     tic
+        %Panel_com('start')  % run trial
         [data, t_p ] = s.startForeground; % data collection
+        Panel_com('stop') % stop stimulus
         stop(vid) % stop video buffer
         Panel_com('stop')
    	toc

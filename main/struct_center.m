@@ -11,12 +11,13 @@ function [comb_struct] = struct_center(struct_array, center, even, dim, varargin
 %       center          :   center value for normalization parameter
 %       even            :   (boolean) for even padding around center
 %       dim             :   dimension to operate on
+%       min_sz          :   minimium size for nan padding
 %   
 %   OUTPUT:
 %       comb_struct  	:   combined structure array
 %
 %   Usage:
-%       comb_struct = struct_center(struct_array, 0, true, 1, {'field_1',field_2',... ,'field_n'})
+%       comb_struct = struct_center(struct_array, 0, true, 1, [], {'field_1',field_2',... ,'field_n'})
 %
 
 % Get field names in stucture
@@ -26,7 +27,7 @@ fnames = string(fieldnames(struct_array));
 if nargin == 5 % only specified fields
     norm_fname = string(varargin{1}{1});
     cent_fname = string(varargin{1}(2:end))';
-elseif nargin < 5 % use all fields in structure
+elseif nargin < 5 % minsz not specified, use default
     norm_fname = fnames(1);
     cent_fname = fnames(2:end);
     if nargin < 4
@@ -84,7 +85,7 @@ nan_cond = all(nan_cond);
 if ~nan_cond
     if ~isempty(field_norm{1})
         [comb_struct.(norm_fname),~,~,~,dR] = nancat_center(field_norm, center, dim, [], even);
-
+        
         % Center other fields
         for kk = 1:n_cent
             field_cent = {struct_array.(cent_fname(kk))}';

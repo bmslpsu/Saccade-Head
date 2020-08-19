@@ -95,7 +95,7 @@ FLY.Fc      = 15; % cut off frequency for lpf
 [b,a]       = butter(2,FLY.Fc/(FLY.Fs/2),'low'); % make lpf
 FLY.head    = filtfilt(b,a,head_data.hAngles); % head angles [deg]
 % FLY.head    = filtfilt(b,a,rad2deg(benifly_data.Head)); % head angles [deg]
-% FLY.head    = FLY.head - mean(FLY.head); % head angles [deg]
+FLY.head    = FLY.head - mean(FLY.head); % head angles [deg]
 FLY.lwing   = rad2deg(hampel(FLY.time,benifly_data.LWing)); % left wing angles [deg]
 FLY.rwing   = rad2deg(hampel(FLY.time,benifly_data.RWing)); % right wing angles [deg]
 FLY.lwing   = filtfilt(b,a,FLY.lwing); % left wing angles [deg]
@@ -113,6 +113,15 @@ FLY.int_rwing  	= FLY.rwing(TRIG.range);
 FLY.int_wba     = FLY.wba(TRIG.range);
 FLY.int_rwing  	= FLY.rwing(TRIG.range);
 PAT.norm        = 3.75*(PAT.pos_exp - mean(PAT.pos_exp));
+
+
+PAT.Fs = 1 / mean(diff(PAT.time_sync));
+PAT.Fc = 12*1.5;
+[PAT.b,PAT.a] = butter(3, PAT.Fc / (PAT.Fs/2),'low');
+PAT.pos_filt = filtfilt(PAT.b, PAT.a, PAT.pos);
+PAT.int_pos_filt = interp1(PAT.time_sync, PAT.pos_filt, TRIG.time_sync_exp, 'pchip');
+PAT.int_norm_filt = 0.99*3.75*(PAT.int_pos_filt - mean(PAT.int_pos_filt));
+% plot(PAT.int_norm_filt)
 
 %% Get video data
 FLY.raw = squeeze(vid_data.vidData(:,:,TRIG.range)); % raw video data
@@ -243,7 +252,7 @@ for jj = 1:FLY.nframe % for each frame
     % Head plot
     subplot(2,4,[3:4]); hold on
         addpoints(h.head, FLY.int_time(jj), FLY.int_head(jj))
-        addpoints(h.pat, FLY.int_time(jj), PAT.norm(jj))
+        addpoints(h.pat, FLY.int_time(jj), PAT.int_norm_filt(jj))
 
    	% WBA plot
 	subplot(2,4,[7:8]); hold on

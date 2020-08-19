@@ -21,7 +21,7 @@ export = true;
 vidFs = 50;
 rootdir = 'H:\EXPERIMENTS\RIGID\Experiment_Static_Wave';
 rootpat = 'C:\Users\BC\Box\Git\Arena\Patterns';
-pat_ypos = 5;
+% pat_ypos = 5;
 
 if ~isfolder(rootdir)
     dirflag = false;
@@ -101,7 +101,7 @@ FLY.rwing   = filtfilt(b,a,FLY.rwing); % right wing angles [deg]
 FLY.wba     = FLY.lwing - FLY.rwing; % delta wing-beat-amplitude [deg]
 [b,a]       = butter(2,20/(FLY.Fs/2),'low'); % make lpf
 FLY.wba     = filtfilt(b,a,FLY.wba); % delta wing-beat-amplitude [deg]
-FLY.wba     = FLY.wba - mean(FLY.wba); % delta wing-beat-amplitude [deg]
+% FLY.wba     = FLY.wba - mean(FLY.wba); % delta wing-beat-amplitude [deg]
 
 % Normalize fly kinematics for experimental window
 FLY.int_time    = TRIG.time_sync_exp; % video time
@@ -201,7 +201,7 @@ for jj = 1:FLY.nframe % for each frame
         else
             win = jj;
         end
-        Frame.raw = median(FLY.raw(:,:,win),3); % current raw frame median across frames
+        Frame.raw = 1.5*median(FLY.raw(:,:,win),3); % current raw frame median across frames
         
         % Display raw video
         subplot(2,4,[1:2,5:6]); cla; hold on; axis image

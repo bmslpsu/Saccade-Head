@@ -5,9 +5,9 @@ root = 'H:\DATA\Rigid_Data\';
 [FILE,PATH] = uigetfile({'*.mat', 'DAQ-files'}, ...
     'Select head angle trials', root, 'MultiSelect','off');
 
-load(fullfile(PATH,FILE),'PATH','COUNT','SACCADE','SACCADE_STATS','FLY','GRAND','Stim','D','I','U','N')
+load(fullfile(PATH,FILE),'SACCADE','HEAD_SACCADE_STATS','FLY','GRAND','Stim','D','I','U','N')
 
-clearvars -except clms CC Vel PATH COUNT SACCADE SACCADE_STATS FLY GRAND Stim D I U N
+% clearvars -except clms CC Vel PATH COUNT SACCADE SACCADE_STATS FLY GRAND Stim D I U N
 
 %% Saccade Trigger Polar Plot
 FIG = figure (1) ; clf
@@ -19,24 +19,24 @@ movegui(FIG,'center')
 FIG.Color = 'w';
 clear ax
 
-stim_dir = sign(SACCADE_STATS.Vel);
+stim_dir = sign(HEAD_SACCADE_STATS.Vel);
 CW  = stim_dir ==  1;
 CCW = stim_dir == -1;
 
 edges = deg2rad(-20:1:20);
 
 ax(1) = subplot(1,2,1,polaraxes); grid off ; axis tight
-    h(1) = polarhistogram(deg2rad(SACCADE_STATS.StartPos(CW)),edges,...
+    h(1) = polarhistogram(deg2rad(HEAD_SACCADE_STATS.StartPos(CW)),edges,...
         'FaceColor','g','FaceAlpha',0.9,'Normalization','Probability'); hold on
-    h(2) = polarhistogram(deg2rad(SACCADE_STATS.EndPos(CW)),'BinEdges', edges, ...
+    h(2) = polarhistogram(deg2rad(HEAD_SACCADE_STATS.EndPos(CW)),'BinEdges', edges, ...
         'FaceColor','r','FaceAlpha',0.9,'Normalization','Probability');
     title('CW Stimulus Direction   ===>')
     ax(1).ThetaAxis.Label.String = 'Head Position (°)';
     
 ax(2) = subplot(1,2,2,polaraxes); grid off ; axis tight
-    h(3) = polarhistogram(deg2rad(SACCADE_STATS.StartPos(CCW)),'BinEdges', edges, ...
+    h(3) = polarhistogram(deg2rad(HEAD_SACCADE_STATS.StartPos(CCW)),'BinEdges', edges, ...
         'FaceColor','g','FaceAlpha',0.9,'Normalization','Probability'); hold on
-    h(4) = polarhistogram(deg2rad(SACCADE_STATS.EndPos(CCW)),'BinEdges', edges, ...
+    h(4) = polarhistogram(deg2rad(HEAD_SACCADE_STATS.EndPos(CCW)),'BinEdges', edges, ...
         'FaceColor','r','FaceAlpha',0.9,'Normalization','Probability');
     title('CCW Stimulus Direction  <===')
     ax(2).ThetaAxis.Label.String = 'Head Position (°)';
@@ -68,18 +68,18 @@ movegui(FIG,'center')
 FIG.Color = 'w';
 clear ax h
 
-stim_dir = sign(SACCADE_STATS.Vel);
+stim_dir = sign(HEAD_SACCADE_STATS.Vel);
 CW  = stim_dir ==  1;
 CCW = stim_dir == -1;
 edges = deg2rad(-20:1:20);
 
 ax(1) = subplot(1,1,1,polaraxes); grid off ; axis tight
-    Trig_Positive = [ SACCADE_STATS.StartPos(CW); -SACCADE_STATS.StartPos(CCW)];
-    Trig_Negative = [ SACCADE_STATS.EndPos(CW);  -SACCADE_STATS.EndPos(CCW)];
+    Trig_Positive = [ HEAD_SACCADE_STATS.StartPos(CW); -HEAD_SACCADE_STATS.StartPos(CCW)];
+    Trig_Negative = [ HEAD_SACCADE_STATS.EndPos(CW);  -HEAD_SACCADE_STATS.EndPos(CCW)];
     h(1) = polarhistogram(deg2rad(Trig_Positive),edges,...
-        'FaceColor','g','FaceAlpha',0.9,'Normalization','Probability'); hold on
+        'FaceColor','g','FaceAlpha',0.5,'Normalization','Probability'); hold on
     h(2) = polarhistogram(deg2rad(Trig_Negative),'BinEdges', edges, ...
-        'FaceColor','r','FaceAlpha',0.9,'Normalization','Probability');
+        'FaceColor','r','FaceAlpha',0.5,'Normalization','Probability');
     title('CW Stimulus Direction   ===>')
     ax(1).ThetaAxis.Label.String = 'Head Position (°)';
     
@@ -87,7 +87,7 @@ set(h,'EdgeColor','none')
 set(ax,'FontSize',8);
 set(ax,'Color','w');
 set(ax,'ThetaLim',[-20 20]);
-set(ax,'RLim',[0 0.12]);
+set(ax,'RLim',[0 0.1]);
 set(ax,'ThetaDir','clockwise')
 set(ax,'ThetaTick',-20:10:20);
 set(ax,'ThetaZeroLocation','top');
