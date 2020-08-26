@@ -8,7 +8,7 @@ load(fullfile(PATH,FILE),'SACCADE','Stim','D','I','U','N')
 
 n_speed = N.vel/2;
 
-%% Active Tracking vs Landing Behavior %%
+%% Revmoved Saccade Example Trial
 % clearvars -except clms CC Vel PATH COUNT SACCADE
 
 FIG = figure (1) ; clf
@@ -21,16 +21,9 @@ FIG.Color = 'w';
 clear ax h
 sacd_color = [0.5 0.5 0.5];
 
-active_switch = 309;
-land = 24;
-active_30 = 100;
-active_60 = 150;
-active_90 = 265;
-
-idx = 116; % 6-9, 2-58
+idx = 1; % 6-9, 2-58
 trial = SACCADE.head_saccade{idx};
 trial_wing = SACCADE.wing_saccade{idx};
-% [wing_sacd, wing_ints] = getSaccade(trial_wing, trial_wing.extra.dwba);
 
 ax(1) = subplot(4,1,1) ; hold on ; title(['Stimulus: ' num2str(D.vel(idx)) ' (°/s)'])
     ylabel('Position (°)')

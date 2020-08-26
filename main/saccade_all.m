@@ -425,6 +425,7 @@ classdef saccade_all
                 if isnan(obj.sacd_length) % automatically find start and ends of saccades
                     if size(pks,2) == 3  % starts and ends are specified
                         obj.starts.index = pks(:,1);
+                        obj.peaks.index = pks(:,2);
                         obj.ends.index = pks(:,3);
                     else
                         for ww = 1:obj.count % every saccade
@@ -952,26 +953,66 @@ classdef saccade_all
             end
         end
         
-        function [scds,ints] = getSaccade(obj, new_signal)
-            % getSaccade: use start/stop times of saccades to pullout saccade and 
-            %             interval data from an external signal
+        function [scds,ints,scd_time,int_time] = getSaccade(obj, new_signal, scd_win, int_win)
+            % getSaccade: use start/stop times of saccades to pullout saccade and interval data from an 
+            %             external signal
+            %
+            %   new_signal: new signal
+            %   scd_win:    optional window around each saccade peak to pullout data. If not given then just use
+            %               saccade start/end points
+            %   int_win:    optional window from start of each interval peak to pullout data. If not given then just use
+            %               saccade start/end points
             %  
             
+            if nargin < 4
+                int_win = [];
+                if nargin < 3
+                    scd_win = [];
+                end
+            end
+            
             assert(obj.n == length(new_signal), 'Signal must be same length as saccade object''s signal')
+            scd_winI = round(obj.Fs * scd_win); % saccade window size in samples
+            int_winI = round(obj.Fs * int_win); % interval window size in samples
             scds = cell(obj.count,1);
             ints = cell(obj.count,1);
+          	scd_time = cell(obj.count,1);
+            int_time = cell(obj.count,1);
             for ww = 1:obj.count
-                scds{ww} = new_signal(obj.saccades{ww}.Index);
-                
+                if isempty(scd_win)
+                    scdI = obj.saccades{ww}.Index; % start to stop of each saccade
+                    scds{ww} = new_signal(scdI);
+                    scd_time{ww} = ( (scdI - obj.SACD.PeakIdx(ww)) * obj.Ts )';
+                else
+                    I = (obj.SACD.PeakIdx(ww) - scd_winI) : (obj.SACD.PeakIdx(ww) + scd_winI);
+                   	outI = (I < 1) | (I > obj.n);
+                    scdI = I(~outI);
+                    scd_time{ww} = ( (I - obj.SACD.PeakIdx(ww)) * obj.Ts )';
+                    scd_time{ww}(outI) = nan;
+                    scds{ww} = nan(length(I),1);
+                    scds{ww}(~outI) = new_signal(scdI);
+                end
+
                 if ww == 1
                     nanflag = nan;
                 else
                     nanflag = 1;
                 end
                 
-                ints{ww} = nanflag * new_signal(obj.intervals{ww}.Index);
+                if isempty(int_win)
+                    intI = obj.intervals{ww}.Index; % start to stop of each interval
+                    ints{ww} = nanflag * new_signal(intI);
+                    int_time{ww} = obj.Ts * (0:length(ints{ww})-1)';
+                else
+                    I = obj.intervals{ww}.Index(1) : (obj.intervals{ww}.Index(1) + int_winI);
+                   	outI = (I < 1) | (I > obj.n);
+                    intI = I(~outI);
+                    int_time{ww} = ( (I - obj.intervals{ww}.Index(1)) * obj.Ts )';
+                    int_time{ww}(outI) = nan;
+                    ints{ww} = nan(length(I),1);
+                    ints{ww}(~outI) = nanflag * new_signal(intI);
+                end
             end
-        
         end
         
         function plotSaccade(obj)

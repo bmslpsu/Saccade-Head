@@ -248,16 +248,19 @@ showplot = false;
 Fc = 2;
 [b,a] = butter(3, Fc/(Fs/2), 'low');
 Int.fly_mean.Prop = [];
-sat_thresh = 10;
+sat_thresh = 5;
 for v = 1:n_speed
     for f = 1:N.fly
         % Get signal and filter
         time_nan = Int.fly_mean.all.time{v};
+        pos_nan = Int.fly_mean.all.pos{v}(:,f);
         vel_nan = Int.fly_mean.all.vel{v}(:,f);
         
         endI = sum(~isnan(vel_nan));
+        pos = pos_nan(1:endI);
         vel = vel_nan(1:endI);
         time = time_nan(1:endI);
+        pos_filt = filtfilt(b, a, pos);
         vel_filt = filtfilt(b, a, vel);
         
         % Detect peaks
@@ -281,6 +284,7 @@ for v = 1:n_speed
         % Get data after and before filtered peak
         idx_after = round(peak_time_filt*Fs):endI;
         time_after = time(idx_after);
+        pos_after = pos_filt(idx_after);
         vel_filt_after = vel_filt(idx_after);
         
         % Find saturation time
@@ -290,11 +294,13 @@ for v = 1:n_speed
             [~,sat_idx] = min(vel_filt_after);
         end
         sat_time = time_after(sat_idx);
+        sat_pos = pos_after(sat_idx);
         sat_vel = vel_filt_after(sat_idx);
         
         % Find saturation time and initial time
-        start_idx = round(find(vel > 0, 1, 'first'));
+        start_idx = round(find(vel > -5, 1, 'first'));
         start_time = time(start_idx);
+        start_pos = pos(start_idx);
         start_vel = vel(start_idx);
         
         % Pull out stabilizing reigon and find mean velocity
@@ -305,9 +311,13 @@ for v = 1:n_speed
         vel_stable(idx_stable) = vel(idx_stable);
         mean_vel = nanmean(vel_stable);
         
+        if range(pos_filt)==0
+            disp('here')
+        end
+        
         if showplot
         figure (100)
-        ax = subplot(1,1,1) ; hold on ; cla ; set(ax, 'LineWidth', 1)
+        ax(1) = subplot(1,2,1) ; hold on ; cla
             plot(time, 0*time, 'Color', [0.5 0.5 0.5])
             plot(time, sat_thresh*ones(size(time)), 'g')
             
@@ -321,10 +331,18 @@ for v = 1:n_speed
             
             plot(start_time, start_vel, '.m', 'MarkerSize', 10)
             plot(sat_time, sat_vel, '.m', 'MarkerSize', 10)
-            
-            
-            xlim([0 3])
             ylim([-50 100])
+            
+        ax(2) = subplot(1,2,2) ; hold on ; cla
+            plot(time, pos, 'Color', 'k', 'LineWidth', 1)
+            plot(time, pos_filt, 'Color', 'b', 'LineWidth', 1)
+            plot(time_after, pos_after, '--', 'Color', 'r', 'LineWidth', 1)
+            plot(start_time, start_pos, '.m', 'MarkerSize', 10)
+            plot(sat_time, sat_pos, '.m', 'MarkerSize', 15)
+            
+            ylim(25*[-1 1])
+            
+       	set(ax, 'LineWidth', 1, 'XLim', [0 3])
             
             pause
         end
@@ -332,12 +350,15 @@ for v = 1:n_speed
       	% Store properties
         Int.fly_mean.Prop(v).peak_vel(f)        = peak_vel;
         Int.fly_mean.Prop(v).peak_time(f)       = peak_time;
+        Int.fly_mean.Prop(v).sat_pos(f)         = sat_pos;
         Int.fly_mean.Prop(v).sat_vel(f)         = sat_vel;
         Int.fly_mean.Prop(v).sat_time(f)        = sat_time;
         Int.fly_mean.Prop(v).start_vel(f)       = start_vel;
         Int.fly_mean.Prop(v).start_time(f)      = start_time;
         Int.fly_mean.Prop(v).vel_stable(:,f)  	= vel_stable;
         Int.fly_mean.Prop(v).time_stable(:,f) 	= time_stable;
+        Int.fly_mean.Prop(v).pos_range(:,f)  	= range(pos_filt);
+        Int.fly_mean.Prop(v).pos_amp(:,f)       = pos_filt(end) - start_pos;
         Int.fly_mean.Prop(v).mean_vel(f)        = mean_vel;
         Int.fly_mean.Prop(v).peak_gain(f)     	= peak_vel / Speed(v);
         Int.fly_mean.Prop(v).mean_gain(f)     	= mean_vel / Speed(v);   
