@@ -31,13 +31,14 @@ for ww = 1:n_plot
     data = abs(All_Stats.(stat_names(ww)));
     fly_mean = splitapply(@(x) nanmean(x,1), data, fly_vel_group);
     
-    bx = boxplot(data, vel_group_all, 'Labels', {Speed}, 'Width', 0.5, 'Symbol', '', 'Whisker', 2);
+    %bx = boxplot(data, vel_group_all, 'Labels', {Speed}, 'Width', 0.5, 'Symbol', '', 'Whisker', 2);
+    bx = boxplot(fly_mean, vel_group, 'Labels', {Speed}, 'Width', 0.5, 'Symbol', '', 'Whisker', 2);
     xlabel('Stimulus Speed (°/s)')
     ylabel(ylabel_names(ww))
 
     h = get(bx(5,:),{'XData','YData'});
     for kk = 1:size(h,1)
-       patch(h{kk,1},h{kk,2}, CC(kk,:));
+       patch(h{kk,1}, h{kk,2}, CC(kk,:),  'EdgeColor', 'none'););
     end
 
     set(findobj(ax(ww),'tag','Median'), 'Color', 'w','LineWidth',1.5);
@@ -67,7 +68,7 @@ ylabel('Frequency (Hz)')
 
 h = get(bx(5,:),{'XData','YData'});
 for kk = 1:size(h,1)
-   patch(h{kk,1},h{kk,2},CC(kk,:));
+   patch(h{kk,1}, h{kk,2}, CC(kk,:), 'EdgeColor', 'none'););
 end
 
 set(findobj(ax(ww),'tag','Median'), 'Color', 'w','LineWidth',1.5);
@@ -91,14 +92,14 @@ clear ax h
 stim_dir = sign(All_Stats.Vel);
 CW  = stim_dir ==  1;
 CCW = stim_dir == -1;
-edges = deg2rad(-20:1:20);
+edges = deg2rad(-25:1:25);
 
 ax(1) = subplot(1,1,1,polaraxes); grid off ; axis tight
-    Trig_Positive = [ -All_Stats.StartPos(CW); All_Stats.StartPos(CCW)];
-    Trig_Negative = [ -All_Stats.EndPos(CW);  All_Stats.EndPos(CCW)];
-    h(1) = polarhistogram(deg2rad(Trig_Positive),edges,...
+    Trig_Start = [ -All_Stats.StartPos(CW); All_Stats.StartPos(CCW)];
+    Trig_End = [ -All_Stats.EndPos(CW);  All_Stats.EndPos(CCW)];
+    h(1) = polarhistogram(deg2rad(Trig_Start),edges,...
         'FaceColor','g','FaceAlpha',0.5,'Normalization','Probability'); hold on
-    h(2) = polarhistogram(deg2rad(Trig_Negative),'BinEdges', edges, ...
+    h(2) = polarhistogram(deg2rad(Trig_End),'BinEdges', edges, ...
         'FaceColor','r','FaceAlpha',0.5,'Normalization','Probability');
     title('CW Stimulus Direction   ===>')
     ax(1).ThetaAxis.Label.String = 'Head Position (°)';
@@ -148,10 +149,11 @@ ax = gobjects(n_plot+1,1);
 for ww = 1:n_plot
     ax(ww) = subplot(1,n_plot+1,ww);  axis tight
     %data = All_Stats.Direction .* (All_Stats.(stat_names(ww)));
-    data = abs(All_Stats.(stat_names(ww)));
+    data = -All_Stats.Direction .* (All_Stats.(stat_names(ww)));
     fly_mean = splitapply(@(x) nanmean(x,1), data, fly_vel_group);
     
-    bx = boxplot(data, vel_group_all, 'Labels', {Speed}, 'Width', 0.5, 'Symbol', '', 'Whisker', 2);
+  	bx = boxplot(fly_mean, vel_group, 'Labels', {Speed}, 'Width', 0.5, 'Symbol', '', 'Whisker', 2);
+    %bx = boxplot(data, vel_group_all, 'Labels', {Speed}, 'Width', 0.5, 'Symbol', '', 'Whisker', 2);
     xlabel('Stimulus Speed (°/s)')
     ylabel(ylabel_names(ww))
 

@@ -38,20 +38,21 @@ PATH.head = fullfile(PATH.daq,'\Vid\tracked_head');
 
 %% Get Data %%
 clc
+close all
 disp('Loading...')
 Fs = 200; % sampling frequency [s]
 tintrp = (0:(1/Fs):(10 - 1/Fs))'; % time vector for interpolation
 
 % HEAD saccade true parameters
 head.showplot = true;
-head.Fc_detect = [10 nan];
-head.Fc_ss = [40 nan];
-head.amp_cut = 4;
-head.thresh = [-1.5 80];
-head.true_thresh = 250;
+head.Fc_detect = [15 nan];
+head.Fc_ss = [nan nan];
+head.amp_cut = 8;
+head.thresh = [90 1];
+head.true_thresh = 300;
 head.sacd_length = nan;
 head.pks = [];
-head.min_pkdist = 0.5;
+head.min_pkdist = 0.1;
 head.min_pkwidth = 0.03;
 head.min_pkprom = 75;
 head.min_pkthresh = 0;
@@ -64,7 +65,7 @@ SACCADE = [I , AmpT, splitvars(table(num2cell(zeros(N.file,1))))]; % store sacca
 SACCADE.Properties.VariableNames(5) = {'head_saccade'};
 HEAD_DATA = cell(N.fly,N.freq);
 HEAD_SACCADE_STATS = []; % store saccade stats
-for kk = 116:N.file
+for kk = 1:N.file
     disp(kk)
     disp(basename{kk})
     % Load HEAD & DAQ data
@@ -91,21 +92,20 @@ for kk = 116:N.file
  	head.pos_filt = filtfilt(head_carry.b, head_carry.a, head.pos);
        
     % Extract head saccades
+    %head.Fc_detect = [1 + 1.2*D.freq(kk) nan];
     head_saccade = saccade_all(head.pos_filt, tintrp, head.thresh, head.true_thresh, head.Fc_detect, ...
                                 head.Fc_ss, head.amp_cut, direction, head.pks, head.sacd_length, ...
                                 head.min_pkdist, head.min_pkwidth, head.min_pkprom, ...
                                 head.min_pkthresh, head.boundThresh, head.showplot);
     head_saccade = stimSaccade(head_saccade, pat.pos, false); % with approximate pattern position
     SACCADE{kk,5} = {head_saccade}; % store data in cell
-    
-    if head_saccade.count > 10
-        test = saccade_all(head.pos_filt, tintrp, head.thresh, head.true_thresh, head.Fc_detect, ...
-                                head.Fc_ss, head.amp_cut, direction, head.pks, head.sacd_length, ...
-                                head.min_pkdist, head.min_pkwidth, head.min_pkprom, ...
-                                head.min_pkthresh, head.boundThresh, true);
-      	pause
-        close all
-    end
+%     
+%     if head_saccade.count > 8
+%         plotSaccade(head_saccade)
+%         plotInterval(head_saccade)
+%         pause
+%         close all
+%     end
     
     if head_saccade.count == 0
         rep = 1;

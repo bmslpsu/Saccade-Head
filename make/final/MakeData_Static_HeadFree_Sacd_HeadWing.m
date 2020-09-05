@@ -38,25 +38,26 @@ PATH.wing = fullfile(PATH.vid,'wing_filt', 'tracked_head_wing');
 
 %% Get Data %%
 clc
+close all
 disp('Loading...')
 Fs = 200; % sampling frequency [s]
 tintrp = (0:(1/Fs):(10 - 1/Fs))'; % time vector for interpolation
 
 % HEAD saccade detection parameters
-head.showplot = false;
+head.showplot = true;
 head.Fc_detect = [10 nan];
 head.Fc_ss = [40 nan];
 head.amp_cut = 4;
-head.thresh = 80;
+head.thresh = [70 1];
 head.true_thresh = 250;
 head.sacd_length = nan;
 head.pks = [];
 head.min_pkdist = 0.1;
 head.min_pkwidth = 0.03;
-head.min_pkprom = 75;
+head.min_pkprom = 20;
 head.min_pkthresh = 0;
 head.boundThresh = [0.25 50];
-head_carry.Fc = 60;
+head_carry.Fc = 40;
 [head_carry.b, head_carry.a] = butter(3, head_carry.Fc / (Fs/2) ,'low');
 
 % WING saccade detection parameters
@@ -68,14 +69,14 @@ wing.thresh = 40;
 wing.true_thresh = [];
 wing.sacd_length = nan;
 wing.pks = [];
-wing.min_pkdist = 0.5;
+wing.min_pkdist = 0.1;
 wing.min_pkwidth = 0.03;
 wing.min_pkprom = 20;
 wing.min_pkthresh = 0;
 wing.boundThresh = 0.35;
 wing.Fc = 8;
 [wing.b, wing.a] = butter(3, wing.Fc / (Fs/2) ,'low');
-wing_carry.Fc = 40;
+wing_carry.Fc = 25;
 [wing_carry.b, wing_carry.a] = butter(3, wing_carry.Fc / (Fs/2) ,'low');
 
 SACCADE = [I , splitvars(table(num2cell(zeros(N.file,4))))]; % store saccade objects
@@ -85,6 +86,7 @@ HEAD_SACCADE_STATS = []; % store saccade stats
 WING_SACCADE_STATS = []; % store saccade stats
 for kk = 1:N.file
     disp(kk)
+    %basename{kk}
     % Load HEAD & DAQ data
 	load(fullfile(PATH.daq, [basename{kk} '.mat']),'data','t_p'); % load head angles % time arrays
     load(fullfile(PATH.head, [basename{kk} '.mat']),'hAngles'); % load head angles % time arrays
@@ -99,6 +101,7 @@ for kk = 1:N.file
  	head.pos_filt = filtfilt(head_carry.b, head_carry.a, head.pos);
        
     % Extract head saccades
+    %med = median(abs(diff(head.pos_filt)*Fs));
     head_saccade = saccade_all(head.pos_filt, tintrp, head.thresh, head.true_thresh, head.Fc_detect, ...
                                 head.Fc_ss, head.amp_cut, direction, head.pks, head.sacd_length, ...
                                 head.min_pkdist, head.min_pkwidth, head.min_pkprom, ...
@@ -122,12 +125,12 @@ for kk = 1:N.file
         close all
     end
     
-    if any(head_saccade.SACD.Duration > 0.09)
-        plotSaccade(head_saccade)
-        plotInterval(head_saccade)
-        pause
-        close all
-    end
+%     if any(head_saccade.SACD.Duration > 0.09)
+%         plotSaccade(head_saccade)
+%         plotInterval(head_saccade)
+%         pause
+%         close all
+%     end
     
 	% Load WING data if we have it
     wfile = fullfile(PATH.wing, [basename{kk} '.csv']);
@@ -146,6 +149,12 @@ for kk = 1:N.file
         wing.left_filt	= filtfilt(wing.b, wing.a, wing.left);
         wing.right_filt	= filtfilt(wing.b, wing.a, wing.right);
         wing.dwba_filt	= wing.left_filt - wing.right_filt;
+        
+%         cla ; hold on
+%             plot(tintrp, head.pos_filt, 'k', 'LineWidth', 1)
+%             plot(tintrp, wing.dwba, 'r', 'LineWidth', 1)
+%             disp(basename{kk})
+%             pause
         
       	% Extract wing saccades
         wing_saccade = saccade_all(wing.dwba_filt, tintrp, wing.thresh, wing.true_thresh, wing.Fc_detect, ...

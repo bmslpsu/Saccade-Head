@@ -20,7 +20,7 @@ clear ; clc ; close all
 export = true;
 vidFs = 50;
 % rootdir = 'H:\EXPERIMENTS\RIGID\Experiment_Static_Wave';
-rootdir = 'H:\EXPERIMENTS\RIGID\Experiment_Asymmetry_Control_Verification\HighContrast\30';
+rootdir = 'H:\EXPERIMENTS\RIGID\Experiment_Asymmetry_Control_Verification\HighContrast\22.5';
 % rootdir = 'H:\EXPERIMENTS\RIGID\Experiment_Sinusoid\3.75';
 rootpat = 'C:\Users\BC\Box\Git\Arena\Patterns';
 pat_ypos = 5;
@@ -91,7 +91,7 @@ debug = false;
 %% Get kinematics data
 FLY.time    = TRIG.time_sync; % video time
 FLY.Fs      = round(1/mean(diff(FLY.time))); % video sampling rate
-FLY.Fc      = 15; % cut off frequency for lpf
+FLY.Fc      = 30; % cut off frequency for lpf
 [b,a]       = butter(2,FLY.Fc/(FLY.Fs/2),'low'); % make lpf
 FLY.head    = filtfilt(b,a,head_data.hAngles); % head angles [deg]
 % FLY.head    = filtfilt(b,a,rad2deg(benifly_data.Head)); % head angles [deg]

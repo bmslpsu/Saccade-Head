@@ -127,7 +127,7 @@ xlabel('Temporal Frequency (Hz)')
 ylabel('Peak Velocity (°s^{-1})')
 
 %% Interval Stats
-stat_names = ["peak_time","peak_vel","sat_time","mean_vel","mean_gain","peak_gain",];
+stat_names = ["peak_time","peak_vel","sat_time","mean_vel","mean_gain","peak_gain"];
 n_plot = length(stat_names);
 
 clear int_stats
@@ -240,5 +240,109 @@ set([YLabelHC], 'String', 'Interval Times (s)')
 XLabelHC = get(ax(1), 'XLabel');
 set([XLabelHC], 'String', 'Kernel Distribution')
 set(ax(2:end),'XTickLabels',[],'YTickLabels',[])
+
+%% Amplitude
+int_amp = cell(n_wave,1);
+int_amp_fly = cell(n_wave,1);
+for w = 1:n_wave
+    for v = 1:wave_data{w}.N.vel/2
+        for f = 1:wave_data{w}.N.fly
+            data = wave_data{w}.Int.pos{f,v};
+            endI = sum(~isnan(data),1);
+            endI = endI(endI ~= 0);
+            for c = 1:size(endI,2)
+                int_amp{w}{f,v}(1,c) = data(endI(c),c) - data(1,c);
+            end
+        end
+    end
+    int_amp_fly{w} = cellfun(@(x) mean(x,2), int_amp{w}, 'UniformOutput', true);
+end
+int_amp_fly = cat(1, int_amp_fly{:});
+
+fig = figure (8) ; clf
+set(fig, 'Color', 'w', 'Units', 'inches', 'Position', [2 2 2*1 1.5])
+clear ax h
+
+kk = 1;
+ax(kk) = subplot(1,1,kk) ; hold on
+    bx = boxplot(int_amp_fly, 'Width', 0.5, 'Symbol', '', 'Whisker', 2);
+    ylabel('Amplitude (°)')
+
+    h = get(bx(5,:),{'XData','YData'});
+    for v = 1:size(h,1)
+       patch(h{v,1},h{v,2},vel_color(v,:));
+    end
+
+    set(findobj(ax(kk),'tag','Median'), 'Color', 'w','LineWidth',1);
+    set(findobj(ax(kk),'tag','Box'), 'Color', 'none');
+    set(findobj(ax(kk),'tag','Upper Whisker'), 'Color', 'k','LineStyle','-');
+    set(findobj(ax(kk),'tag','Lower Whisker'), 'Color', 'k','LineStyle','-');
+    ax(kk).Children = ax(kk).Children([end 1:end-1]);
+    ylim([0 20])
+
+set(ax, 'LineWidth', 1, 'Box', 'off')
+
+%% Error
+error_win = round(0.5*200);
+n_vel = wave_data{1}.N.vel/2;
+Error = cell(n_wave,1);
+Error_fly = cell(n_wave,1);
+for w = 1:n_wave
+    for v = 1:n_vel
+        vel = wave_data{w}.U.vel{1}(v);
+        for f = 1:wave_data{w}.N.fly
+            time = wave_data{w}.Int.time{f,v};
+            error = vel - wave_data{w}.Int.vel{f,v};
+            endI = sum(~isnan(error),1);
+            endI = endI(endI ~= 0);
+            for c = 1:size(endI,2)
+                int_error = cumtrapz(error(:,c), time);
+                %Error{w}{f,v}(1,c) = int_error(endI(c));
+                if error_win > endI
+                    Error{w}{f,v}(1,c) = mean(error(endI(c) - error_win:endI(c), c));
+                else
+                    Error{w}{f,v}(1,c) = error(endI(c), c);
+                end
+            end
+        end
+    end
+    Error_fly{w} = cellfun(@(x) mean(x,2), Error{w}, 'UniformOutput', true);
+end
+Error_fly = cat(1, Error_fly{:});
+
+Error_all_wave = cell(n_wave,5);
+for w = 1:n_wave
+    for v = 1:n_vel
+        Error_all_wave{w,v} = cat(2, Error{w}{:,v});
+    end
+end
+
+Error_all = cell(1,5);
+for v = 1:n_vel
+    Error_all{1,v} = cat(2, Error_all_wave{:,v});
+end
+
+fig = figure (9) ; clf
+set(fig, 'Color', 'w', 'Units', 'inches', 'Position', [2 2 2*1 1.5])
+clear ax h
+
+kk = 1;
+ax(kk) = subplot(1,1,kk) ; hold on
+    bx = boxplot(Error_fly, 'Width', 0.5, 'Symbol', '', 'Whisker', 2);
+    ylabel('Amplitude (°)')
+
+    h = get(bx(5,:),{'XData','YData'});
+    for v = 1:size(h,1)
+       patch(h{v,1},h{v,2},vel_color(v,:));
+    end
+
+    set(findobj(ax(kk),'tag','Median'), 'Color', 'w','LineWidth',1);
+    set(findobj(ax(kk),'tag','Box'), 'Color', 'none');
+    set(findobj(ax(kk),'tag','Upper Whisker'), 'Color', 'k','LineStyle','-');
+    set(findobj(ax(kk),'tag','Lower Whisker'), 'Color', 'k','LineStyle','-');
+    ax(kk).Children = ax(kk).Children([end 1:end-1]);
+    %ylim([0 20])
+
+set(ax, 'LineWidth', 1, 'Box', 'off')
 
 end

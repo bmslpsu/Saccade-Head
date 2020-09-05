@@ -1,5 +1,5 @@
-function [] = MakeData_Ramp_HeadFree_Sacd_HeadRoll_test()
-%% MakeData_Ramp_HeadFree_Sacd_HeadRoll:
+function [] = MakeData_Static_HeadFree_Sacd_HeadRoll()
+%% MakeData_Static_HeadFree_Sacd_HeadRoll:
 %   INPUTS:
 %       -
 %   OUTPUTS:
@@ -7,7 +7,7 @@ function [] = MakeData_Ramp_HeadFree_Sacd_HeadRoll_test()
 %
 
 % Data location
-rootdir = 'H:\EXPERIMENTS\RIGID\Experiment_Ramp_forRoll';
+rootdir = 'H:\EXPERIMENTS\RIGID\Experiment_Static_forRoll';
 
 % Output file name
 % filename = ['Ramp_HeadFree_SACCD_Anti_HeadWingALL_Wave=' num2str(wave)];
@@ -44,8 +44,6 @@ head.boundThresh = [0.25 50];
 head_carry.Fc = 40;
 [head_carry.b, head_carry.a] = butter(3, head_carry.Fc / (Fs/2) ,'low');
 
-Vel = U.vel{1}; % velocities
-Stim = (Vel*tintrp')'; % stimuli
 SACCADE = [I , splitvars(table(num2cell(zeros(N.file,4))))];
 SACCADE.Properties.VariableNames(4:7) = {'head_yaw','head_roll','yaw2roll','roll2yaw'};
 HEAD_DATA = cell(N.fly,N.vel);
@@ -59,7 +57,7 @@ for kk = 1:N.file
     load(fullfile(PATH.head, [basename{kk} '.mat']),'yaw','roll_idx');
  
   	% Sync frames and get pattern data
-	[trig,pat] = sync_pattern_trigger(t_p, data(:,2), 10, data(:,1), true, [], false, false);
+	[trig,pat] = sync_pattern_trigger(t_p, data(:,2), 10, data(:,1), true, round(0.5*Fs), false, false);
     
     % Get head data
     dx = 3;
@@ -95,7 +93,6 @@ for kk = 1:N.file
                                 head.Fc_ss, head.amp_cut, direction, head.pks, head.sacd_length, ...
                                 head.min_pkdist, head.min_pkwidth, head.min_pkprom, ...
                                 head.min_pkthresh, head.boundThresh, head.showplot);
-    head_yaw = stimSaccade(head_yaw, Stim(:,I.vel(kk)), false); % with approximate pattern position
     SACCADE.head_yaw(kk) = {head_yaw};
     SACCADE.head_roll(kk) = {head.roll};
     
@@ -117,8 +114,8 @@ for kk = 1:N.file
     end
     
     if head_yaw.count > 0
-        [yaw_scds,yaw_ints,~,~] = getSaccade(head_yaw, head.yaw_filt, 0.5, 0.5);
-        [roll_scds,roll_ints,scd_time,int_time] = getSaccade(head_yaw, head.roll_filt, 0.5, 0.5);
+        [yaw_scds,yaw_ints,~,~] = getSaccade(head_yaw, head.yaw_filt, 0.5, 0.5, true);
+        [roll_scds,roll_ints,scd_time,int_time] = getSaccade(head_yaw, head.roll_filt, 0.5, 0.5, true);
         
         Yaw_SCD{I.fly(kk,:),I.vel(kk,:)} = cat(1, Yaw_SCD{I.fly(kk,:),I.vel(kk,:)}, yaw_scds);
         Roll_SCD{I.fly(kk,:),I.vel(kk,:)} = cat(1, Roll_SCD{I.fly(kk,:),I.vel(kk,:)}, roll_scds);
@@ -146,33 +143,19 @@ Roll.All = cellfun(@(x) x(:,~isnan(x(1,:))), Roll.All, 'UniformOutput', false);
 for v = 1:N.vel
     for f = 1:N.fly
        for c = 1:size(Roll.All{f,v},2)
-           Yaw.All{f,v}(:,c) = Yaw.All{f,v}(:,c) - 0*nanmean(Yaw.All{f,v}([1:40, end-40:end],c));
-           Roll.All{f,v}(:,c) = Roll.All{f,v}(:,c) - 1*nanmean(Roll.All{f,v}([1:80, end-80:end],c));
+           Yaw.All{f,v}(:,c) = Yaw.All{f,v}(:,c) - 0*nanmean(Yaw.All{f,v}([1:20],c));
+           Roll.All{f,v}(:,c) = Roll.All{f,v}(:,c) - 0*nanmean(Roll.All{f,v}([1:50],c));
        end
     end
 end
 
-% Combine CW & CCW
-Yaw.All_speed = cell(N.fly,1);
-Roll.All_speed = cell(N.fly,1);
-for f = 1:N.fly
-    Yaw.All_speed{f} = cat(2, -Yaw.All{f,1}, Yaw.All{f,2});
-    Roll.All_speed{f} = cat(2, -Roll.All{f,1}, Roll.All{f,2});
-end
+Yaw.Fly = cellfun(@(x) nanmean(x,2), Yaw.All, 'UniformOutput', false);
+Roll.Fly = cellfun(@(x) nanmean(x,2), Roll.All, 'UniformOutput', false);
+Yaw.Fly = cat(2, Yaw.Fly{:});
+Roll.Fly = cat(2, Roll.Fly{:});
 
-Yaw.Fly = cellfun(@(x) nanmean(x,2), Yaw.All_speed, 'UniformOutput', false);
-Roll.Fly = cellfun(@(x) nanmean(x,2), Roll.All_speed, 'UniformOutput', false);
-
-n_speed = size(Roll.Fly,2);
-Yaw.Vel_fly = cell(1,n_speed);
-Roll.Vel_fly = cell(1,n_speed);
-for v = 1:n_speed
-    Yaw.Vel_fly{v} = cat(2, Yaw.Fly{:,v});
-    Roll.Vel_fly{v} = cat(2, Roll.Fly{:,v});
-end
-
-Yaw.Vel_stats = cellfun(@(x) basic_stats(x,2), Yaw.Vel_fly, 'UniformOutput', true);
-Roll.Vel_stats = cellfun(@(x) basic_stats(x,2), Roll.Vel_fly, 'UniformOutput', true);
+Yaw.Fly_stats = basic_stats(Yaw.Fly, 2);
+Roll.Fly_stats = basic_stats(Roll.Fly, 2);
 
 fig = figure (102);
 set(fig, 'Color', 'w', 'Units', 'inches', 'Position', [2 2 4 3])
@@ -182,14 +165,14 @@ clear ax
 yaw_color = [0 0 1];
 roll_color = [0.1 0.7 0.3];
 ax(1) = subplot(1,1,1); cla ; hold on
-%     plot(tt, Yaw.Vel_fly{1}, 'Color', 0.7*yaw_color, 'LineWidth', 0.5)
-%     plot(tt, Roll.Vel_fly{1}, 'Color', 0.7*roll_color, 'LineWidth', 0.5)
+%     plot(tt, Yaw.Fly, 'Color', 0.7*yaw_color, 'LineWidth', 0.5)
+%     plot(tt, Roll.Fly, 'Color', 0.7*roll_color, 'LineWidth', 0.5)
     yline(0);
     xline(0);
     
-    [~,h.mean(1)] = PlotPatch(Roll.Vel_stats(1).mean, Roll.Vel_stats(1).std, ...
+    [~,h.mean(1)] = PlotPatch(Roll.Fly_stats(1).mean, Roll.Fly_stats(1).std, ...
         tt, 1, 1, roll_color, 0.7*roll_color, 0.3, 1);
-    [~,h.mean(2)] = PlotPatch(Yaw.Vel_stats(1).mean, Yaw.Vel_stats(1).std, ...
+    [~,h.mean(2)] = PlotPatch(Yaw.Fly_stats(1).mean, Yaw.Fly_stats(1).std, ...
         tt, 1, 1, yaw_color, 0.7*yaw_color, 0.3, 1);
     
     uistack(h.mean, 'top')
@@ -199,7 +182,7 @@ ax(1) = subplot(1,1,1); cla ; hold on
     xlabel('Time (s)')
     ylabel('Head Angle (°)')
 %     ylim([-400 600])
-%     ylim(10*[-1 1])
+    ylim(10*[-1 1])
 %     xlim([0 0.5])
     
 %%
@@ -221,6 +204,7 @@ roll_int_all = roll_int_all(~isnan(roll_int_all));
     Roll.Vel_stats(1).mean(start_time_I:end_time_I))
 
 %% Example Trial: fly 2 trial 2 I=735
+
 idx = 2;
 
 tt = SACCADE.head_yaw{idx}.time;

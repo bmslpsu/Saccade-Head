@@ -23,8 +23,8 @@ PATH.head = fullfile(PATH.vid,'tracked_head'); % tracked kinematic data location
 PATH.wing = fullfile(PATH.vid,'wing_filt', 'tracked_head_wing'); % tracked kinematic data location
 
 % Select files
-% [D,I,N,U,T,~,~,basename] = GetFileData(PATH.head,'*.mat',false,'fly','trial','vel','wave');
-[D,I,N,U,T,~,~,basename] = GetFileData(PATH.wing,'*.csv',false,'fly','trial','vel','wave');
+[D,I,N,U,T,~,~,basename] = GetFileData(PATH.head,'*.mat',false,'fly','trial','vel','wave');
+% [D,I,N,U,T,~,~,basename] = GetFileData(PATH.wing,'*.csv',false,'fly','trial','vel','wave');
 
 %% Get Data %%
 clc
@@ -33,11 +33,11 @@ Fs = 200; % sampling frequency [s]
 tintrp = (0:(1/Fs):(10 - 1/Fs))'; % time vector for interpolation
 
 % HEAD saccade detection parameters
-head.showplot = false;
+head.showplot = true;
 head.Fc_detect = [10 nan];
-head.Fc_ss = [40 nan];
+head.Fc_ss = [nan nan];
 head.amp_cut = 4;
-head.thresh = [80];
+head.thresh = [90 2];
 head.true_thresh = 250;
 head.sacd_length = nan;
 head.pks = [];
@@ -46,7 +46,7 @@ head.min_pkwidth = 0.03;
 head.min_pkprom = 75;
 head.min_pkthresh = 0;
 head.boundThresh = [0.25 50];
-head_carry.Fc = 60;
+head_carry.Fc = 40;
 [head_carry.b, head_carry.a] = butter(3, head_carry.Fc / (Fs/2) ,'low');
 
 % WING saccade detection parameters
@@ -54,7 +54,7 @@ wing.showplot = false;
 wing.Fc_detect = [5 nan];
 wing.Fc_ss = [5 nan];
 wing.amp_cut = 10;
-wing.thresh = 40;
+wing.thresh = [40 2];
 wing.true_thresh = [];
 wing.sacd_length = nan;
 wing.pks = [];
@@ -75,8 +75,9 @@ SACCADE.Properties.VariableNames(5:8) = {'head_saccade','wing_saccade','head2win
 HEAD_DATA = cell(N.fly,N.vel);
 HEAD_SACCADE_STATS = []; % store saccade stats
 WING_SACCADE_STATS = []; % store saccade stats
-for kk = 50:N.file
+for kk = 1:N.file
     disp(kk)
+    %basename{kk}
     % Load HEAD & DAQ data
 	load(fullfile(PATH.daq, [basename{kk} '.mat']),'data','t_p'); % load head angles % time arrays
     load(fullfile(PATH.head, [basename{kk} '.mat']),'hAngles'); % load head angles % time arrays
@@ -116,12 +117,12 @@ for kk = 50:N.file
         close all
     end
     
-    if any(head_saccade.SACD.Duration > 0.09)
-        plotSaccade(head_saccade)
-        plotInterval(head_saccade)
-        pause
-        close all
-    end
+%     if any(head_saccade.SACD.Duration > 0.09)
+%         plotSaccade(head_saccade)
+%         plotInterval(head_saccade)
+%         pause
+%         close all
+%     end
     
 	% Load WING data if we have it
     wfile = fullfile(PATH.wing, [basename{kk} '.csv']);
@@ -134,10 +135,10 @@ for kk = 50:N.file
         wing.left       = interp1(trig.time, wing.left, tintrp, 'pchip');
         wing.right      = interp1(trig.time, wing.right, tintrp, 'pchip');
 
-        %wing.left       = hampel(pat.time_sync, data(:,4));
-        %wing.right      = hampel(pat.time_sync, data(:,5));
-        %wing.left       = interp1(pat.time_sync, wing.left, tintrp, 'pchip');
-        %wing.right      = interp1(pat.time_sync, wing.right, tintrp, 'pchip');
+%         wing.left       = hampel(pat.time_sync, data(:,4));
+%         wing.right      = hampel(pat.time_sync, data(:,5));
+%         wing.left       = interp1(pat.time_sync, wing.left, tintrp, 'pchip');
+%         wing.right      = interp1(pat.time_sync, wing.right, tintrp, 'pchip');
 
         wing.dwba       = wing.left - wing.right;
         wing.dwba       = filtfilt(wing_carry.b, wing_carry.a, wing.dwba);
@@ -146,6 +147,12 @@ for kk = 50:N.file
         wing.left_filt	= filtfilt(wing.b, wing.a, wing.left);
         wing.right_filt	= filtfilt(wing.b, wing.a, wing.right);
         wing.dwba_filt	= wing.left_filt - wing.right_filt;
+        
+        cla ; hold on
+            plot(tintrp, head.pos_filt, 'k', 'LineWidth', 1)
+            plot(tintrp, wing.dwba, 'r', 'LineWidth', 1)
+            disp(basename{kk})
+            pause
         
       	% Extract wing saccades
         wing_saccade = saccade_all(wing.dwba_filt, tintrp, wing.thresh, wing.true_thresh, wing.Fc_detect, ...
@@ -175,10 +182,10 @@ for kk = 50:N.file
         end
 
         if head_saccade.count > 0
-            head2wing = head_wing_saccade_cc(head_saccade, wing_saccade, 0.15, 0.5, 0.5, false, true);
+            head2wing = head_wing_saccade_cc(head_saccade, wing_saccade, 0.15, 0.5, 0.5, false, false);
             %head2wing_align_wing = head_wing_saccade_cc(head_saccade, wing_saccade, 0.15, 0.5, 0.5, true, false);
-            head2wing_all = saccade_interact(head_saccade, wing_saccade, 0.5, 0.1, true);
-            pause
+            head2wing_all = saccade_interact(head_saccade, wing_saccade, 0.5, 0.1, false);
+            %pause
         	SACCADE{kk,7} = {head2wing};
             SACCADE{kk,8} = {head2wing_all};
         end
@@ -239,7 +246,7 @@ end
 
 %% SAVE %%
 disp('Saving...')
-save(['H:\DATA\Rigid_Data\' filename '_' datestr(now,'mm-dd-yyyy') '.mat'],...
+save(['H:\DATA\Rigid_Data\ramp_v1' filename '_' datestr(now,'mm-dd-yyyy') '.mat'],...
       'PATH','HEAD_DATA','SACCADE','HEAD_SACCADE_STATS','WING_SACCADE_STATS','FLY','GRAND',...
       'Stim','D','I','U','N','T','-v7.3')
 disp('SAVING DONE')

@@ -10,13 +10,15 @@ load(fullfile(PATH,FILE),'SACCADE','U','N')
 clearvars -except SACCADE D I U N
 
 %% Land %%
+clearvars -except SACCADE D I U N
+
 Vel = U.vel{1};
 n_vel = length(Vel);
 CC = repmat(hsv(n_vel/2),2,1);
 leg_thresh = 0.9;
 
 vel_idx = SACCADE.vel;
-head_data = cellfun(@(x) x.position, SACCADE.head_saccade, 'UniformOutput', false);
+head_data = cellfun(@(x) x.velocity, SACCADE.head_saccade, 'UniformOutput', false);
 head_data = cat(2,head_data{:});
 
 Fs = 200;
@@ -56,7 +58,7 @@ land_head_vel = cellfun(@(x) x(~isnan(x)), land_head_vel, 'UniformOutput', false
 land_ratio = cellfun(@(x,y) length(y) / (length(x) + length(y)), stable_head_vel, ...
                             land_head_vel, 'UniformOutput', true);
 
-vel_idx = 1:5;
+vel_idx = 3:5;
 stable_head_all = cat(1,stable_head_vel{vel_idx});
 land_head_all = cat(1,land_head_vel{vel_idx});
 
@@ -65,7 +67,7 @@ fig = figure (1) ; clf
 set(fig, 'Color', 'w','Units', 'inches', 'Position', [2 2 3 8])
 ax = gobjects(N.vel/2,1);
 bins = -300:5:300;
-bins = -25:0.5:25;
+% bins = -25:0.5:25;
 pp = 1;
 for v = 1:n_vel/2
     ax(v) = subplot(N.vel/2,1,pp); hold on ; title([ num2str(Vel(v)) '(°/s)'])
@@ -88,7 +90,7 @@ set(ax, 'LineWidth', 1.5, 'Box', 'on', 'YLim', [-0.005 ax(1).YLim(2)])
 fig = figure (2) ; clf
 set(fig, 'Color', 'w','Units', 'inches', 'Position', [2 2 3 3])
 bins = -300:5:300;
-bins = -25:1:25;
+% bins = -25:1:25;
 ax = subplot(1,1,1); hold on
     h_stable = histogram(stable_head_all, bins, 'Normalization', 'probability', ...
         'FaceColor', 'k', 'FaceAlpha', 0.5, 'EdgeColor', 'none');
@@ -100,8 +102,8 @@ ax = subplot(1,1,1); hold on
     
     ylabel('Probability')
     axis tight
-    xlim(25*[-1 1])
-    xticks([-25:5:25])
+    %xlim(25*[-1 1])
+    %xticks([-25:5:25])
     
     %legend('Landing State', 'Stabilizing State')
 

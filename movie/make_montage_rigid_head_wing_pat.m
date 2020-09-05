@@ -14,14 +14,13 @@ function [MOV] = make_montage_rigid_head_wing_pat(rootdir,rootpat,vidFs,export)
 %   OUTPUT:
 %       MOV         : structure containing movie 
 %
-
+%18.75: fly 3 trial 5 1Hz
 % Example Input %
 clear ; clc ; close all 
 export = true;
 vidFs = 50;
-% rootdir = 'H:\EXPERIMENTS\RIGID\Experiment_Static_Wave';
-% rootdir = 'H:\EXPERIMENTS\RIGID\Experiment_Asymmetry_Control_Verification\HighContrast\30';
-rootdir = 'H:\EXPERIMENTS\RIGID\Experiment_Sinusoid\3.75';
+amp = 18.75;
+rootdir = ['H:\EXPERIMENTS\RIGID\Experiment_Sinusoid\' num2str(amp)];
 rootpat = 'C:\Users\BC\Box\Git\Arena\Patterns';
 pat_ypos = 5;
 
@@ -46,7 +45,7 @@ PATH.raw            = rootdir;
 PATH.vid            = fullfile(PATH.raw,'Vid');
 PATH.head_track     = fullfile(PATH.raw,'Vid','tracked_head');
 PATH.beninfly_track	= fullfile(PATH.vid,'vid_filt','tracked_head_wing');
-PATH.mask           = fullfile(PATH.beninfly_track,'mask');
+PATH.mask           = fullfile(PATH.beninfly_track,'');
 
 if dirflag
     % Select tracked angle file (use head tracked files to select)
@@ -91,11 +90,11 @@ debug = false;
 %% Get kinematics data
 FLY.time    = TRIG.time_sync; % video time
 FLY.Fs      = round(1/mean(diff(FLY.time))); % video sampling rate
-FLY.Fc      = 15; % cut off frequency for lpf
+FLY.Fc      = 30; % cut off frequency for lpf
 [b,a]       = butter(2,FLY.Fc/(FLY.Fs/2),'low'); % make lpf
 FLY.head    = filtfilt(b,a,head_data.hAngles); % head angles [deg]
 % FLY.head    = filtfilt(b,a,rad2deg(benifly_data.Head)); % head angles [deg]
-FLY.head    = FLY.head - mean(FLY.head); % head angles [deg]
+FLY.head    = FLY.head - 0*mean(FLY.head); % head angles [deg]
 FLY.lwing   = rad2deg(hampel(FLY.time,benifly_data.LWing)); % left wing angles [deg]
 FLY.rwing   = rad2deg(hampel(FLY.time,benifly_data.RWing)); % right wing angles [deg]
 FLY.lwing   = filtfilt(b,a,FLY.lwing); % left wing angles [deg]
@@ -114,14 +113,15 @@ FLY.int_wba     = FLY.wba(TRIG.range);
 FLY.int_rwing  	= FLY.rwing(TRIG.range);
 PAT.norm        = 3.75*(PAT.pos_exp - mean(PAT.pos_exp));
 
-
 PAT.Fs = 1 / mean(diff(PAT.time_sync));
-PAT.Fc = 12*1.5;
+PAT.Fc = 3.5*1.8;
 [PAT.b,PAT.a] = butter(3, PAT.Fc / (PAT.Fs/2),'low');
 PAT.pos_filt = filtfilt(PAT.b, PAT.a, PAT.pos);
 PAT.int_pos_filt = interp1(PAT.time_sync, PAT.pos_filt, TRIG.time_sync_exp, 'pchip');
-PAT.int_norm_filt = 0.99*3.75*(PAT.int_pos_filt - mean(PAT.int_pos_filt));
-% plot(PAT.int_norm_filt)
+PAT.int_norm_filt = 3.75*(PAT.int_pos_filt - mean(PAT.int_pos_filt));
+rshift = 2*amp / range(PAT.int_norm_filt(500:1000));
+PAT.int_norm_filt = rshift * PAT.int_norm_filt;
+PAT.int_norm_filt = PAT.int_norm_filt - mean(PAT.int_norm_filt);
 
 %% Get video data
 FLY.raw = squeeze(vid_data.vidData(:,:,TRIG.range)); % raw video data
@@ -140,6 +140,9 @@ raw = fread(fid,inf);
 str = char(raw'); 
 fclose(fid); 
 params = jsondecode(str);
+
+FLY.body = -90 - rad2deg(atan2(params.gui.head.hinge.y - params.gui.abdomen.hinge.y, ...
+                            params.gui.head.hinge.x - params.gui.abdomen.hinge.x));
 
 FLY.wing_length = 150;
 
@@ -251,7 +254,7 @@ for jj = 1:FLY.nframe % for each frame
     
     % Head plot
     subplot(2,4,[3:4]); hold on
-        addpoints(h.head, FLY.int_time(jj), FLY.int_head(jj))
+        addpoints(h.head, FLY.int_time(jj), FLY.body + FLY.int_head(jj))
         addpoints(h.pat, FLY.int_time(jj), PAT.int_norm_filt(jj))
 
    	% WBA plot

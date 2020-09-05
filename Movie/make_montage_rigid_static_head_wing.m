@@ -21,7 +21,7 @@ export = true;
 vidFs = 50;
 rootdir = 'H:\EXPERIMENTS\RIGID\Experiment_Static_Wave';
 rootpat = 'C:\Users\BC\Box\Git\Arena\Patterns';
-% pat_ypos = 5;
+pat_ypos = 1;
 
 if ~isfolder(rootdir)
     dirflag = false;
@@ -76,7 +76,6 @@ disp('DONE')
 %% Get pattern data & sync with start of visual stimulus
 % [TRIG,PAT] = sync_pattern_trigger(raw_data.t_p, raw_data.data(:,2), pattern_total_time, ...
 %                         raw_data.data(:,1), true, nan, false, true);
-
 pattern_total_time = 10; % [s]
 reg = true; % use interp times
 start_idx = nan; % use first frame
@@ -89,7 +88,7 @@ debug = false;
 %% Get kinematics data
 FLY.time    = TRIG.time_sync; % video time
 FLY.Fs      = round(1/mean(diff(FLY.time))); % video sampling rate
-FLY.Fc      = 15; % cut off frequency for lpf
+FLY.Fc      = 30; % cut off frequency for lpf
 [b,a]       = butter(2,FLY.Fc/(FLY.Fs/2),'low'); % make lpf
 FLY.head    = filtfilt(b,a,head_data.hAngles); % head angles [deg]
 % FLY.head    = filtfilt(b,a,rad2deg(benifly_data.Head)); % head angles [deg]
@@ -136,7 +135,7 @@ FLY.rwing_hinge = [params.gui.right.hinge.x , params.gui.right.hinge.y];
 FLY.lwing_tip = FLY.lwing_hinge - FLY.wing_length*[cosd(FLY.int_lwing),  sind(FLY.int_lwing)];
 FLY.rwing_tip = FLY.rwing_hinge + FLY.wing_length*[cosd(FLY.int_rwing), -sind(FLY.int_rwing)];
 
-FLY.head_length = 40;
+FLY.head_length = 45;
 FLY.head_hinge = [head_data.cPoint.X  , head_data.cPoint.Y];
 % FLY.head_hinge = [params.gui.head.hinge.x  , params.gui.head.hinge.y];
 FLY.head_tip = FLY.head_hinge + FLY.head_length*[sind(FLY.int_head) , -cosd(FLY.int_head)];
@@ -201,7 +200,7 @@ for jj = 1:FLY.nframe % for each frame
         else
             win = jj;
         end
-        Frame.raw = 1.5*median(FLY.raw(:,:,win),3); % current raw frame median across frames
+        Frame.raw = 0.9*median(FLY.raw(:,:,win),3); % current raw frame median across frames
         
         % Display raw video
         subplot(2,4,[1:2,5:6]); cla; hold on; axis image

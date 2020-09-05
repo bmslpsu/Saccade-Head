@@ -67,6 +67,7 @@ for v = 1:nvel/2
     end
 end
 
+mean_win = round(0.2*200);
 for v = 1:nvel/2
     for f = 1:length(stats_fields)
         temp = cat(2,head.fly_speed(:,v).(stats_fields(f)));
@@ -78,17 +79,17 @@ for v = 1:nvel/2
     % Normalize dwba position
     for k = 1:size(wing.grand(v).(get_fields(f)),2)
         wing.grand(v).('pos')(:,k) = wing.grand(v).('pos')(:,k) - ...
-            mean(wing.grand(v).('pos')(:,k));
+            0*mean(wing.grand(v).('pos')(1:mean_win,k));
         wing.grand(v).('pos_desync')(:,k) = wing.grand(v).('pos_desync')(:,k) - ...
-            mean(wing.grand(v).('pos_desync')(:,k));
+            0*mean(wing.grand(v).('pos_desync')(1:mean_win,k));
     end
     
     % Normalize head position
     for k = 1:size(head.grand(v).(get_fields(f)),2)
         head.grand(v).('pos')(:,k) = head.grand(v).('pos')(:,k) - ...
-            mean(head.grand(v).('pos')(:,k));
+            0*mean(head.grand(v).('pos')(:,k));
         head.grand(v).('pos_desync')(:,k) = head.grand(v).('pos_desync')(:,k) - ...
-            mean(head.grand(v).('pos_desync')(:,k));
+            0*mean(head.grand(v).('pos_desync')(:,k));
     end
     
     for f = 1:length(stats_fields)
@@ -137,7 +138,7 @@ head_color = [0 0 1];
 wing_color = [1 0 0];
 ax(1) = subplot(2,1,1); hold on ; cla
         hold on ; cla ; ylabel('Head (°)')
-        ylim(10*[-1 1])
+        ylim(20*[-1 1])
 %         plot(head.grand.time, head.grand.pos,...
 %             '-', 'Color', [0.7*head_color 0.3], 'LineWidth', 0.25)
         [~,~] = PlotPatch(head.grand.pos_stats.mean, head.grand.pos_stats.std, ...
@@ -182,7 +183,7 @@ head_color = [0 0 1];
 wing_color = [1 0 0];
 ax(1) = subplot(2,1,1); hold on ; cla
         hold on ; cla ; ylabel('Head (°)')
-        ylim(10*[-1 1])
+        ylim(20*[-1 1])
 %         plot(head.grand.time, head.grand.pos_desync,...
 %             '-', 'Color', [0.7*head_color 0.3], 'LineWidth', 0.25)
         [~,~] = PlotPatch(head.grand.pos_desync_stats.mean, head.grand.pos_desync_stats.std, ...

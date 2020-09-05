@@ -53,6 +53,7 @@ for v = 1:1
     end
 end
 
+mean_win = round(0.2*200);
 for v = 1:1
     for f = 1:length(stats_fields)
         temp = cat(2,head.fly(:,v).(stats_fields(f)));
@@ -64,17 +65,17 @@ for v = 1:1
     % Normalize dwba position
     for k = 1:size(wing.grand(v).(get_fields(f)),2)
         wing.grand(v).('pos')(:,k) = wing.grand(v).('pos')(:,k) - ...
-            mean(wing.grand(v).('pos')(:,k));
+            0*mean(wing.grand(v).('pos')(1:mean_win,k));
         wing.grand(v).('pos_desync')(:,k) = wing.grand(v).('pos_desync')(:,k) - ...
-            mean(wing.grand(v).('pos_desync')(:,k));
+            0*mean(wing.grand(v).('pos_desync')(1:mean_win,k));
     end
     
     % Normalize head position
     for k = 1:size(head.grand(v).(get_fields(f)),2)
         head.grand(v).('pos')(:,k) = head.grand(v).('pos')(:,k) - ...
-            mean(head.grand(v).('pos')(:,k));
+            0*mean(head.grand(v).('pos')(:,k));
         head.grand(v).('pos_desync')(:,k) = head.grand(v).('pos_desync')(:,k) - ...
-            mean(head.grand(v).('pos_desync')(:,k));
+            0*mean(head.grand(v).('pos_desync')(:,k));
     end
     
     for f = 1:length(stats_fields)
@@ -121,7 +122,7 @@ movegui(fig, 'center')
 clear ax
 head_color = [0 0 1];
 wing_color = [1 0 0];
-ax(1) = subplot(2,1,1); hold on ; cla ; ylim(12*[-1 1])
+ax(1) = subplot(2,1,1); hold on ; cla ; ylim(20*[-1 1])
         hold on ; cla ; ylabel('Head (°)')
 %         plot(head.grand.time, head.grand.pos,...
 %             '-', 'Color', [0.7*head_color 0.3], 'LineWidth', 0.25)
@@ -141,15 +142,14 @@ ax(2) = subplot(2,1,2); hold on ; cla ; xlabel('Time (s)')
         [~,~] = PlotPatch(head.grand.vel_stats.mean, head.grand.vel_stats.std, ...
             head.grand.time_stats.mean, 1, 1, head_color, 0.7*head_color, 0.3, 1);
         
-    ylim([200 600])
 %         plot(wing.grand.time, wing.grand.vel,...
 %             '-', 'Color', [0.7*wing_color 0.3], 'LineWidth', 0.25)
         [~,~] = PlotPatch(wing.grand.vel_stats.mean, wing.grand.vel_stats.std, ...
             wing.grand.time_stats.mean, 1, 1, wing_color, 0.7*wing_color, 0.3, 1);
         
 linkaxes(ax,'x')
-set(ax,'XLim', 0.02*[-1 1])
-set(ax,'XTick', -0.06:0.01:0)
+set(ax,'XLim', 0.5*[-1 1])
+% set(ax,'XTick', -0.06:0.01:0)
 set(ax(1),'XTickLabels',[])
 set(ax,'LineWidth', 1)
 

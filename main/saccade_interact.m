@@ -198,21 +198,21 @@ classdef saccade_interact
                 end
             end
             
-            % Find peaks to make sure there are no false detetcions
-            locs = nan(in.count,1);
-            peaks = nan(in.count,1);
-            for s = 1:in.count
-                [~,loc] = findpeaks(out.direction*vel_out_filt(:,s), ...
-                                        'MinPeakProminence', 0.7*out.min_pkprom, ...
-                                        'MinPeakHeight', out.threshold, ...
-                                        'MinPeakDistance', round(out.min_pkdist*obj.Fs), ...
-                                        'MinPeakWidth', 0.7*round(out.min_pkwidth*obj.Fs), ...
-                                        'SortStr','descend', 'NPeaks', 1);
-                if ~isempty(loc)
-                    locs(s)= loc;
-                    peaks(s) = vel_out_filt(locs(s),s);
-                end
-            end
+%             % Find peaks to make sure there are no false detetcions
+%             locs = nan(in.count,1);
+%             peaks = nan(in.count,1);
+%             for s = 1:in.count
+%                 [~,loc] = findpeaks(out.direction*vel_out_filt(:,s), ...
+%                                         'MinPeakProminence', 0.7*out.min_pkprom, ...
+%                                         'MinPeakHeight', out.threshold, ...
+%                                         'MinPeakDistance', round(out.min_pkdist*obj.Fs), ...
+%                                         'MinPeakWidth', 0.7*round(out.min_pkwidth*obj.Fs), ...
+%                                         'SortStr','descend', 'NPeaks', 1);
+%                 if ~isempty(loc)
+%                     locs(s)= loc;
+%                     peaks(s) = vel_out_filt(locs(s),s);
+%                 end
+%             end
             
 %             % Remove false detections
 %             reverse_cond = isnan(peaks) | (out.direction*peaks < 100);

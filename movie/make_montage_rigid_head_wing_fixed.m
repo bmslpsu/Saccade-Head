@@ -87,7 +87,7 @@ debug = false;
                                 raw_fixed.data(:,1), reg, [], false, false);
                             
 %% Get kinematic data
-FLY.Fc = 20; % cut off frequency for lpf
+FLY.Fc = 30; % cut off frequency for lpf
 
 % Free
 FLY.time_free 	= TRIG_free.time_sync; % video time
@@ -106,7 +106,7 @@ FLY.wba_free  	= filtfilt(b_free,a_free,FLY.wba_free); % delta wing-beat-amplitu
 FLY.time_fixed      = TRIG_fixed.time_sync; % video time
 FLY.Fs_fixed        = round(1/mean(diff(FLY.time_fixed))); % video sampling rate
 [b_fixed,a_fixed]   = butter(2,FLY.Fc/(FLY.Fs_fixed/2),'low'); % make lpf
-FLY.lwing_fixed     = rad2deg(hampel(FLY.time_fixed,benifly_fixed.LWing)); % left wing angles [°]
+FLY.lwing_fixed     = rad2deg(hampel(FLY.time_fixed,benifly_fixed.LWing)) + 3; % left wing angles [°]
 FLY.rwing_fixed 	= rad2deg(hampel(FLY.time_fixed,benifly_fixed.RWing)); % right wing angles [°]
 FLY.lwing_fixed 	= filtfilt(b_fixed,a_fixed,FLY.lwing_fixed); % left wing angles [°]
 FLY.rwing_fixed 	= filtfilt(b_fixed,a_fixed,FLY.rwing_fixed); % right wing angles [°]
@@ -256,7 +256,7 @@ for jj = 1:FLY.nframe_free % for each frame
             win = jj;
         end
         Frame.free  = median(FLY.raw_free(:,:,win),iter-1); % current raw frame median across frames
-        Frame.fixed = 1.1*median(FLY.raw_fixed_norm(:,:,win),iter-1); % current raw frame median across frames
+        Frame.fixed = 1.4*median(FLY.raw_fixed_norm(:,:,win),iter-1); % current raw frame median across frames
         
         % Display free video
         subplot(2,4,[1:2]); cla; hold on; axis image

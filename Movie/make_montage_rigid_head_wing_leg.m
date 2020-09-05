@@ -12,11 +12,12 @@ function [MOV] = make_montage_rigid_head_wing_leg(rootdir,rootpat,vidFs,export)
 %       export      : boolean (1=export video to images)
 %
 %   OUTPUT:
-%       MOV         : structure containing movie 
+%       MOV         : structure containing movie
 %
 
 % Example Input %
-clear ; clc ; close all 
+% fly 7 trial 48 vel -150
+clear ; clc ; close all
 export = true;
 vidFs = 50;
 rootdir = 'H:\EXPERIMENTS\RIGID\Experiment_Asymmetry_Control_Verification\HighContrast\30';
@@ -87,7 +88,7 @@ pattern_total_time = 10;
 % Get kinematics data
 FLY.time    = TRIG.time_sync; % video time
 FLY.Fs      = round(1/mean(diff(FLY.time))); % video sampling rate
-FLY.Fc      = 15; % cut off frequency for lpf
+FLY.Fc      = 30; % cut off frequency for lpf
 [b,a]       = butter(2,FLY.Fc/(FLY.Fs/2),'low'); % make lpf
 FLY.head    = filtfilt(b,a,head_data.hAngles); % head angles [deg]
 % FLY.head    = filtfilt(b,a,rad2deg(benifly_data.Head)); % head angles [deg]
@@ -106,7 +107,7 @@ FLY.leg_left = [dlc_data.front_leg_left_x , dlc_data.front_leg_left_y];
 FLY.leg_right = [dlc_data.front_leg_right_x , dlc_data.front_leg_right_y];
 
 % Cutoff for legs
-prob_cut = 0.97;
+prob_cut = 0.9;
 FLY.leg_left(dlc_data.front_leg_left_prob < prob_cut,:) = nan;
 FLY.leg_right(dlc_data.front_leg_right_prob < prob_cut,:) = nan;
 

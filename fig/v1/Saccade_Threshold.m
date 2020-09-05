@@ -20,7 +20,7 @@ for n = 1:N.file
     head.all{SACCADE.fly(n),SACCADE.vel(n)}(end+1,1) = SACCADE.head_saccade{n};
 end
 
-head.fly = cellfun(@(x) cat(2,x.velocity), head.all, 'UniformOutput', false);
+head.fly = cellfun(@(x) cat(2,x.velocity_filt_detect), head.all, 'UniformOutput', false);
 head.vel = cell(N.vel/2,2);
 for v = 1:N.vel
     for f = 1:N.fly
@@ -42,6 +42,7 @@ fig = figure (1) ; clf
 set(fig, 'Color', 'w','Units', 'inches', 'Position', [2 2 4 6])
 ax = gobjects(N.vel,1);
 bins = -1000:5:1000;
+bins = -400:5:300;
 % bins = [-1000:50:-350 -350:5:350 350:50:1000];
 pp = 1;
 for v = [1 6 2 7 3 8 4 9 5 10]
@@ -55,7 +56,7 @@ for v = [1 6 2 7 3 8 4 9 5 10]
 end
 linkaxes(ax,'xy')
 set(ax, 'LineWidth', 1.5, 'Box', 'on', 'XLim', 1000*[-1 1], 'YLim', [-0.005 0.06])
-
+%%
 fig = figure (2) ; clf
 set(fig, 'Color', 'w', 'Units', 'inches', 'Position', [3 3 3 3])
 clear ax
@@ -65,10 +66,10 @@ ax(1) = subplot(1,1,1); hold on
     xlabel('Head Velocity (°/s)')
     ylabel('Probability')
     
-thresh = 3*std(head.vel_all(:));
+thresh = 1.5*std(head.vel_all(:));
 plot(thresh*[-1 -1],[0 ax.YLim(2)], 'm', 'LineWidth', 1)
 plot(thresh*[ 1  1],[0 ax.YLim(2)], 'm', 'LineWidth', 1)
-set(ax, 'LineWidth', 1.5, 'FontSize', 8, 'Box', 'on', 'XLim', 1000*[-1 1], 'YLim', [-0.005 ax.YLim(2)])
+set(ax, 'LineWidth', 1.5, 'FontSize', 8, 'Box', 'on', 'XLim', 400*[-1 1], 'YLim', [-0.005 ax.YLim(2)])
 
 %% Position Histogram
 clear head
