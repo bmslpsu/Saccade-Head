@@ -75,9 +75,6 @@ head_data    	= load(fullfile(PATH.head_track,FILE.raw),'hAngles','cPoint'); % l
 disp('DONE')
 
 %% Get pattern data & sync with start of visual stimulus
-% [TRIG,PAT] = sync_pattern_trigger(raw_data.t_p, raw_data.data(:,2), pattern_total_time, ...
-%                         raw_data.data(:,1), true, nan, false, true);
-
 pattern_total_time = 10; % [s]
 reg = true; % use interp times
 start_idx = nan; % use first frame
@@ -114,7 +111,8 @@ FLY.int_rwing  	= FLY.rwing(TRIG.range);
 PAT.norm        = 3.75*(PAT.pos_exp - mean(PAT.pos_exp));
 
 PAT.Fs = 1 / mean(diff(PAT.time_sync));
-PAT.Fc = 3.5*1.8;
+PAT.Fc = 2*1.8;
+% PAT.Fc = 15;
 [PAT.b,PAT.a] = butter(3, PAT.Fc / (PAT.Fs/2),'low');
 PAT.pos_filt = filtfilt(PAT.b, PAT.a, PAT.pos);
 PAT.int_pos_filt = interp1(PAT.time_sync, PAT.pos_filt, TRIG.time_sync_exp, 'pchip');
@@ -149,8 +147,8 @@ FLY.wing_length = 150;
 FLY.lwing_hinge = [params.gui.left.hinge.x  , params.gui.left.hinge.y];
 FLY.rwing_hinge = [params.gui.right.hinge.x , params.gui.right.hinge.y];
 
-FLY.lwing_tip = FLY.lwing_hinge - FLY.wing_length*[cosd(FLY.int_lwing),  sind(FLY.int_lwing)];
-FLY.rwing_tip = FLY.rwing_hinge + FLY.wing_length*[cosd(FLY.int_rwing), -sind(FLY.int_rwing)];
+FLY.lwing_tip = FLY.lwing_hinge - FLY.wing_length*[cosd(FLY.int_lwing+FLY.body),  sind(FLY.int_lwing+FLY.body)];
+FLY.rwing_tip = FLY.rwing_hinge + FLY.wing_length*[cosd(FLY.int_rwing+FLY.body), -sind(FLY.int_rwing+FLY.body)];
 
 FLY.head_length = 40;
 % FLY.head_hinge = [head_data.cPoint.X  , head_data.cPoint.Y];
@@ -219,7 +217,7 @@ for jj = 1:FLY.nframe % for each frame
         else
             win = jj;
         end
-        Frame.raw = median(FLY.raw(:,:,win),3); % current raw frame median across frames
+        Frame.raw = 1.5*median(FLY.raw(:,:,win),3); % current raw frame median across frames
         
         % Display raw video
         subplot(2,4,[1:2,5:6]); cla; hold on; axis image

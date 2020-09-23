@@ -5,16 +5,15 @@ root = 'H:\DATA\Rigid_Data\';
 [FILE,PATH] = uigetfile({'*.mat', 'DAQ-files'}, ...
     'Select head angle trials', root, 'MultiSelect','off');
 
-load(fullfile(PATH,FILE),'SACCADE','FLY','GRAND','D','I','U','N')
-
-n_speed = N.vel/2;
-CC = repmat(hsv(n_speed),2,1);
-
-Vel = U{1,3}{1};
-
-% clearvars -except clms CC Vel PATH COUNT SACCADE SACCADE_STATS FLY GRAND Stim D I U N
+load(fullfile(PATH,FILE),'SACCADE', 'HEAD_SACCADE_STATS', 'FLY','GRAND','D','I','U','N')
 
 %% Combine Speeds
+clearvars -except SACCADE FLY GRAND Stim D I U N
+Fs = round(SACCADE.head_saccade{1}.Fs);
+n_speed = N.vel/2;
+CC = repmat(hsv(n_speed),2,1);
+Vel = U{1,3}{1};
+
 norm_fields = {'time','position','velocity'};
 % norm_fields_stats = string(norm_fields) + "_stats";
 center = 0;
@@ -58,7 +57,7 @@ movegui(FIG,'center')
 FIG.Color = 'w';
 clear ax h
 ax = gobjects(n_speed,1);
-med_span = 5;
+med_span = Fs*0.05;
 for jj = 1:n_speed
     ax(jj) = subplot(1,n_speed,jj) ; hold on
     title([num2str(Vel(jj)) ' (°/s)']);
@@ -83,7 +82,7 @@ for jj = 1:n_speed
         CC(jj,:),  0.5*CC(jj,:), 0.3, 2);
 end
 set(ax,'LineWidth',1,'FontSize',8,'Color','w',...
-    'YColor','k','XColor','k','XLim',1000*0.05*[-1 1],'YLim',25*[-1 1])
+    'YColor','k','XColor','k','XLim',1000*0.1*[-1 1],'YLim',25*[-1 1])
 XLabelHC = get(ax, 'XLabel');
 set([XLabelHC{:}], 'String', 'Time (ms)')
 YLabelHC = get(ax(1), 'YLabel');
@@ -99,7 +98,7 @@ movegui(FIG,'center')
 FIG.Color = 'w';
 clear ax h
 ax = gobjects(n_speed,1);
-med_span = 5;
+med_span = Fs*0.05;
 for jj = 1:n_speed
     ax(jj) = subplot(1,n_speed,jj) ; hold on
     title([num2str(Vel(jj)) ' (°/s)']);
@@ -124,7 +123,7 @@ for jj = 1:n_speed
         CC(jj,:),  0.5*CC(jj,:), 0.3, 2);
 end
 set(ax,'LineWidth',1,'FontSize',8,'Color','w',...
-    'YColor','k','XColor','k','XLim',1000*0.05*[-1 1],'YLim',[-500 1500])
+    'YColor','k','XColor','k','XLim',1000*0.1*[-1 1],'YLim',[-500 1500])
 XLabelHC = get(ax, 'XLabel');
 set([XLabelHC{:}], 'String', 'Time (ms)')
 YLabelHC = get(ax(1), 'YLabel');
@@ -140,7 +139,7 @@ movegui(FIG,'center')
 FIG.Color = 'w';
 clear ax h
 ax = gobjects(N{1,3},1);
-med_span = 5;
+med_span = 7;
 for jj = 1:N.vel
     ax(jj) = subplot(ceil(N.vel/clms),clms,jj) ; hold on
     title([num2str(Vel(jj)) ' (°/s)']);
@@ -161,7 +160,7 @@ for jj = 1:N.vel
     %h.patch.EdgeColor = CC(jj,:);
 end
 set(ax,'LineWidth',1,'FontSize',8,'Color','w',...
-    'YColor','k','XColor','k','XLim',1000*0.05*[-1 1],'YLim',20*[-1 1])
+    'YColor','k','XColor','k','XLim',1000*0.07*[-1 1],'YLim',20*[-1 1])
 XLabelHC = get(ax(6:10), 'XLabel');
 set([XLabelHC{:}], 'String', 'Time (ms)')
 YLabelHC = get(ax([1,clms+1]), 'YLabel');

@@ -1,5 +1,5 @@
-function [] = Saccade_WingMean_FreeFixed()
-%% Saccade_WingMean_FreeFixed:
+function [] = Ramp_free_fixed_wing()
+%% Ramp_free_fixed_wing:
 root = 'H:\DATA\Rigid_Data\Saccade';
 
 [Free,FreePath] = uigetfile({'*.mat'},'Select free data', root, 'MultiSelect','off');

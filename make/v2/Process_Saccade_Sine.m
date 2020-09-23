@@ -1,31 +1,51 @@
-function [] = Saccade_Threshold_SS()
+function [] = Process_Saccade_Sine()
 %% Saccade_Threshold:
-root = 'H:\DATA\Rigid_Data\Sine';
-
+root = 'H:\DATA\Rigid_Data\Saccade';
 [FILE,PATH] = uigetfile({'*.mat', 'DAQ-files'}, ...
     'Select head angle trials', root, 'MultiSelect','off');
-
 load(fullfile(PATH,FILE),'SACCADE','HEAD_SACCADE_STATS','U','N','I')
 
-clearvars -except U N I SACCADE HEAD_SACCADE_STATS FILE
-
 filedata = textscan(FILE, '%s', 'delimiter', '_=');
-amp = filedata{1}{6};
+amp = filedata{1}{5};
 
 %% Get saccade count
-% count = cellfun(@(x) x.count, SACCADE.head_saccade, 'UniformOutput', true);
-clear head
-head.count = cell(N.fly,N.freq);
+clearvars -except U N I SACCADE HEAD_SACCADE_STATS FILE amp
+count = cell(N.fly,N.freq);
 for n = 1:N.file
-    head.count{SACCADE.fly(n),SACCADE.freq(n)}(end+1,1) = SACCADE.head_saccade{n}.count;
+    count{SACCADE.fly(n),SACCADE.freq(n)}(end+1,1) = SACCADE.head_saccade{n}.count;
 end
 
-head.count_all = cell(N.freq,1);
-for v = 1:N.freq
-	head.count_all{v} = cat(1, head.count{:,v});
+n_scd = size(HEAD_SACCADE_STATS,1);
+starts = cell(N.fly,N.freq);
+ends = cell(N.fly,N.freq);
+co_anti = cell(N.fly,N.freq);
+for n = 1:n_scd
+    S = HEAD_SACCADE_STATS.StartPos(n) .* HEAD_SACCADE_STATS.Direction(n);
+    E = HEAD_SACCADE_STATS.EndPos(n) .* HEAD_SACCADE_STATS.Direction(n);
+    CA = HEAD_SACCADE_STATS.CoAnti(n);
+    if ~isnan(S)
+        starts{HEAD_SACCADE_STATS.fly(n),HEAD_SACCADE_STATS.freq(n)}(end+1,1) = S;
+        ends{HEAD_SACCADE_STATS.fly(n),HEAD_SACCADE_STATS.freq(n)}(end+1,1) = E;
+        co_anti{HEAD_SACCADE_STATS.fly(n),HEAD_SACCADE_STATS.freq(n)}(end+1,1) = CA;
+    end
 end
-Head.count = head.count;
-Head.count_all = head.count_all;
+
+count_all = cell(N.freq,1);
+starts_all = cell(N.freq,1);
+ends_all = cell(N.freq,1);
+co_anti_all = cell(N.freq,1);
+for v = 1:N.freq
+	count_all{v} = cat(1, count{:,v});
+    starts_all{v} = cat(1, starts{:,v});
+    ends_all{v} = cat(1, ends{:,v});
+    co_anti_all{v} = cat(1, co_anti{:,v});
+end
+Head.count = count;
+Head.count_all = count_all;
+Head.starts = starts;
+Head.starts_all = starts_all;
+Head.ends = ends;
+Head.ends_all = ends_all;
 
 %% Velocity Histogram
 CC = hsv(N.freq);
@@ -129,10 +149,10 @@ fig = figure (2) ; clf
 set(fig, 'Color', 'w', 'Units', 'inches', 'Position', [3 3 3 3])
 clear ax
 
-% start_pos = -HEAD_SACCADE_STATS.StartPos.*HEAD_SACCADE_STATS.Direction;
-% start_pos = start_pos(~isnan(start_pos));
-% end_pos = -HEAD_SACCADE_STATS.EndPos.*HEAD_SACCADE_STATS.Direction;
-% end_pos = end_pos(~isnan(end_pos));
+start_pos = -HEAD_SACCADE_STATS.StartPos.*HEAD_SACCADE_STATS.Direction;
+start_pos = start_pos(~isnan(start_pos));
+end_pos = -HEAD_SACCADE_STATS.EndPos.*HEAD_SACCADE_STATS.Direction;
+end_pos = end_pos(~isnan(end_pos));
 
 ax(1) = subplot(1,1,1); hold on
     h(1) = histogram(head.pos_all, bins, 'Normalization', 'probability', ...
@@ -140,10 +160,10 @@ ax(1) = subplot(1,1,1); hold on
 %     for s = [1,6]
 %         histogram(head.pos{s}, bins, 'Normalization', 'probability', ...
 %             'FaceColor', CC(s,:), 'FaceAlpha', 0.5, 'EdgeColor', 'none');
-%     h(2) = histogram(start_pos, bins, 'Normalization', 'probability', ...
-%         'FaceColor', 'g', 'FaceAlpha', 0.5, 'EdgeColor', 'none');
-%     h(3) = histogram(end_pos, bins, 'Normalization', 'probability', ...
-%         'FaceColor', 'r', 'FaceAlpha', 0.5, 'EdgeColor', 'none');
+    h(2) = histogram(start_pos, bins, 'Normalization', 'probability', ...
+        'FaceColor', 'g', 'FaceAlpha', 0.5, 'EdgeColor', 'none');
+    h(3) = histogram(end_pos, bins, 'Normalization', 'probability', ...
+        'FaceColor', 'r', 'FaceAlpha', 0.5, 'EdgeColor', 'none');
     
     xlabel('Head Position (°)')
     ylabel('Probability')
@@ -151,8 +171,8 @@ ax(1) = subplot(1,1,1); hold on
 set(ax, 'LineWidth', 1.5, 'FontSize', 8, 'Box', 'on', 'XLim', 25*[-1 1], 'YLim', [-0.005 ax.YLim(2)])
 
 %% Save
-fname = ['SS_amp=' num2str(amp)];
-savedir = 'C:\Users\BC\Box\Research\Manuscripts\Head Saccade\Data';
+fname = ['Sine_amp=' num2str(amp)];
+savedir = 'H:\DATA\Rigid_Data\Saccade\processed';
 save(fullfile(savedir, [fname '.mat']), 'Head', 'amp', 'U', 'N', 'I', 'HEAD_SACCADE_STATS');
 
 end

@@ -120,8 +120,8 @@ movegui(fig, 'center')
 n_std = 1;
 ax = gobjects(2,n_speed); clear h
 for v = 1:n_speed
-    span_std = 1:Fs*(Int.all.time_end_stats(v).median + n_std*Int.all.time_end_stats(v).std);
-    span_med = 1:Fs*(Int.all.time_end_stats(v).median + 0*Int.all.time_end_stats(v).std);
+    span_std = 1:round(Fs*(Int.all.time_end_stats(v).median + n_std*Int.all.time_end_stats(v).std));
+    span_med = 1:round(Fs*(Int.all.time_end_stats(v).median + 0*Int.all.time_end_stats(v).std));
     
     ax(1,v) = subplot(2,n_speed,v); cla ; hold on
         plot(Int.all.time{v}, Int.all.pos{v}, 'Color', [0.5 0.5 0.5 0.2], 'LineWidth', 0.25)

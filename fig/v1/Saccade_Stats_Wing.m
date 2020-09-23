@@ -1,6 +1,6 @@
 function [] = Saccade_Stats_Wing()
 %% Saccade_Stats_Wing:
-root = 'H:\DATA\Rigid_Data\';
+root = 'H:\DATA\Rigid_Data\Saccade';
 
 [FILE,PATH] = uigetfile({'*.mat', 'DAQ-files'}, ...
     'Select head angle trials', root, 'MultiSelect','off');

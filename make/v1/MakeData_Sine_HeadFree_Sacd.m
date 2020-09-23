@@ -1,4 +1,4 @@
-function [] = MakeData_Sine_HeadFree_Sacd(amp,direction)
+function [] = MakeData_Sine_HeadFree_Sacd(amp)
 %% MakeData_Ramp_HeadFree_Sacd:
 %   INPUTS:
 %       amp         :   amplitude of sineusoid stimulus
@@ -7,26 +7,16 @@ function [] = MakeData_Sine_HeadFree_Sacd(amp,direction)
 %   OUTPUTS:
 %       -
 %
+warning('off', 'signal:findpeaks:largeMinPeakHeight')
 
-amp = 18.75;
+amp = 11.25;
 direction = 0; % get saccades in all directions
-
-switch direction
-    case 0
-        dirlabel = 'ALL';
-    case 1
-        dirlabel = 'CW';
-    case -1
-        dirlabel = 'CCW';
-    otherwise
-        error('direction must be 0,1, or -1')
-end
 
 % Data location
 rootdir = ['H:\EXPERIMENTS\RIGID\Experiment_Sinusoid\' num2str(amp)];
 
 % Output file name
-filename = ['SS_HeadFree_SACCD_' dirlabel '_Amp=' num2str(amp)];
+filename = ['Sine_HeadFree_SACCD_Amp=' num2str(amp)];
 
 % Setup Directories 
 PATH.daq = rootdir;
@@ -44,11 +34,12 @@ Fs = 200; % sampling frequency [s]
 tintrp = (0:(1/Fs):(10 - 1/Fs))'; % time vector for interpolation
 
 % HEAD saccade true parameters
-head.showplot = true;
-head.Fc_detect = [15 nan];
+head.showplot = false;
+head.Fc_detect = [10 nan];
 head.Fc_ss = [nan nan];
-head.amp_cut = 8;
-head.thresh = [90 1];
+head.amp_cut = 4;
+head.dur_cut = 0.1;
+head.thresh = [50 , 1, 1, 70];
 head.true_thresh = 300;
 head.sacd_length = nan;
 head.pks = [];
@@ -92,21 +83,25 @@ for kk = 1:N.file
  	head.pos_filt = filtfilt(head_carry.b, head_carry.a, head.pos);
        
     % Extract head saccades
-    %head.Fc_detect = [1 + 1.2*D.freq(kk) nan];
     head_saccade = saccade_all(head.pos_filt, tintrp, head.thresh, head.true_thresh, head.Fc_detect, ...
-                                head.Fc_ss, head.amp_cut, direction, head.pks, head.sacd_length, ...
+                                head.Fc_ss, head.amp_cut, head.dur_cut, direction, head.pks, head.sacd_length, ...
                                 head.min_pkdist, head.min_pkwidth, head.min_pkprom, ...
                                 head.min_pkthresh, head.boundThresh, head.showplot);
     head_saccade = stimSaccade(head_saccade, pat.pos, false); % with approximate pattern position
-    SACCADE{kk,5} = {head_saccade}; % store data in cell
-%     
-%     if head_saccade.count > 8
+    SACCADE{kk,5} = {head_saccade};
+
+%     cla ; hold on
+%     plot(tintrp, pat.pos, 'k')
+%     plot(tintrp, head.pos_filt, 'b')
+%     pause
+
+%     if head_saccade.count > 5
 %         plotSaccade(head_saccade)
 %         plotInterval(head_saccade)
 %         pause
 %         close all
 %     end
-    
+        
     if head_saccade.count == 0
         rep = 1;
     else
@@ -128,7 +123,7 @@ end
 % Fill in empty saccade trials
 empty_idx = cellfun(@(x) isempty(x), HEAD_DATA);
 HEAD_DATA(empty_idx) = {saccade_all(0*head.pos, tintrp, head.thresh, head.true_thresh, head.Fc_detect, ...
-                                head.Fc_ss, head.amp_cut, direction, head.pks, head.sacd_length, ...
+                                head.Fc_ss, head.amp_cut, head.dur_cut, direction, head.pks, head.sacd_length, ...
                                 head.min_pkdist, head.min_pkwidth, head.min_pkprom, ...
                                 head.min_pkthresh, head.boundThresh, false)};
 
@@ -179,7 +174,7 @@ end
 
 %% SAVE %%
 disp('Saving...')
-save(['H:\DATA\Rigid_Data\' filename '_' datestr(now,'mm-dd-yyyy') '.mat'],...
+save(['H:\DATA\Rigid_Data\Saccade\' filename '_' datestr(now,'mm-dd-yyyy') '.mat'],...
       'PATH','SACCADE','HEAD_SACCADE_STATS','FLY','GRAND',...
       'D','I','U','N','T','-v7.3')
 disp('SAVING DONE')

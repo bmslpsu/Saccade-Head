@@ -1,7 +1,9 @@
-function [] = Combine_Stats_Table()
+function [] = Combine_Stats_Table_Ramp(root)
 %% Combine_Stats_Table:
-
-root = 'H:\DATA\Rigid_Data\';
+% savedir = 'C:\Users\BC\Box\Research\Manuscripts\Head Saccade\Data';
+% root = 'H:\DATA\Rigid_Data\Saccade';
+cmb_dir = fullfile(root,'combined');
+mkdir(cmb_dir)
 
 [FILE,PATH] = uigetfile({'*.mat', 'DAQ-files'}, ...
     'Select head angle trials', root, 'MultiSelect','on');
@@ -38,7 +40,6 @@ end
 
 %% Save
 fname = 'Ramp_All_Stats';
-savedir = 'C:\Users\BC\Box\Research\Manuscripts\Head Saccade\Data';
-save(fullfile(savedir, [fname '.mat']), 'All_Stats', 'Count_Stats');
+save(fullfile(cmb_dir, [fname '.mat']), 'All_Stats', 'Count_Stats');
 
 end
