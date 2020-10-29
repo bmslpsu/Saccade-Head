@@ -88,8 +88,13 @@ set([YLabelHC], 'String', 'Position (°)')
 YLabelHC = get(ax(2,1), 'YLabel');
 set([YLabelHC], 'String', 'Velocity (°/s)')
 YLabelHC = get(ax(3,1), 'YLabel');
-set([YLabelHC], 'String', 'Accleratin (°/s^{2})')
+set([YLabelHC], 'String', 'Accleration (°/s^{2})')
 XLabelHC = get(ax(3,1), 'XLabel');
 set([XLabelHC], 'String', 'Time (s)')
+
+%% Save
+savedir = 'H:\DATA\Rigid_Data\Saccade\processed';
+filename = ['Ramp_saccade_window_wave=' num2str(U.wave) '.mat'];
+save(fullfile(savedir, filename), 'Head','U','N','-v7.3')
 
 end

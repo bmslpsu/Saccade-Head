@@ -7,71 +7,60 @@ load(fullfile(PATH,FILE),'SACCADE','U','N')
 
 %% Saccade distribution
 clearvars -except U N SACCADE
-clc
+
 leg_thresh = 0.9;
 n_speed = N.vel/2;
 n_trial = size(SACCADE,1);
-velI = SACCADE.vel;
-velI(velI > n_speed) = velI(velI > n_speed) - n_speed;
-[vel_fly_group, vel_group, fly_group] = findgroups(velI, SACCADE.fly);
-
-DATA = splitvars(table(nan(n_trial,5)));
-DATA.Properties.VariableNames = {'leg_percent', 'count', 'count_leg', 'sacd_leg_percent', 'sacd_leg_norm'};
-DATA = [SACCADE(:,1:4), DATA];
-for n = 1:n_trial    
-   	leg_class = max(SACCADE.leg{n} > leg_thresh, [], 2); % classify time series into leg extension / stabilization
-  	leg_class = medfilt2(leg_class,[200,1]); % filter classification data
-    DATA.leg_percent(n) = 100 * sum(leg_class) / SACCADE.head_saccade{n}.n; % percent of time fly is extending legs
-    
-   	n_sacd = SACCADE.head_saccade{n}.count;
-    DATA.count(n) = n_sacd; % total # of saccades
+sacd_leg = cell(N.fly,n_speed);
+vel_idx = SACCADE.vel;
+vel_idx(vel_idx > n_speed) = vel_idx(vel_idx > n_speed) - n_speed; % speeds
+for n = 1:n_trial
+	n_sacd = SACCADE.head_saccade{n}.count;
     if n_sacd > 0
-        sacd_idx = SACCADE.head_saccade{n}.SACD.PeakIdx; % saccade indicies
-        %sacd_idx = SACCADE.head_saccade{n}.saccades_all.Index;
-        sacd_locs = false(SACCADE.head_saccade{n}.n, 1); % saccade class vector
+        leg_class = max(SACCADE.leg{n} > leg_thresh,[],2); % classify time series into leg extension / stabilization
+        leg_class = medfilt2(leg_class,[200,1]); % filter classification data
+        all_times = SACCADE.head_saccade{n}.time; % time vetor
+        %sacd_idx = SACCADE.head_saccade{n}.SACD.PeakIdx; % saccade indicies
+        sacd_idx = SACCADE.head_saccade{n}.saccades_all.Index;
+        sacd_locs = false(length(all_times),1); % saccade class vector
         sacd_locs(sacd_idx) = true; % classify saccades
         sacd_class = sacd_locs & leg_class; % saccades during leg extension
-        DATA.count_leg(n) = sum(sacd_class);
-        DATA.sacd_leg_percent(n) = 100 * DATA.count_leg(n) / DATA.count(n);
-    else % no saccades
-        DATA.count_leg(n) = 0;
-    end
-    
-    if DATA.leg_percent(n) == 0
-        DATA.sacd_leg_norm(n) = nan;
+        sacd_leg{SACCADE.fly(n),vel_idx(n)}(end+1,1) = length(sacd_idx); % # of saccades in trial
+        
+        pp = size(sacd_leg{SACCADE.fly(n),vel_idx(n)},1);
+        sacd_leg{SACCADE.fly(n),vel_idx(n)}(pp,2) = sum(sacd_class); % # of saccades occuring with leg extension
+        sacd_leg{SACCADE.fly(n),vel_idx(n)}(pp,3) = sum(leg_class); % leg extension data points
+        sacd_leg{SACCADE.fly(n),vel_idx(n)}(pp,4) = length(leg_class); % total data points
+        sacd_leg{SACCADE.fly(n),vel_idx(n)}(pp,5) = sum(sacd_class) / length(sacd_idx); % percent saccd during leg extension
+        sacd_leg{SACCADE.fly(n),vel_idx(n)}(pp,6) = sum(leg_class) / length(leg_class); % percent leg extension per trial
     else
-        DATA.sacd_leg_norm(n) = DATA.sacd_leg_percent(n) / DATA.leg_percent(n);
+        % no saccades
     end
-    
 end
 
-%%
-clear ALL
-ALL.leg_percent = splitapply(@(x) {cat(2,x)}, DATA.leg_percent, vel_fly_group);
-ALL.sacd_leg_percent = splitapply(@(x) {cat(2,x)}, DATA.sacd_leg_percent, vel_fly_group);
-
-ALL = structfun(@(x) splitapply(@(y) {y}, x, vel_group), ALL, 'UniformOutput', false);
-ALL = structfun(@(x) cat(2,x{:}), ALL, 'UniformOutput', false);
-
-ALL.fly_stats = structfun(@(x) cellfun(@(y) basic_stats(y,1), x, 'UniformOutput', true), ...
-    ALL, 'UniformOutput', false);
-
-fnames = string(fieldnames(ALL.fly_stats));
-n_field = length(fnames);
-for f = 1:n_field
-    for v = 1:n_speed
-        ALL.fly_mean.(fnames(f)){v} = cat(1, ALL.fly_stats.(fnames(f))(:,v).mean);
-        ALL.vel_trial.(fnames(f)){v} = cat(1, ALL.(fnames(f)){:,v});
-    end
-    ALL.fly_mean_all.(fnames(f)) = cat(2, ALL.fly_mean.(fnames(f)){:});
-    ALL.vel_trial_all.(fnames(f)) = cat(1, ALL.vel_trial.(fnames(f)){:});
-%     ALL.vel_trial_group.(fnames(f)) = cellfun(@(x,y) y*ones(size(x)), ALL.vel_trial.(fnames(f)), ...
-%         num2cell(1:n_speed), 'UniformOutput', false);
-%     ALL.vel_trial_group.(fnames(f)) = cat(1, ALL.vel_trial_group.(fnames(f)){:});
+comb_vel_sacd_leg = cell(N.fly,1);
+for f = 1:N.fly
+   comb_vel_sacd_leg{f} = cat(1,sacd_leg{f,:}); % combine speeds
 end
 
-ALL.vel_stats = structfun(@(x) cellfun(@(y) basic_stats(y,2), x, 'UniformOutput', true), ...
-    ALL.fly_mean, 'UniformOutput', false);
+comb_fly_sacd_leg = cell(n_speed,1);
+for v = 1:n_speed
+   comb_fly_sacd_leg{v} = cat(1,sacd_leg{:,v}); % combine speeds
+end
+
+percent_leg_ext = cellfun(@(x) 100*sum(x(:,3))/sum(x(:,4)), sacd_leg, 'UniformOutput', true);
+percent_leg_ext_stats = basic_stats(percent_leg_ext,1);
+percent_leg_ext_trial = cat(1,comb_fly_sacd_leg{:});
+
+percent_sacd_leg_ext = cellfun(@(x) 100 * sum(x(:,2)) / sum(x(:,1)), sacd_leg, 'UniformOutput', true);
+percent_sacd_leg_ext = cellfun(@(x) 100 * sum(x(:,2)) / sum(x(:,1)), comb_vel_sacd_leg, 'UniformOutput', true);
+percent_sacd_leg_ext_stats = basic_stats(percent_sacd_leg_ext,1);
+
+% percent_sacd_leg_ext = cellfun(@(x) 100 * sum(x(:,2)) / sum(x(:,1)), comb_fly_sacd_leg, 'UniformOutput', true);
+
+vel_group = cellfun(@(x,y) y*ones(size(x,1),1), comb_fly_sacd_leg, num2cell(1:n_speed)', ...
+    'UniformOutput', false);
+vel_group = cat(1, vel_group{:});
 
 %% Percent Leg Extension by trial
 fig = figure (1) ; clf
@@ -80,7 +69,7 @@ ax(1) = subplot(1,1,1); cla ; hold on ; axis tight
     speeds = U.vel{1}(1:n_speed);
     CC = hsv(n_speed);
     
-    bx = boxplot(DATA.leg_percent, velI, 'Labels', {speeds}, ...
+    bx = boxplot(100*percent_leg_ext_trial(:,6), vel_group, 'Labels', {speeds}, ...
         'Width', 0.5, 'Symbol', '.', 'Whisker', 2);
     
     xlabel('Stimulus Speed (°/s)')
@@ -112,8 +101,7 @@ ax(1) = subplot(1,1,1); cla ; hold on ; axis tight
     ylabel('Leg Extension Percent')
     xticks(speeds)
     
-    bx = boxplot(ALL.fly_mean_all.leg_percent, 'Labels', {speeds}, ...
-        'Width', 0.5, 'Symbol', '.', 'Whisker', 2);
+    bx = boxplot(percent_leg_ext, 'Labels', {speeds}, 'Width', 0.5, 'Symbol', '.', 'Whisker', 2);
     xlabel('Stimulus Speed (°/s)')
     ylabel('Percentage Leg Extension')
 
@@ -136,7 +124,7 @@ fig = figure (3) ; clf
 set(fig, 'Color', 'w','Units', 'inches', 'Position', [2 2 2 2])
 ax(1) = subplot(1,1,1); cla ; hold on ; axis tight   
     %bx = boxplot(percent_sacd_leg_ext, 'Width', 0.5, 'Symbol', '.', 'Whisker', 2);
-    bx = boxplot(ALL.fly_mean_all.sacd_leg_percent(:), 'Width', 0.5, 'Symbol', '.', 'Whisker', 2);
+    bx = boxplot(100*percent_leg_ext_trial(:,5), vel_group, 'Width', 0.5, 'Symbol', '.', 'Whisker', 2);
     
     ylabel('Saccades During Leg Extension (%)')
 

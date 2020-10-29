@@ -219,6 +219,16 @@ for kk = 1:n_plot
 end
 set(ax, 'LineWidth', 1, 'Box', 'off')
 
+%% Anova
+% [p,tb,stats] = anovan(int_stats.vel_error_end, G, 'varnames', {'Speed'});
+% [p,tb,stats] = anovan(int_stats.int_vel_error_end, G, 'varnames', {'Speed'});
+% [c,m] = multcompare(stats);
+
+% % Kruskalwallis
+[p,tb,stats] = kruskalwallis(int_stats.int_vel_error_end, G);
+[c,m] = multcompare(stats);
+
+
 %% Interval Times Histogram
 fig = figure (6); clf
 set(fig, 'Color', 'w', 'Units', 'inches', 'Position', [2 2 6 2])
@@ -290,6 +300,26 @@ XLabelHC = get(ax(1), 'XLabel');
 set([XLabelHC], 'String', 'Kernel Distribution')
 set(ax(2:end),'XTickLabels',[],'YTickLabels',[])
 
+%% Percent Saturate
+clc
+time_med = cellfun(@(x) median(x), int_times);
+time_std = cellfun(@(x) std(x), int_times);
+time_sat = time_med + 2*time_std;
+time_rmv = cellfun(@(x) rmoutliers(x, 'median'), int_times, 'UniformOutput', false);
+sat_ratio = 1 - ( cellfun(@(x) length(x), time_rmv) ./ cellfun(@(x) length(x), int_times) );
+
+fig = figure (17); clf
+set(fig, 'Color', 'w', 'Units', 'inches', 'Position', [2 2 5 8])
+clear ax h
+edges = 0:0.05:3;
+for v = 1:n_speed
+    ax(v) = subplot(n_speed,1,v); cla ; hold on
+        histogram(int_times{v}, edges, 'Normalization', 'probability', ...
+            'FaceColor', 'r', 'FaceAlpha', 1, 'EdgeColor', 'none')
+        histogram(time_rmv{v}, edges, 'Normalization', 'probability', ...
+            'FaceColor', 'k', 'FaceAlpha', 1, 'EdgeColor', 'none')
+end
+
 %% Amplitude
 int_amp = cell(n_wave,1);
 int_amp_fly = cell(n_wave,1);
@@ -301,6 +331,7 @@ for w = 1:n_wave
             endI = endI(endI ~= 0);
             for c = 1:size(endI,2)
                 int_amp{w}{f,v}(1,c) = data(endI(c),c) - data(1,c);
+                %int_amp{w}{f,v}(1,c) = data(endI(c),c);
             end
         end
     end

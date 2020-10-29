@@ -1,19 +1,18 @@
-function [] = HeadWing_Timing_Static()
-%% HeadWing_Timing_Static:
-
+function [] = Ramp_Static_head_wing_sync()
+%% Ramp_Static_head_wing_sync:
 root = 'H:\DATA\Rigid_Data\Saccade';
-
 [FILE,PATH] = uigetfile({'*.mat', 'DAQ-files'}, ...
     'Select head angle trials', root, 'MultiSelect','off');
-
 load(fullfile(PATH,FILE),'SACCADE','U','N')
 
 %% Group head & wing saccades and compute stats %%
 keepI = cellfun(@(x) isstruct(x) | isobject(x), SACCADE.head2wing);
 Saccade = SACCADE(keepI,:);
 
+% waveI = any(Saccade.wave == [2 3 4 6], 2);
+% Saccade = Saccade(waveI,:);
+
 hw_field = 'head2wing';
-% hw_field = 'head2wing_align_wing';
 
 clear head wing
 head.fly = [];
@@ -53,7 +52,7 @@ for v = 1:1
     end
 end
 
-mean_win = round(0.4*200);
+mean_win = round(1*200);
 for v = 1:1
     for f = 1:length(stats_fields)
         temp = cat(2,head.fly(:,v).(stats_fields(f)));
@@ -164,8 +163,8 @@ wing_color = [1 0 0];
 ax(1) = subplot(2,1,1); hold on ; cla
         hold on ; cla ; ylabel('Head (°)')
         ylim(10*[-1 1])
-        plot(head.grand.time, head.grand.pos_desync,...
-            '-', 'Color', [0.7*head_color 0.3], 'LineWidth', 0.25)
+%         plot(head.grand.time, head.grand.pos_desync,...
+%             '-', 'Color', [0.7*head_color 0.3], 'LineWidth', 0.25)
         [~,~] = PlotPatch(head.grand.pos_desync_stats.mean, head.grand.pos_desync_stats.std, ...
             head.grand.time_stats.mean, 1, 1, head_color, 0.7*head_color, 0.3, 1);
         

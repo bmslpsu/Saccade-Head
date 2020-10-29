@@ -57,11 +57,11 @@ wing.Fc_detect = [5 nan];
 wing.Fc_ss = [5 nan];
 wing.amp_cut = 7;
 wing.dur_cut = inf;
-wing.thresh = 40;
-wing.true_thresh = [];
+wing.thresh = [10 , 1, 1.2, 0];
+wing.true_thresh = 70;
 wing.sacd_length = nan;
 wing.pks = [];
-wing.min_pkdist = 1;
+wing.min_pkdist = 0.3;
 wing.min_pkwidth = 0.03;
 wing.min_pkprom = 20;
 wing.min_pkthresh = 0;
@@ -150,11 +150,12 @@ for kk = 1:N.file
         wing.right_filt	= filtfilt(wing.b, wing.a, wing.right);
         wing.dwba_filt	= wing.left_filt - wing.right_filt;
         
-        cla ; hold on
-            plot(tintrp, head.pos_filt, 'k', 'LineWidth', 1)
-            plot(tintrp, wing.dwba, 'r', 'LineWidth', 1)
-            disp(basename{kk})
-            pause
+%         figure (102)
+%         cla ; hold on
+%             plot(tintrp, head.pos_filt, 'k', 'LineWidth', 1)
+%             plot(tintrp, wing.dwba, 'r', 'LineWidth', 1)
+%             disp(basename{kk})
+%             pause
         
       	% Extract wing saccades
         wing_saccade = saccade_all(wing.dwba_filt, tintrp, wing.thresh, wing.true_thresh, wing.Fc_detect, ...
@@ -163,6 +164,10 @@ for kk = 1:N.file
                                 wing.min_pkthresh, wing.boundThresh, wing.showplot);
      	wing_saccade.extra.dwba = wing.dwba; % carry unfiltered dwba singal
         wing_saccade.extra.dwba_vel = wing.dwba_vel; % carry unfiltered dwba velocity singal
+        
+        if wing.showplot
+            figure (1) ; subplot(4,1,1) ; plot(tintrp, head.pos_filt, 'm', 'LineWidth', 1)
+        end
         
         if wing_saccade.count == 0
             rep = 1;

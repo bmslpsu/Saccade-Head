@@ -14,8 +14,8 @@ CC = repmat(hsv(n_vel/2),2,1);
 leg_thresh = 0.9;
 
 vel_idx = SACCADE.vel;
-% head_data = cellfun(@(x) x.position, SACCADE.head_saccade, 'UniformOutput', false);
-head_data = cellfun(@(x) x.velocity, SACCADE.head_saccade, 'UniformOutput', false);
+head_data = cellfun(@(x) x.position, SACCADE.head_saccade, 'UniformOutput', false);
+% head_data = cellfun(@(x) x.velocity, SACCADE.head_saccade, 'UniformOutput', false);
 head_data = cat(2,head_data{:});
 
 Fs = 200;
@@ -59,12 +59,24 @@ vel_idx = 1:5;
 stable_head_all = cat(1,stable_head_vel{vel_idx});
 land_head_all = cat(1,land_head_vel{vel_idx});
 
+comb_data = [stable_head_all ; land_head_all];
+G = [ones(size(stable_head_all)) ; 2*ones(size(land_head_all))];
+
+%% Stats
+% [p,tbl,stats] = anova1(comb_data, G);
+[p,tbl,stats]  = kruskalwallis(comb_data, G);
+[p,stats] = vartestn(comb_data, G);
+
+%% Skewness
+stable_skew = skewness(stable_head_all);
+land_skew = skewness(land_head_all);
+
 %% Speeds
 fig = figure (1) ; clf
 set(fig, 'Color', 'w','Units', 'inches', 'Position', [2 2 3 8])
 ax = gobjects(N.vel/2,1);
 bins = -300:5:300;
-% bins = -25:0.5:25;
+bins = -25:0.5:25;
 pp = 1;
 for v = 1:n_vel/2
     ax(v) = subplot(N.vel/2,1,pp); hold on ; title([ num2str(Vel(v)) '(°/s)'])
@@ -87,12 +99,15 @@ set(ax, 'LineWidth', 1.5, 'Box', 'on', 'YLim', [-0.005 ax(1).YLim(2)])
 fig = figure (2) ; clf
 set(fig, 'Color', 'w','Units', 'inches', 'Position', [2 2 3 3])
 bins = -300:5:300;
-% bins = -25:1:25;
+bins = -25:1:25;
 ax = subplot(1,1,1); hold on
     h_stable = histogram(stable_head_all, bins, 'Normalization', 'probability', ...
         'FaceColor', 'k', 'FaceAlpha', 0.5, 'EdgeColor', 'none');
     h_land = histogram(land_head_all, bins, 'Normalization', 'probability', ...
         'FaceColor', 'r', 'FaceAlpha', 0.5, 'EdgeColor', 'none');
+    
+    xline(mean(stable_head_all), 'Color', 'k')
+    xline(mean(land_head_all), 'Color', 'r')
 
     xlabel('Position (°)')
     xlabel('Velocity (°/s)')

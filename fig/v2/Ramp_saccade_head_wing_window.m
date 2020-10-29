@@ -26,9 +26,36 @@ Scd.head_accel  = splitapply(@(x) {cat(2,x{:})}, Saccade.head_scd_accel, vel_fly
 Scd.wing_pos    = splitapply(@(x) {cat(2,x{:})}, Saccade.wing_scd_pos, vel_fly_group);
 Scd.wing_vel    = splitapply(@(x) {cat(2,x{:})}, Saccade.wing_scd_vel, vel_fly_group);
 
+% head_pos_sync = cellfun(@(x) x.hsacd.pos, Saccade.head2wing, 'UniformOutput', false);
+% head_vel_sync = cellfun(@(x) x.hsacd.vel, Saccade.head2wing, 'UniformOutput', false);
+% head_pos_desync = cellfun(@(x) x.hsacd.pos_desync, Saccade.head2wing, 'UniformOutput', false);
+% head_vel_desync = cellfun(@(x) x.hsacd.vel_desync, Saccade.head2wing, 'UniformOutput', false);
+% 
+% wing_pos_sync = cellfun(@(x) x.wsacd.pos, Saccade.head2wing, 'UniformOutput', false);
+% wing_vel_sync = cellfun(@(x) x.wsacd.vel, Saccade.head2wing, 'UniformOutput', false);
+% wing_pos_desync = cellfun(@(x) x.wsacd.pos_desync, Saccade.head2wing, 'UniformOutput', false);
+% wing_vel_desync = cellfun(@(x) x.wsacd.vel_desync, Saccade.head2wing, 'UniformOutput', false);
+% 
+% Scd.head_pos_sync = splitapply(@(x) {cat(2,x{:})}, head_pos_sync, vel_fly_group);
+% Scd.head_vel_sync = splitapply(@(x) {cat(2,x{:})}, head_vel_sync, vel_fly_group);
+% Scd.head_pos_desync = splitapply(@(x) {cat(2,x{:})}, head_pos_desync, vel_fly_group);
+% Scd.head_vel_desync = splitapply(@(x) {cat(2,x{:})}, head_vel_desync, vel_fly_group);
+% 
+% Scd.wing_pos_sync = splitapply(@(x) {cat(2,x{:})}, wing_pos_sync, vel_fly_group);
+% Scd.wing_vel_sync = splitapply(@(x) {cat(2,x{:})}, wing_vel_sync, vel_fly_group);
+% Scd.wing_pos_desync = splitapply(@(x) {cat(2,x{:})}, wing_pos_desync, vel_fly_group);
+% Scd.wing_vel_desync = splitapply(@(x) {cat(2,x{:})}, wing_vel_desync, vel_fly_group);
+
 Scd = structfun(@(x) splitapply(@(y) {y}, x, vel_group), Scd, 'UniformOutput', false);
 Scd = structfun(@(x) cat(2,x{:}), Scd, 'UniformOutput', false);
-Scd.wing_pos = cellfun(@(x) x - mean(x), Scd.wing_pos, 'UniformOutput', false);
+
+% Normalize position
+Fs = round(Saccade.head_saccade{1}.Fs);
+winI = 1 * Fs;
+% Scd.wing_pos = cellfun(@(x) x - mean(x([1:winI, length(x)-winI:length(x)],:),1), ...
+%     Scd.wing_pos, 'UniformOutput', false);
+Scd.wing_pos = cellfun(@(x) x - mean(x(1:winI,:),1), ...
+    Scd.wing_pos, 'UniformOutput', false);
 
 Scd.fly_stats = structfun(@(x) cellfun(@(y) basic_stats(y,2), x, 'UniformOutput', true), ...
     Scd, 'UniformOutput', false);
@@ -44,7 +71,7 @@ end
 Scd.vel_stats = structfun(@(x) cellfun(@(y) basic_stats(y,2), x, 'UniformOutput', true), ...
     Scd.fly_mean, 'UniformOutput', false);
 
-%% Plot by speed
+%% Plot ALL by speed
 clc
 fig = figure (1) ; clf
 set(fig, 'Color', 'w', 'Units', 'inches')
@@ -56,7 +83,7 @@ fly_lw = 0.5;
 vel_lw = 1;
 head_color = [0 0 1];
 wing_color = [1 0 0];
-n_std = 0;
+n_std = 1;
 for v = 1:n_speed
     rowI = v + (0:2)*n_speed;
     ax(1,v) = subplot(3,n_speed,rowI(1)); hold on ; cla
@@ -69,8 +96,8 @@ for v = 1:n_speed
         [~] = PlotPatch(Scd.vel_stats.head_pos(v).mean, Scd.vel_stats.head_pos(v).std, ...
             Scd.vel_stats.time(v).mean, n_std, 1, head_color, head_color, 0.3, vel_lw);
         
-%         [~] = PlotPatch(Scd.vel_stats.wing_pos(v).mean, Scd.vel_stats.wing_pos(v).std, ...
-%             Scd.vel_stats.time(v).mean, n_std, 1, wing_color, wing_color, 0.3, vel_lw);
+        [~] = PlotPatch(Scd.vel_stats.wing_pos(v).mean, Scd.vel_stats.wing_pos(v).std, ...
+            Scd.vel_stats.time(v).mean, n_std, 1, wing_color, wing_color, 0.3, vel_lw);
         
     ax(2,v) = subplot(3,n_speed,rowI(2)); hold on ; cla
         plot(Scd.fly_mean.time{v}, Scd.fly_mean.head_vel{v}, ...
@@ -82,8 +109,8 @@ for v = 1:n_speed
         [~] = PlotPatch(Scd.vel_stats.head_vel(v).mean, Scd.vel_stats.head_vel(v).std, ...
             Scd.vel_stats.time(v).mean, n_std, 1, head_color, head_color, 0.3, vel_lw);
         
-%         [~] = PlotPatch(Scd.vel_stats.wing_vel(v).mean, Scd.vel_stats.wing_vel(v).std, ...
-%             Scd.vel_stats.time(v).mean, n_std, 1, wing_color, wing_color, 0.3, vel_lw);
+        [~] = PlotPatch(Scd.vel_stats.wing_vel(v).mean, Scd.vel_stats.wing_vel(v).std, ...
+            Scd.vel_stats.time(v).mean, n_std, 1, wing_color, wing_color, 0.3, vel_lw);
  
     ax(3,v) = subplot(3,n_speed,rowI(3)); hold on ; cla
         plot(Scd.fly_mean.time{v}, Scd.fly_mean.head_accel{v}, ...
@@ -97,7 +124,7 @@ linkaxes(ax(1,:), 'y')
 linkaxes(ax(2,:), 'y')
 linkaxes(ax(3,:), 'y')
 set(ax, 'XLim', 0.2*[-1 1])
-set(ax(1,:), 'YLim', 13*[-1 1])
+set(ax(1,:), 'YLim', 15*[-1 1])
 set(ax(2,:), 'YLim', [-200 700])
 set(ax(3,:), 'YLim', 40000*[-1 1])
 set(ax(1:2,:), 'XTickLabel', [])

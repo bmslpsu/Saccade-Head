@@ -8,7 +8,7 @@ load(fullfile(PATH,FILE),'SACCADE','D','I','U','N')
 %% Example Trial
 % Amp = 3.75
 % idx_05 = 2;
-idx_1 = 5;
+% idx_1 = 5;
 % idx_2 = 4;
 % idx_35 = 70;
 % idx_65 = 6;
@@ -22,7 +22,7 @@ idx_1 = 5;
 % idx_12 = 4;
 
 % Amp = 18.75
-% idx_1 = 46;
+idx_1 = 46;
 % idx_2 = 102;
 % idx_35 = 9;
 % idx_65 = 3;
@@ -31,7 +31,9 @@ idx_1 = 5;
 idx = idx_1;
 trial = SACCADE.head_saccade{idx};
 
-OR = mean(abs(trial.position - mean(trial.position)));
+med_abs = median(abs(trial.position));
+OR(1) = median(trial.position) - med_abs;
+OR(2) = median(trial.position) + med_abs;
 
 fig = figure (1) ; clf
 set(fig, 'Color', 'w','Units', 'inches', 'Position', [2 2 6 2.5])
@@ -54,8 +56,8 @@ ax(1) = subplot(2,1,1) ; hold on ; title(['Stimulus: ' num2str(D.freq(idx)) ' (H
         %plot(trial.peaks.time  , trial.peaks.position  , '*b')
         %plot(trial.ends.time   , trial.ends.position   , '*r')
     end
-    plot([0 10],  OR*[1 1], '--r')
-    plot([0 10], -OR*[1 1], '--r')
+    plot([0 10], OR(1)*[1 1], '--r')
+    plot([0 10], OR(2)*[1 1], '--r')
     
     ax(1).YLim = 20*[-1 1];
 

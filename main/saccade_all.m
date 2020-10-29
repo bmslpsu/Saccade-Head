@@ -263,7 +263,7 @@ classdef saccade_all
             %   thresh   : [manual_thresh , med_boolean, nstd_thresh, min_thresh]
             %
             
-            assert( length(thresh) <= 4, 'threshold must be 2x1, or 1x1')
+            assert( length(thresh) <= 4, 'threshold must be 1x1 - 4x1')
             nT = length(thresh);
             
             obj.medians.velocity        = median(obj.velocity_filt_detect); % median velocity
@@ -491,7 +491,12 @@ classdef saccade_all
                             bound = obj.peaks.velocity_ss(ww)*obj.boundThresh(1);
                             if length(obj.boundThresh) == 2
                                 if abs(bound) < obj.boundThresh(2)
-                                    bound = sign(bound) * obj.boundThresh(2);
+                                    if bound == 0
+                                        sgn = 1;
+                                    else
+                                        sgn = sign(bound);
+                                    end
+                                    bound = sgn * obj.boundThresh(2);
                                 end
                             end
                             
@@ -877,8 +882,8 @@ classdef saccade_all
                 end
 
                 % Extract stimulus intervals
-                vel_window = nan(obj.count,1); % anti- or co-directional saccade
-                med_win_co_anti = round(0.1 * obj.Fs); % mean stimulus window size
+                vel_window = nan(obj.count,1); % stim velocity in window before saccade
+                med_win_co_anti = round(0.5 * obj.Fs); % mean stimulus window size
                 if ~isempty(stim) % if any saccades are detected and a stimulus if given
                     for ww = 1:obj.count % every saccade
                         % Create stimulus table

@@ -9,7 +9,7 @@ Free = load(fullfile(FreePath,Free),'SACCADE','U','N','D');
 Fixed = load(fullfile(FixedPath,Fixed),'SACCADE','U','N','D');
 
 %% Head-free vs Head-fixed dwba response
-clearvars -except SACCADE U N D Free Fixed root
+clearvars -except SACCADE U N D Free Fixed
 
 head_color = [0 0 1];
 free_color = [1 0 0];
@@ -59,57 +59,90 @@ ax(1) = subplot(1,1,1) ; cla ; hold on
     
 set(ax, 'LineWidth', 1)
 
-%% Mean & variance distribution in time
-ALL.mean = [ cat(2,Head.fly_mean_time {:})' ; cat(2,WBA_Free.fly_mean_time{:})' ; ...
-                    cat(2,WBA_Fixed.fly_mean_time{:})' ];
-                
-ALL.std = [ cat(2,Head.fly_std_time {:})' ; cat(2,WBA_Free.fly_std_time{:})' ; ...
-                    cat(2,WBA_Fixed.fly_std_time{:})' ];
-
-ALL.range = [ cat(2,Head.fly_range_time{:})' ; cat(2,WBA_Free.fly_range_time{:})' ; ...
-                    cat(2,WBA_Fixed.fly_range_time{:})' ];
-                            
-ALL.group = [ ones(size(cat(2,WBA_Free.fly_mean_time{:})')) ; ...
-                    2*ones(size(cat(2,WBA_Free.fly_mean_time{:})')) ; ...
-                    3*ones(size(cat(2,WBA_Fixed.fly_mean_time{:})')) ];
-                
-fig = figure (12) ; clf
-set(fig, 'Color', 'w', 'Units', 'inches', 'Position', [2 2 6 1.5])
+%% Variance Distribution in time
+fig = figure (11) ; clf
+set(fig, 'Color', 'w', 'Units', 'inches', 'Position', [2 2 5 3])
 movegui(fig, 'center')
-clear ax b
+% bins = 0:2:30;
+ax(1) = subplot(1,3,1) ; cla ; hold on ; ylabel('STD (°)')
+    violin(cat(2,Head.fly_std_time{:})', 'facecolor', head_color, 'plotlegend', true);
+ax(2) = subplot(1,3,2) ; cla ; hold on
+    violin(cat(2,WBA_Free.fly_std_time{:})', 'facecolor', free_color, 'plotlegend', false);
+    %histogram(cat(2,WBA_Free.fly_std_time{:})', bins, 'Normalization','probability','FaceColor','g')
+    %histogram(cat(2,WBA_Fixed.fly_std_time{:})', bins, 'Normalization','probability','FaceColor','r')
+ax(3) = subplot(1,3,3) ; cla ; hold on
+    violin(cat(2,WBA_Fixed.fly_std_time{:})', 'facecolor', fixed_color, 'plotlegend', false);
+
+set(ax, 'LineWidth', 1, 'Box', 'off', 'YTick', 0:5:30, 'YLim', [0 35])
+linkaxes(ax,'xy')
+
+%% Range Distribution in time
+fig = figure (11) ; clf
+set(fig, 'Color', 'w', 'Units', 'inches', 'Position', [2 2 5 3])
+movegui(fig, 'center')
+% bins = 0:2:30;
+ax(1) = subplot(1,3,1) ; cla ; hold on ; ylabel('Range (°)')
+    violin(cat(2,Head.fly_range_time{:})', 'facecolor', head_color, 'plotlegend', true)
+ax(2) = subplot(1,3,2) ; cla ; hold on
+    violin(cat(2,WBA_Free.fly_range_time{:})', 'facecolor', free_color, 'plotlegend', false)
+    %histogram(cat(2,WBA_Free.fly_std_time{:})', bins, 'Normalization','probability','FaceColor','g')
+    %histogram(cat(2,WBA_Fixed.fly_std_time{:})', bins, 'Normalization','probability','FaceColor','r')
+ax(3) = subplot(1,3,3) ; cla ; hold on
+    violin(cat(2,WBA_Fixed.fly_range_time{:})', 'facecolor', fixed_color, 'plotlegend', false)
+
+set(ax, 'LineWidth', 1, 'Box', 'off')
+linkaxes(ax,'xy')
+
+%% Mean Distribution in time
+fig = figure (12) ; clf
+set(fig, 'Color', 'w', 'Units', 'inches', 'Position', [2 2 5 3])
+movegui(fig, 'center')
+% bins = 0:2:30;
 ax(1) = subplot(1,3,1) ; cla ; hold on ; ylabel('Mean (°)')
-    ylim(50*[-1 1])
-    yticks(-50:25:50)
-    b(1) = boxchart(ALL.group, ALL.mean);
+    violin(cat(2,Head.fly_mean_time{:})', 'facecolor', head_color, 'plotlegend', true)
+ax(2) = subplot(1,3,2) ; cla ; hold on
+    violin(cat(2,WBA_Free.fly_mean_time{:})', 'facecolor', free_color, 'plotlegend', false)
+    %histogram(cat(2,WBA_Free.fly_std_time{:})', bins, 'Normalization','probability','FaceColor','g')
+    %histogram(cat(2,WBA_Fixed.fly_std_time{:})', bins, 'Normalization','probability','FaceColor','r')
+ax(3) = subplot(1,3,3) ; cla ; hold on
+    violin(cat(2,WBA_Fixed.fly_mean_time{:})', 'facecolor', fixed_color, 'plotlegend', false)
 
-ax(2) = subplot(1,3,2) ; cla ; hold on ; ylabel('STD (°)') ; 
-    ylim([-1 25])
-    yticks(0:5:25)
-    b(2) = boxchart(ALL.group, ALL.std);
+set(ax, 'LineWidth', 1, 'Box', 'off', 'YLim', 70*[-1 1])
+linkaxes(ax,'xy')
+
+%% Variance Distribution over trials by fly
+fig = figure (13) ; clf
+set(fig, 'Color', 'w', 'Units', 'inches', 'Position', [2 2 6 4])
+movegui(fig, 'center')
+% bins = 0:2:30;
+ax(1) = subplot(1,3,1) ; cla ; hold on
+    violin(cat(1,Head.fly_std{:}), 'facecolor', head_color, 'plotlegend', false)
     
-ax(3) = subplot(1,3,3) ; cla ; hold on ; ylabel('Range (°)') ; 
-%     ylim([-1 50])
-%     yticks(0:10:50)
-    b(3) = boxchart(ALL.group, ALL.range);
+ax(2) = subplot(1,3,2) ; cla ; hold on
+    violin(cat(1,WBA_Free.fly_std{:}), 'facecolor', free_color, 'plotlegend', false)
     
-set(ax, 'LineWidth', 1, 'Box', 'off', 'Color', 'none')
-set(ax(1:end), 'XColor', 'none')
-set(b, 'MarkerStyle', 'none', 'JitterOutliers', 'on', 'BoxFaceAlpha', 0.7)
-linkaxes(ax,'x')
+ax(3) = subplot(1,3,3) ; cla ; hold on
+    violin(cat(1,WBA_Fixed.fly_std{:}), 'facecolor', fixed_color, 'plotlegend', false)
 
-%% Stats
-data = ALL.mean;
-data = ALL.std;
-[p,tbl,stats] = anova1(data, ALL.group);
-% [p,tbl,stats] = kruskalwallis(data, ALL.group);
-c = multcompare(stats, 'alpha', 0.001);
+set(ax, 'LineWidth', 1, 'Box', 'off')
+linkaxes(ax,'xy')
 
-%% Save
-fname = 'Wing_response';
-savedir = fullfile(root,'processed');
-mkdir(savedir)
-save(fullfile(savedir, [fname '.mat']), 'Fc', 'detrend_n', 'WBA_Free', 'WBA_Fixed', 'Head', 'ALL');
+%% Variance Distribution over fly means
+fig = figure (13) ; clf
+set(fig, 'Color', 'w', 'Units', 'inches', 'Position', [2 2 6 4])
+movegui(fig, 'center')
+% bins = 0:2:30;
+ax(1) = subplot(1,3,1) ; cla ; hold on
+    violin(Head.grand_std{:}, 'facecolor', head_color, 'plotlegend', false)
+    
+ax(2) = subplot(1,3,2) ; cla ; hold on
+    violin(WBA_Free.grand_std{:}, 'facecolor', free_color, 'plotlegend', false)
+    
+ax(3) = subplot(1,3,3) ; cla ; hold on
+    violin(WBA_Fixed.grand_std{:}, 'facecolor', fixed_color, 'plotlegend', false)
 
+set(ax, 'LineWidth', 1, 'Box', 'off')
+linkaxes(ax,'xy')
 end
 
 %% Function to get wing data from stucture
@@ -155,7 +188,7 @@ function [DATA,tt] = get_data(WingStruct, prop, norm, Fc, detrend_n)
     n_fly = length(Fly);
     
     % Calculate auto-correlation
-   	%[acor,lags] = cellfun(@(x) autocorr(x, 'NumLags', N-1), data, 'UniformOutput', false);
+   	[acor,lags] = cellfun(@(x) autocorr(x, 'NumLags', N-1), data, 'UniformOutput', false);
 
     % Group wba signals by fly and speed
     DATA.fly = cell(n_fly,n_vel);

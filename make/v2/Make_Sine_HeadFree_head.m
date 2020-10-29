@@ -9,7 +9,7 @@ function [] = Make_Sine_HeadFree_head(amp)
 %
 warning('off', 'signal:findpeaks:largeMinPeakHeight')
 
-amp = 3.75;
+amp = 18.75;
 direction = 0; % get saccades in all directions
 
 % Data location
@@ -34,7 +34,7 @@ Fs = 200; % sampling frequency [s]
 tintrp = (0:(1/Fs):(10 - 1/Fs))'; % time vector for interpolation
 
 % HEAD saccade true parameters
-head.showplot = true;
+head.showplot = false;
 head.Fc_detect = [10 nan];
 head.Fc_ss = [nan nan];
 head.amp_cut = 4;

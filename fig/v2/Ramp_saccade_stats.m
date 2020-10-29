@@ -57,6 +57,13 @@ for ww = 1:n_plot
     ylim(ylim_list{ww})
 end
 
+%% Stats
+data = All_Stats.StartPos .* All_Stats.Direction;
+% [p,tbl,stats] = kruskalwallis(data, vel_group_all);
+[p,tbl,stats] = anovan(data, {vel_group_all, All_Stats.wave}, 'interaction');
+
+[c,m] = multcompare(stats);
+
 %% Saccade Count/Rate
 fly_group = Count_Stats.fly;
 vel_group_all = Count_Stats.vel;
@@ -120,6 +127,7 @@ for ww = 1:n_plot
     ylim(ylim_list{ww})
 end
 
+
 %% Saccade Trigger Polar Plot, normalized to stimulus direction
 FIG = figure (2) ; clf
 FIG.Units = 'inches';
@@ -157,6 +165,30 @@ set(ax,'ThetaZeroLocation','top');
 % leg.Box = 'off';
 
 set(ax, 'LineWidth', 1)
+
+%% Anova and/or Kruskalwallis
+close all
+nanI = ~isnan(All_Stats.Amplitude);
+vel = All_Stats.vel(nanI);
+vel(vel > n_speed) = vel(vel > n_speed) - n_speed;
+wave = All_Stats.wave(nanI);
+fly = All_Stats.fly(nanI);
+
+% test_data = All_Stats.Amplitude .* All_Stats.Direction;
+% test_data = All_Stats.PeakVel .* All_Stats.Direction;
+% test_data = All_Stats.Duration;
+% test_data = All_Stats.Skew;
+% test_data = All_Stats.StartPos .* All_Stats.Direction;
+test_data = All_Stats.EndPos .* All_Stats.Direction;
+
+test_data = test_data(nanI);
+
+[p,tb,stats] = anovan(test_data, {vel wave}, ...
+    'model','interaction', 'varnames', {'Vel','Wave'});
+% [p,tb,stats] = kruskalwallis(test_data, vel);
+pause
+alpha = 0.01 / length(test_data);
+[c,m] = multcompare(stats, 'Alpha', alpha);
 
 %% Error
 vel_group_all = All_Stats.vel;

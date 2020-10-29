@@ -1,7 +1,7 @@
 function [] = Combine_Stats_Table_Ramp(root)
 %% Combine_Stats_Table:
 % savedir = 'C:\Users\BC\Box\Research\Manuscripts\Head Saccade\Data';
-% root = 'H:\DATA\Rigid_Data\Saccade';
+root = 'H:\DATA\Rigid_Data\Saccade';
 cmb_dir = fullfile(root,'combined');
 mkdir(cmb_dir)
 
@@ -16,9 +16,10 @@ for n = 1:n_file
     T{n} = load(fullfile(PATH,FILE{n}),'SACCADE','HEAD_SACCADE_STATS','U','N');
 end
 
-%% Combine tables
+%% Combine tables & get position and velocity structures
 All_Stats = [];
 Count_Stats = [];
+Data = [];
 flyI = 0;
 for n = 1:n_file
     tbl = T{n}.HEAD_SACCADE_STATS;
@@ -36,10 +37,23 @@ for n = 1:n_file
     Count_Stats = cat(1, Count_Stats, count_table);
     
     flyI = tbl.fly(end);
+    
+    n_speed = T{n}.N.vel/2;
+    velI = T{n}.SACCADE.vel;
+    velI(velI > n_speed) = velI(velI > n_speed) - n_speed;
+    pos = cellfun(@(x) x.position .* sign(mean(x.stimlus_velocity)), ...
+        T{n}.SACCADE.head_saccade, 'UniformOutput', false);
+    vel = cellfun(@(x) x.velocity .* sign(mean(x.stimlus_velocity)), ...
+        T{n}.SACCADE.head_saccade, 'UniformOutput', false);
+    pos = splitapply(@(x) {cat(2,x{:})}, pos, velI);
+    vel = splitapply(@(x) {cat(2,x{:})}, vel, velI);
+    Data(n).wave = T{n}.U.wave;
+    Data(n).pos = pos;
+    Data(n).vel = vel;
 end
 
 %% Save
 fname = 'Ramp_All_Stats';
-save(fullfile(cmb_dir, [fname '.mat']), 'All_Stats', 'Count_Stats');
+save(fullfile(cmb_dir, [fname '.mat']), 'All_Stats', 'Count_Stats', 'Data');
 
 end

@@ -8,7 +8,7 @@ function [] = Make_Ramp_HeadFree_head_wing_leg(wave)
 %
 warning('off', 'signal:findpeaks:largeMinPeakHeight')
 
-% wave = 30;
+wave = 30;
 
 % Data location
 rootdir = ['H:\EXPERIMENTS\RIGID\Experiment_Asymmetry_Control_Verification\HighContrast\' num2str(wave)];
@@ -21,7 +21,7 @@ filename = ['Ramp_HeadFree_head_wing_leg_Wave=' num2str(wave)];
 PATH.daq  = rootdir; % DAQ data location
 PATH.vid  = fullfile(PATH.daq,'Vid'); % video data location
 PATH.head = fullfile(PATH.vid,'tracked_head'); % tracked kinematic data location
-PATH.wing = fullfile(PATH.vid,'wing_filt_60', 'tracked_head_wing'); % tracked kinematic data location
+PATH.wing = fullfile(PATH.vid,'wing_filt', 'tracked_head_wing'); % tracked kinematic data location
 PATH.dlc  = rootdlc; % DLC data location
 
 % Select files
@@ -41,7 +41,7 @@ head.Fc_detect = [10 nan];
 head.Fc_ss = [nan nan];
 head.amp_cut = 4;
 head.dur_cut = inf;
-head.thresh = [70 , 2, 1, 0];
+head.thresh = [70, 2, 1, 0];
 head.true_thresh = 250;
 head.sacd_length = nan;
 head.pks = [];
@@ -59,13 +59,13 @@ wing.Fc_detect = [5 nan];
 wing.Fc_ss = [5 nan];
 wing.amp_cut = 4;
 wing.dur_cut = inf;
-wing.thresh = [40, 0, 0, 0];
-wing.true_thresh = [];
+wing.thresh = [50, 2, 0, 0];
+wing.true_thresh = 70;
 wing.sacd_length = nan;
 wing.pks = [];
-wing.min_pkdist = 0.2;
+wing.min_pkdist = 0.3;
 wing.min_pkwidth = 0.03;
-wing.min_pkprom = 10;
+wing.min_pkprom = 20;
 wing.min_pkthresh = 0;
 wing.boundThresh = 0.35;
 wing.Fc = 8;
@@ -171,12 +171,12 @@ for kk = 1:N.file
         wing.right_filt	= filtfilt(wing.b, wing.a, wing.right);
         wing.dwba_filt	= wing.left_filt - wing.right_filt;
         
-        cla ; hold on
-            plot(tintrp, head.pos_filt, 'k', 'LineWidth', 1)
-            plot(tintrp, wing.dwba, 'Color', [0.5 0.5 0.5], 'LineWidth', 0.5)
-            plot(tintrp, wing.dwba_filt, 'r', 'LineWidth', 1)
-            disp(basename{kk})
-            pause
+%         cla ; hold on
+%             plot(tintrp, head.pos_filt, 'k', 'LineWidth', 1)
+%             plot(tintrp, wing.dwba, 'Color', [0.5 0.5 0.5], 'LineWidth', 0.5)
+%             plot(tintrp, wing.dwba_filt, 'r', 'LineWidth', 1)
+%             disp(basename{kk})
+%             pause
         
       	% Extract wing saccades
         wing_saccade = saccade_all(wing.dwba_filt, tintrp, wing.thresh, wing.true_thresh, wing.Fc_detect, ...
@@ -187,6 +187,12 @@ for kk = 1:N.file
         wing_saccade.extra.dwba_vel = wing.dwba_vel; % carry unfiltered dwba velocity singal
         wing_saccade.extra.lwing = wing.left; % carry unfiltered left wba singal
         wing_saccade.extra.rwing = wing.right; % carry unfiltered left wba singal
+        
+        if wing.showplot
+            figure (1) ; subplot(4,1,1)
+            plot(tintrp, head.pos_filt, 'm', 'LineWidth', 0.25)
+            plot(tintrp, wing.dwba, 'b', 'LineWidth', 0.25)
+        end
         
         if wing_saccade.count == 0
             rep = 1;
