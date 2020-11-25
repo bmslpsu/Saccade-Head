@@ -468,6 +468,16 @@ for v = 1:n_speed
     end
 end
 
+%% Interval time at saturation
+n_std = 1;
+time_cut = nan(n_speed,1);
+percent_sat = nan(n_speed,1);
+for v = 1:n_speed
+    int_times = Int_all.time_end{v};
+    time_cut(v) = median(int_times) + n_std*std(int_times);
+    percent_sat(v) = sum(int_times > time_cut(v)) / length(int_times);
+end
+
 %% Save Intervals
 fname = ['Ramp_intervals_wave=' num2str(U.wave)];
 savedir = fullfile(root,'processed');

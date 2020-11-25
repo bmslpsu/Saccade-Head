@@ -6,7 +6,7 @@ load(fullfile(PATH,FILE),'U','N','SACCADE')
 
 %% Get windows around saccades
 clc
-clearvars -except SACCADE U N
+clearvars -except SACCADE U N FILE
 keepI = cellfun(@(x) isobject(x) || isstruct(x), SACCADE.head2wing);
 Saccade = SACCADE(keepI,:);
 if N.vel > 1
@@ -87,8 +87,8 @@ n_std = 1;
 for v = 1:n_speed
     rowI = v + (0:2)*n_speed;
     ax(1,v) = subplot(3,n_speed,rowI(1)); hold on ; cla
-        plot(Scd.fly_mean.time{v}, Scd.fly_mean.head_pos{v}, ...
-            'Color', [0.7*head_color 0.5], 'LineWidth', fly_lw)
+%         plot(Scd.fly_mean.time{v}, Scd.fly_mean.head_pos{v}, ...
+%             'Color', [0.7*head_color 0.5], 'LineWidth', fly_lw)
         
 %         plot(Scd.fly_mean.time{v}, Scd.fly_mean.wing_pos{v}, ...
 %             'Color', [0.7*wing_color 0.5], 'LineWidth', fly_lw)
@@ -96,12 +96,12 @@ for v = 1:n_speed
         [~] = PlotPatch(Scd.vel_stats.head_pos(v).mean, Scd.vel_stats.head_pos(v).std, ...
             Scd.vel_stats.time(v).mean, n_std, 1, head_color, head_color, 0.3, vel_lw);
         
-        [~] = PlotPatch(Scd.vel_stats.wing_pos(v).mean, Scd.vel_stats.wing_pos(v).std, ...
-            Scd.vel_stats.time(v).mean, n_std, 1, wing_color, wing_color, 0.3, vel_lw);
+%         [~] = PlotPatch(Scd.vel_stats.wing_pos(v).mean, Scd.vel_stats.wing_pos(v).std, ...
+%             Scd.vel_stats.time(v).mean, n_std, 1, wing_color, wing_color, 0.3, vel_lw);
         
     ax(2,v) = subplot(3,n_speed,rowI(2)); hold on ; cla
-        plot(Scd.fly_mean.time{v}, Scd.fly_mean.head_vel{v}, ...
-            'Color', [0.7*head_color 0.5], 'LineWidth', fly_lw)
+%         plot(Scd.fly_mean.time{v}, Scd.fly_mean.head_vel{v}, ...
+%             'Color', [0.7*head_color 0.5], 'LineWidth', fly_lw)
 %         
 %         plot(Scd.fly_mean.time{v}, Scd.fly_mean.wing_vel{v}, ...
 %             'Color', [0.7*wing_color 0.5], 'LineWidth', fly_lw)
@@ -109,8 +109,8 @@ for v = 1:n_speed
         [~] = PlotPatch(Scd.vel_stats.head_vel(v).mean, Scd.vel_stats.head_vel(v).std, ...
             Scd.vel_stats.time(v).mean, n_std, 1, head_color, head_color, 0.3, vel_lw);
         
-        [~] = PlotPatch(Scd.vel_stats.wing_vel(v).mean, Scd.vel_stats.wing_vel(v).std, ...
-            Scd.vel_stats.time(v).mean, n_std, 1, wing_color, wing_color, 0.3, vel_lw);
+%         [~] = PlotPatch(Scd.vel_stats.wing_vel(v).mean, Scd.vel_stats.wing_vel(v).std, ...
+%             Scd.vel_stats.time(v).mean, n_std, 1, wing_color, wing_color, 0.3, vel_lw);
  
     ax(3,v) = subplot(3,n_speed,rowI(3)); hold on ; cla
         plot(Scd.fly_mean.time{v}, Scd.fly_mean.head_accel{v}, ...
@@ -142,5 +142,12 @@ YLabelHC = get(ax(3,1), 'YLabel');
 set([YLabelHC], 'String', 'Accleratin (°/s^{2})')
 XLabelHC = get(ax(3,1), 'XLabel');
 set([XLabelHC], 'String', 'Time (s)')
+
+%% Save
+savedir = 'H:\DATA\Rigid_Data\Saccade\processed';
+filedata = textscan(char(FILE), '%s', 'delimiter', '_');
+fclass = filedata{1}{1};
+filename = [fclass '_saccade_window_head_wing.mat'];
+save(fullfile(savedir, filename), 'Scd','U','N','-v7.3')
 
 end

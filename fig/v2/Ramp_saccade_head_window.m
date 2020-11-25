@@ -92,6 +92,20 @@ set([YLabelHC], 'String', 'Accleration (°/s^{2})')
 XLabelHC = get(ax(3,1), 'XLabel');
 set([XLabelHC], 'String', 'Time (s)')
 
+%% Mean
+clc
+max_accel = nan(n_speed,2);
+max_accel_std = nan(n_speed,2);
+for v = 1:n_speed
+   [max_accel(v,1),maxI] = max(Head.vel_stats.vel(v).mean);
+   [max_accel(v,2),minI] = min(Head.vel_stats.vel(v).mean);
+   max_accel_std(v,1) = Head.vel_stats.vel(v).std(maxI);
+   max_accel_std(v,2) = Head.vel_stats.vel(v).std(minI);
+end
+disp(max_accel)
+disp(['Mean Acceleration: ' num2str(mean(max_accel,1))])
+disp(['STD Acceleration: ' num2str(mean(max_accel_std,1))])
+
 %% Save
 savedir = 'H:\DATA\Rigid_Data\Saccade\processed';
 filename = ['Ramp_saccade_window_wave=' num2str(U.wave) '.mat'];

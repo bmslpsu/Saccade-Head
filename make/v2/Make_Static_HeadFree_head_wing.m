@@ -79,7 +79,7 @@ HEAD_SACCADE_STATS = []; % store saccade stats
 WING_SACCADE_STATS = []; % store saccade stats
 for kk = 1:N.file
     disp(kk)
-    %basename{kk}
+    %disp(basename{kk})
     % Load HEAD & DAQ data
 	load(fullfile(PATH.daq, [basename{kk} '.mat']),'data','t_p'); % load head angles % time arrays
     load(fullfile(PATH.head, [basename{kk} '.mat']),'hAngles'); % load head angles % time arrays

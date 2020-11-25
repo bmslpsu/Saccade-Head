@@ -5,12 +5,13 @@ root = 'H:\DATA\Rigid_Data\Saccade';
 load(fullfile(PATH,FILE),'U','N','DATA')
 
 Ramp = load("H:\DATA\Rigid_Data\Saccade\processed\Ramp_saccade_window_wave=30.mat");
+Static = load("H:\DATA\Rigid_Data\Saccade\processed\Static_saccade_window_head_wing.mat");
 
 %% Get windows around saccades
 clc
-clearvars -except DATA U N Ramp
-Data = DATA(DATA.init_pos > -12,:);
-% Data = DATA(DATA.init_pos > -100,:);
+clearvars -except DATA U N Ramp Static
+Data = DATA(DATA.init_pos > -20,:);
+Data = DATA(DATA.init_pos > -100,:);
 fly_group = findgroups(Data.Fly);
 
 Head.time   = splitapply(@(x) {cat(2,x{:})}, Data.time, fly_group);
@@ -45,6 +46,12 @@ fnames = fields(Head_intrp_actv);
 Head_intrp_actv = rmfield(Head_intrp_actv, fnames(1));
 Head_intrp_actv = structfun(@(x) interp1(Ramp.Head.vel_stats.time(speedI).mean + 0.02, x, tintrp, 'pchip'), ...
     Head_intrp_actv, 'UniformOutput', false);
+
+Head_intrp_static = structfun(@(x) x.mean, Static.Scd.vel_stats(1), 'UniformOutput', false);
+fnames = fields(Head_intrp_static);
+Head_intrp_static = rmfield(Head_intrp_static, fnames(1));
+Head_intrp_static = structfun(@(x) interp1(Ramp.Head.vel_stats.time(speedI).mean + 0.02, x, tintrp, 'pchip'), ...
+    Head_intrp_static, 'UniformOutput', false);
 
 %% Analytical Response
 % Fit coefficents
@@ -194,6 +201,7 @@ set(fig, 'Position', 1*[2 2 2 4])
 movegui(fig, 'center')
 cc_passive = 'k';
 cc_active = 'r';
+cc_static = 'b';
 grand_lw = 1;
 speedI = 2;
 
@@ -206,25 +214,33 @@ pos_active = Ramp.Head.vel_stats.pos(speedI).mean;
 % pos_active = pos_active - pos_active(normI) + pos_passive(1);
 
 time_active = Ramp.Head.vel_stats.time(speedI).mean + 0.02;
+time_passive = Static.Scd.vel_stats.time.mean + 0.02;
 
+% Head_intrp_static
 clear ax h
 ax(1) = subplot(3,1,1); hold on ; cla
     h.passive = plot(Head.grand_stats.time.mean, pos_passive, ...
         'Color', cc_passive, 'LineWidth', grand_lw);
     h.active = plot(time_active, pos_active, ...
         'Color', cc_active, 'LineWidth', grand_lw);
+    h.static = plot(time_passive, Static.Scd.vel_stats.head_pos.mean, ...
+        'Color', cc_static, 'LineWidth', grand_lw);
 
 ax(2) = subplot(3,1,2); hold on ; cla
     h.passive = plot(Head.grand_stats.time.mean, Head.grand_stats.vel.mean, ...
         'Color', cc_passive, 'LineWidth', grand_lw);
     h.active = plot(time_active, Ramp.Head.vel_stats.vel(speedI).mean, ...
         'Color', cc_active, 'LineWidth', grand_lw);
+    h.static = plot(time_passive, Static.Scd.vel_stats.head_vel.mean, ...
+        'Color', cc_static, 'LineWidth', grand_lw);
 
 ax(3) = subplot(3,1,3); hold on ; cla
     h.passive = plot(Head.grand_stats.time.mean, Head.grand_stats.accel.mean, ...
         'Color', cc_passive, 'LineWidth', grand_lw);
     h.active = plot(time_active, Ramp.Head.vel_stats.accel(speedI).mean, ...
         'Color', cc_active, 'LineWidth', grand_lw);
+    h.static = plot(time_passive, Static.Scd.vel_stats.head_accel.mean, ...
+        'Color', cc_static, 'LineWidth', grand_lw);
         
 linkaxes(ax, 'x')
 set(ax, 'XLim', [0 0.05])
@@ -249,13 +265,14 @@ set(fig, 'Position', 1*[2 2 2 4])
 movegui(fig, 'center')
 cc_passive = 'k';
 cc_active = 'r';
+cc_static = 'b';
 cc_diff = 'g';
-grand_lw = 1;
+cc_act_stat = 'm';
+grand_lw = 1.5;
 
 pos_passive_raw = Head_intrp_pass.pos;
 normI = Fs_intrp * 0.04;
 pos_passive = pos_passive_raw - pos_passive_raw(normI);
-F = F - pos_passive_raw(normI);
 
 pos_active = Head_intrp_actv.pos;
 % [~,normI] = min(abs(tintrp  + 0.0400));
@@ -263,35 +280,54 @@ pos_active = Head_intrp_actv.pos;
 
 clear ax h
 ax(1) = subplot(3,1,1); hold on ; cla
-    h.passive = plot(tintrp, pos_passive, ...
+    h.passive(1) = plot(tintrp, pos_passive, ...
         'Color', cc_passive, 'LineWidth', grand_lw);
-    h.active = plot(tintrp, pos_active, ...
+    h.active(1) = plot(tintrp, pos_active, ...
         'Color', cc_active, 'LineWidth', grand_lw);
-	h.diff = plot(tintrp, (pos_active - pos_passive), ...
+    h.static(1) = plot(tintrp, Head_intrp_static.head_pos, ...
+        'Color', cc_static, 'LineWidth', grand_lw);
+	h.diff(1) = plot(tintrp, (pos_active - pos_passive), ...
         'Color', cc_diff, 'LineWidth', grand_lw);
+    h.diff2(1) = plot(tintrp, pos_active - Head_intrp_static.head_pos, ...
+        'Color', cc_act_stat, 'LineWidth', grand_lw);
     
 ax(2) = subplot(3,1,2); hold on ; cla
-    h.passive = plot(tintrp, Head_intrp_pass.vel, ...
+    h.passive(2) = plot(tintrp, Head_intrp_pass.vel, ...
         'Color', cc_passive, 'LineWidth', grand_lw);
-    h.active = plot(tintrp, Head_intrp_actv.vel, ...
+    h.active(2) = plot(tintrp, Head_intrp_actv.vel, ...
         'Color', cc_active, 'LineWidth', grand_lw);
-	h.diff = plot(tintrp, (Head_intrp_actv.vel - Head_intrp_pass.vel), ...
+    h.static(2) = plot(tintrp, Head_intrp_static.head_vel, ...
+        'Color', cc_static, 'LineWidth', grand_lw);
+	h.diff(2) = plot(tintrp, (Head_intrp_actv.vel - Head_intrp_pass.vel), ...
         'Color', cc_diff, 'LineWidth', grand_lw);
+    h.diff2(2) = plot(tintrp, Head_intrp_actv.vel - Head_intrp_static.head_vel, ...
+        'Color', cc_act_stat, 'LineWidth', grand_lw);
     
 ax(3) = subplot(3,1,3); hold on ; cla
-    h.passive = plot(tintrp, Head_intrp_pass.accel, ...
+    h.passive(3) = plot(tintrp, Head_intrp_pass.accel, ...
         'Color', cc_passive, 'LineWidth', grand_lw);
-    h.active = plot(tintrp, Head_intrp_actv.accel, ...
+    h.active(3) = plot(tintrp, Head_intrp_actv.accel, ...
         'Color', cc_active, 'LineWidth', grand_lw);
-	h.diff = plot(tintrp, (Head_intrp_actv.accel - Head_intrp_pass.accel), ...
+    h.static(3) = plot(tintrp, Head_intrp_static.head_accel, ...
+        'Color', cc_static, 'LineWidth', grand_lw);
+	h.diff(3) = plot(tintrp, (Head_intrp_actv.accel - Head_intrp_pass.accel), ...
         'Color', cc_diff, 'LineWidth', grand_lw);
+    h.diff2(3) = plot(tintrp, Head_intrp_actv.accel - Head_intrp_static.head_accel, ...
+        'Color', cc_act_stat, 'LineWidth', grand_lw);
     
 linkaxes(ax, 'x')
 set(ax, 'XLim', [0 0.05])
 set(ax(1), 'YLim', [-10 10])
 set(ax(2), 'YLim', [-100 700])
 set(ax(3), 'YLim', 0.5e5*[-1 1])
-set(ax, 'LineWidth', 1)
+set(ax, 'LineWidth', 1.5)
+
+sI = 3;
+legend([h.passive(sI) h.active(sI) h.static(sI) h.diff2(sI)], ...
+    'passive', 'active (ramp)', 'static (ramp)', 'ramp - static', ...
+    'Box', 'off')
+
+delete(h.diff)
 
 YLabelHC = get(ax(1), 'YLabel');
 set([YLabelHC], 'String', 'Position (°)')

@@ -1,4 +1,4 @@
-function [MOV] = make_montage_rigid_head_wing_fixed(root_free,rootpat,vidFs,export)
+function [MOV] = make_montage_rigid_head_wing_fixed_yyaxis(root_free,rootpat,vidFs,export)
 %% make_montage_rigid_head_wing_fixed: makes movie for fly in rigid tether
 %
 % 	Includes fly video, head tracking, wing tracking, leg tracking 
@@ -17,7 +17,7 @@ function [MOV] = make_montage_rigid_head_wing_fixed(root_free,rootpat,vidFs,expo
 
 % Example Input %
 clear ; clc ; close all
-export = false;
+export = true;
 vidFs = 50;
 root_free = 'H:\EXPERIMENTS\RIGID\Experiment_Asymmetry_Control_Verification\HighContrast\30';
 root_fixed = 'H:\EXPERIMENTS\RIGID\Experiment_Ramp_30_HeadFixed';
@@ -58,7 +58,7 @@ FILE.benifly_fixed = [FILE.basename_fixed '.csv'];
 FILE.mask_free 	= [FILE.basename_free '.json'];
 FILE.mask_fixed = [FILE.basename_fixed '.json'];
 
-FILE.montage  = ['Free=' FILE.basename_free '_Fxed=' FILE.basename_fixed '_Montage.mp4'];
+FILE.montage  = ['Free=' FILE.basename_free '_Fxed=' FILE.basename_fixed '_yy_Montage.mp4'];
 
 % Load data
 disp('Loading Data ...')
@@ -211,6 +211,7 @@ set(FIG, 'Color', 'k', 'Renderer', 'OpenGL', 'Units', 'inches', ...
 movegui(FIG, 'center')
 linewidth = 1.25; % displayed line width
 fontsize = 12;
+max_y = 5*ceil(max(abs([FLY.int_wba_free;FLY.int_wba_fixed]))/5);
 
 gs = pattern_data.pattern.gs_val + 1;
 cmap = [zeros(gs,1), linspace(0,1,gs)', zeros(gs,1)];
@@ -220,18 +221,19 @@ clear ax
 ax(1) = subplot(2,4,[1:2]) ; cla; hold on; axis square % for raw fly & pattern vid free
 ax(2) = subplot(2,4,[5:6]) ; cla; hold on; axis square % for raw fly & pattern vid fixed
 ax(3) = subplot(2,4,[3:4]);
-        yyaxis left
-        ax(3) = gca; cla; hold on
-            set(ax(3), 'YColor', 'c') ; ylim([-25 25])
+        yyaxis right
+        ax(3) = gca; cla; hold on ; title('Head Free', 'Color', 'w', 'FontSize', 15)
+            set(ax(3), 'YColor', 'c') ; ylim(max_y*[-1 1]) ; yticks([-20 0 20])
             ylabel('Head (°)','Color','w','FontSize',fontsize)
             h.head = animatedline('Color','c','LineWidth',linewidth); % for head angle
-        yyaxis right
+        yyaxis left
         ax(4) = gca; cla; hold on
-            set(ax(4), 'YColor', 'r')
+            set(ax(4), 'YColor', 'r') ; ylim([-25 25]) ; yticks([-20 0 20])
             ylabel('\DeltaWBA (°)','Color','w','FontSize',fontsize)
             h.wba_free = animatedline('Color','r','LineWidth',linewidth); % for dWBA angle free
-ax(5) = subplot(2,4,[7:8]) ; cla; hold on
-        ylabel('Fixed \DeltaWBA (°)','Color','w','FontSize',fontsize)
+ax(5) = subplot(2,4,[7:8]) ; cla; hold on  ; title('Head Fixed', 'Color', 'w', 'FontSize', 15)
+        set(ax(5), 'YColor', 'm')
+        ylabel('\DeltaWBA (°)','Color','w','FontSize',fontsize)
     	xlabel('Time (s)','Color','w','FontSize',fontsize)
         h.wba_fixed = animatedline('Color','m','LineWidth',linewidth); % for dWBA angle fixed
 
@@ -239,14 +241,12 @@ set(ax(3:end), 'FontSize', 12, 'Color', 'k', 'XColor', 'w', 'FontWeight', 'bold'
     'LineWidth', 1.5, 'XLim', [0 round(FLY.int_time_free(end))])
 set(ax(end),'XTick', 0:2:round(FLY.time_free(end)))
 set(ax(3), 'XTickLabel', [], 'XColor', 'none')
-set(ax(5), 'YColor', 'w')
 
-max_y = 5*ceil(max(abs([FLY.int_wba_free;FLY.int_wba_fixed]))/5);
 
-set(ax(3:5), 'YLim', max_y*[-1 1], 'YTick', 20*[-1 0 1])
+set(ax(5), 'YLim', max_y*[-1 1], 'YTick', 20*[-1 0 1])
 
 linkaxes(ax(3:end),'xy')
-align_Ylabels_ax(ax(3:end)')
+align_Ylabels_ax(ax(3:4)')
 
 iter = round(FLY.Fs_free/vidFs); % # of frames to skip per iteration to acheive desired frame rate
 expframe = circshift(mod(1:FLY.nframe_free,iter)==1,0); % which frames to export
@@ -263,7 +263,12 @@ for jj = 1:FLY.nframe_free % for each frame
             win = jj;
         end
         Frame.free  = median(FLY.raw_free(:,:,win),iter-1); % current raw frame median across frames
-        Frame.fixed = 1.4*median(FLY.raw_fixed_norm(:,:,win),iter-1); % current raw frame median across frames
+        Frame.free = 1.3*medfilt2(Frame.free,[3 3]);
+        
+        Frame.fixed = 1*median(FLY.raw_fixed_norm(:,:,win),iter-1); % current raw frame median across frames
+        Frame.fixed = medfilt2(Frame.fixed,[3 3]);
+        Frame.fixed = 1.3*imadjust(Frame.fixed);
+        
         
         % Display free video
         subplot(2,4,[1:2]); cla; hold on; axis image

@@ -1,12 +1,11 @@
-function [] = Static_saccade_stats()
-%% Static_saccade_stats:
+function [] = Static_saccade_stats_uniform()
+%% Static_saccade_stats_uniform:
 load('H:\DATA\Rigid_Data\Saccade\processed\Static_All_Stats.mat')
 
 %% Pick wavelengths & whether to combine
-comb = true;
-waveI = [2 3 4 6];
-waveI = [1 5];
-% waveI = 1:6;
+waveI_feat = [2 3 4 6];
+waveI_uni = [1 5];
+waveI = 1:6;
 
 %% Saccade Statistics
 All_Stats = All_Stats(All_Stats.Duration < 0.08,:);
@@ -14,10 +13,6 @@ All_Stats = All_Stats(any(All_Stats.wave == waveI,2),:);
 fly_group_all = All_Stats.fly;
 wave_group_all = All_Stats.wave;
 Wave = U.wave{1}(waveI);
-if comb
-    wave_group_all = wave_group_all ./ wave_group_all;
-    Wave = 1;
-end
 
 n_wave = length(Wave);
 CC = repmat(jet(n_wave),2,1);
@@ -26,7 +21,7 @@ CC = repmat(jet(n_wave),2,1);
 
 stat_names = ["PeakVel", "Amplitude", "Duration", "Skew", "StartPos", "EndPos"];
 ylabel_names = ["Peak Velocity (°/s)", "Amplitude (°)", "Duration (s)", "Skew", "Start (°)", "End (°)"];
-ylim_list = {[0 1500],[0 35],[0 0.1],[0 1],[-30 30], [-30 30], [-0.1 3],};
+ylim_list = {[0 1500],[0 35],[0 0.1],[0 1],[-30 30], [-30 30], [-0.1 1],};
 n_plot = length(stat_names);
 
 FIG = figure (1) ; clf
@@ -64,9 +59,7 @@ Count_Stats = Count_Stats(Count_Stats.count < 10,:);
 Count_Stats = Count_Stats(any(Count_Stats.wave == waveI,2),:);
 fly_group_all = Count_Stats.fly;
 wave_group_all = Count_Stats.wave;
-if comb
-    wave_group_all = wave_group_all ./ wave_group_all;
-end
+
 [fly_wave_group,fly_group,wave_group] = findgroups(fly_group_all, wave_group_all);
 
 count = Count_Stats.count;
@@ -122,5 +115,45 @@ set(ax,'ThetaDir','clockwise')
 set(ax,'ThetaTick',-20:10:20);
 set(ax,'ThetaZeroLocation','top');
 set(ax, 'LineWidth', 1)
+
+%% Anova and/or Kruskalwallis
+close all
+nanI = ~isnan(All_Stats.Amplitude);
+wave = All_Stats.wave(nanI);
+% fly = All_Stats.fly(nanI);
+
+% test_data = All_Stats.Amplitude .* All_Stats.Direction;
+% test_data = All_Stats.PeakVel .* All_Stats.Direction;
+% test_data = All_Stats.Duration;
+% test_data = All_Stats.Skew;
+% test_data = All_Stats.StartPos .* All_Stats.Direction;
+% test_data = All_Stats.EndPos .* All_Stats.Direction;
+
+test_data = test_data(nanI);
+
+[p,tb,stats] = anovan(test_data, {wave}, 'model','interaction', 'varnames', {'Wave'});
+% [p,tb,stats] = kruskalwallis(test_data, wave);
+pause
+alpha = 0.01;
+[c,m] = multcompare(stats, 'Alpha', alpha);
+
+%% Anova and/or Kruskalwallis for saccade frequency
+close all
+nanI = ~isnan(Count_Stats.count);
+wave = Count_Stats.wave(nanI);
+
+% Uniform vs grating
+waveI = wave;
+waveI(any(wave==[2 3 4 6],2)) = 0;
+waveI(waveI ~=0) = 1;
+
+test_data = Count_Stats.count ./ 10;
+test_data = test_data(nanI);
+
+[p,tb,stats] = anovan(test_data, {waveI}, 'model','interaction', 'varnames', {'Wave'});
+% [p,tb,stats] = kruskalwallis(test_data, wave);
+pause
+alpha = 0.05;
+[c,m] = multcompare(stats, 'Alpha', alpha);
 
 end

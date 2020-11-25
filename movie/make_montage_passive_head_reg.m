@@ -1,5 +1,5 @@
-function [MOV] = make_montage_passive_head(rootdir,vidFs,export)
-%% make_montage_passive_head: makes movie for fly in rigid tether
+function [MOV] = make_montage_passive_head_reg(rootdir,vidFs,export)
+%% make_montage_passive_head_reg: makes movie for fly in rigid tether
 %
 % 	Includes fly video, head tracking, wing tracking, leg tracking 
 %   & pattern position
@@ -19,7 +19,7 @@ function [MOV] = make_montage_passive_head(rootdir,vidFs,export)
 clear ; clc ; close all 
 export = true;
 vidFs = 50;
-rootdir = 'H:\EXPERIMENTS\RIGID\Passive Head Displacement\Vid';
+rootdir = 'H:\EXPERIMENTS\RIGID\Passive Head Displacement\Vid\registered';
 if ~isfolder(rootdir)
     dirflag = false;
     [rootdir,mainfile,mainext] = fileparts(rootdir);
@@ -49,7 +49,7 @@ FILE.montage = [FILE.basename '_Montage.mp4'];
 
 % Load data
 disp('Loading Data ...')
-vid_data = load(fullfile(PATH.vid,FILE.vid),'vidData'); % load vid video
+vid_data = load(fullfile(PATH.vid,FILE.vid),'regvid'); % load vid video
 head_data = load(fullfile(PATH.head_track,FILE.vid),'hAngles','cPoint','t_v'); % load head angles
 disp('DONE')
 
@@ -88,10 +88,13 @@ winI = scdI(1) - round(t_win(1)*FLY.Fs) : scdI(end) + ( round(t_win(2)*FLY.Fs) -
 % FLY.time_win = (1/FLY.Fs)*(0:length(winI)-1)';
 FLY.time_win = (-t_win(1):(1/FLY.Fs):t_win(2))';
 FLY.head_win = FLY.head(winI);
-FLY.head_win = FLY.head_win - FLY.head_win(end);
+
+norm_win = scdI(end):length(FLY.head);
+norm_head = median(FLY.head(norm_win));
+FLY.head_win_norm = FLY.head_win - FLY.head_win(end);
 
 %% Get video data
-FLY.vid = squeeze(vid_data.vidData(:,:,winI)); % video data
+FLY.vid = squeeze(vid_data.regvid(:,:,winI)); % video data
 FLY.vid = medfilt3(FLY.vid, [3 3 3]);
 % [~,rectout] = imcrop(FLY.vid(:,:,1));
 crop_r = [0.1 0.1];
@@ -173,7 +176,7 @@ for n = 1:n_rep
 
         % Head plot
         subplot(3,4,[9:12]); hold on
-            addpoints(h.head, FLY.time_win(jj), FLY.head_win(jj))
+            addpoints(h.head, FLY.time_win(jj), FLY.head_win_norm(jj))
 
         drawnow
 
@@ -202,7 +205,7 @@ for jj = 1:FLY.nframe % for each frame
         
     % Head plot
     subplot(3,4,[9:12]); hold on
-        addpoints(h.head, FLY.time_win(jj), FLY.head_win(jj))
+        addpoints(h.head, FLY.time_win(jj), FLY.head_win_norm(jj))
 
     drawnow
 

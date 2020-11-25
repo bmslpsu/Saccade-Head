@@ -325,8 +325,6 @@ scd_fly.stats = structfun(@(x) cellfun(@(y) basic_stats(y,2), x, 'UniformOutput'
 % scd_fly.vel_stats = structfun(@(x) cellfun(@(y) basic_stats(y,2), x, 'UniformOutput', true), ...
 %     scd_fly.mean, 'UniformOutput', false);
 
-%%
-
 G = structfun(@(z) cellfun(@(x,y) y*ones(size(x)), z, num2cell((1:length(z))'), ...
     'UniformOutput', false), scd, 'UniformOutput', false);
 G = structfun(@(z) cat(1,z{:}), G, 'UniformOutput', false);
@@ -382,7 +380,7 @@ set(ax , 'LineWidth', 1, 'Color', 'none', 'Box', 'off')
 set(ax, 'XLim', [0 31])
 linkaxes(ax, 'x')
 
-set(ax, 'XColor', 'none')
+% set(ax, 'XColor', 'none')
 
 %% CDF's
 clear ax h H

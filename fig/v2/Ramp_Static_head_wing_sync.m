@@ -5,7 +5,7 @@ root = 'H:\DATA\Rigid_Data\Saccade';
     'Select head angle trials', root, 'MultiSelect','off');
 load(fullfile(PATH,FILE),'SACCADE','U','N')
 
-%% Group head & wing saccades and compute stats %%
+%% Group head & wing saccades and compute stats
 keepI = cellfun(@(x) isstruct(x) | isobject(x), SACCADE.head2wing);
 Saccade = SACCADE(keepI,:);
 
@@ -87,6 +87,8 @@ end
 sync_fly = nan(nfly,1);
 for a = 1:nfly
     all_head = head.fly(a).pos;
+    desync_fly(a) = sum(isnan(all_head(1,:)));
+    all_fly(a) = size(all_head,2);
     sync_fly(a) = sum(isnan(all_head(1,:))) / size(all_head,2);
 end
 

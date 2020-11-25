@@ -100,7 +100,7 @@ FLY.rwing   = filtfilt(b,a,FLY.rwing); % right wing angles [deg]
 FLY.wba     = FLY.lwing - FLY.rwing; % delta wing-beat-amplitude [deg]
 [b,a]       = butter(2,20/(FLY.Fs/2),'low'); % make lpf
 FLY.wba     = filtfilt(b,a,FLY.wba); % delta wing-beat-amplitude [deg]
-FLY.wba     = FLY.wba - mean(FLY.wba); % delta wing-beat-amplitude [deg]
+% FLY.wba     = FLY.wba - mean(FLY.wba); % delta wing-beat-amplitude [deg]
 
 % Legs from DLC
 FLY.leg_left = [dlc_data.front_leg_left_x , dlc_data.front_leg_left_y];

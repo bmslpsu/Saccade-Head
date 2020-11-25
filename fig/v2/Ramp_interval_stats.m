@@ -228,7 +228,6 @@ set(ax, 'LineWidth', 1, 'Box', 'off')
 [p,tb,stats] = kruskalwallis(int_stats.int_vel_error_end, G);
 [c,m] = multcompare(stats);
 
-
 %% Interval Times Histogram
 fig = figure (6); clf
 set(fig, 'Color', 'w', 'Units', 'inches', 'Position', [2 2 6 2])
@@ -304,21 +303,36 @@ set(ax(2:end),'XTickLabels',[],'YTickLabels',[])
 clc
 time_med = cellfun(@(x) median(x), int_times);
 time_std = cellfun(@(x) std(x), int_times);
+n_mad = 3;
+time_mad = cellfun(@(x) mad(x), int_times);
+time_cut = time_med + n_mad *time_mad;
+
 time_sat = time_med + 2*time_std;
-time_rmv = cellfun(@(x) rmoutliers(x, 'median'), int_times, 'UniformOutput', false);
+time_rmv = cellfun(@(x) rmoutliers(x, 'median', 'ThresholdFactor', n_mad), int_times, 'UniformOutput', false);
 sat_ratio = 1 - ( cellfun(@(x) length(x), time_rmv) ./ cellfun(@(x) length(x), int_times) );
+disp(sat_ratio)
+time_cut =  cellfun(@(x) max(x), time_rmv);
+% n_std = 3;
+% time_cut = nan(n_speed,1);
+% percent_sat = nan(n_speed,1);
+% for v = 1:n_speed
+%     I = int_times{v};
+%     time_cut(v) = median(I) + n_std*std(I);
+%     percent_sat(v) = sum(I > time_cut(v)) / length(I);
+% end
 
 fig = figure (17); clf
 set(fig, 'Color', 'w', 'Units', 'inches', 'Position', [2 2 5 8])
 clear ax h
 edges = 0:0.05:3;
 for v = 1:n_speed
-    ax(v) = subplot(n_speed,1,v); cla ; hold on
+    ax(v) = subplot(n_speed,1,v); cla ; hold on ; title(Speed(v))
         histogram(int_times{v}, edges, 'Normalization', 'probability', ...
             'FaceColor', 'r', 'FaceAlpha', 1, 'EdgeColor', 'none')
         histogram(time_rmv{v}, edges, 'Normalization', 'probability', ...
             'FaceColor', 'k', 'FaceAlpha', 1, 'EdgeColor', 'none')
 end
+legend('Outlier', 'All')
 
 %% Amplitude
 int_amp = cell(n_wave,1);

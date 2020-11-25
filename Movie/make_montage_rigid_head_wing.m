@@ -20,7 +20,7 @@ clear ; clc ; close all
 export = true;
 vidFs = 50;
 % rootdir = 'H:\EXPERIMENTS\RIGID\Experiment_Static_Wave';
-rootdir = 'H:\EXPERIMENTS\RIGID\Experiment_Asymmetry_Control_Verification\HighContrast\22.5';
+rootdir = 'H:\EXPERIMENTS\RIGID\Experiment_Asymmetry_Control_Verification\HighContrast\30';
 % rootdir = 'H:\EXPERIMENTS\RIGID\Experiment_Sinusoid\3.75';
 rootpat = 'C:\Users\BC\Box\Git\Arena\Patterns';
 pat_ypos = 5;
@@ -63,7 +63,7 @@ mkdir(PATH.mov) % create directory for export images
 % Set file names
 [~,FILE.basename,~] = fileparts(FILE.raw);
 FILE.benifly   	= [FILE.basename '.csv'];
-FILE.montage    = [FILE.basename '_Montage.mp4'];
+FILE.montage    = [FILE.basename '_Montage_new.mp4'];
 FILE.mask       = [FILE.basename '.json'];
 
 % Load data
@@ -95,7 +95,7 @@ FLY.Fc      = 30; % cut off frequency for lpf
 [b,a]       = butter(2,FLY.Fc/(FLY.Fs/2),'low'); % make lpf
 FLY.head    = filtfilt(b,a,head_data.hAngles); % head angles [deg]
 % FLY.head    = filtfilt(b,a,rad2deg(benifly_data.Head)); % head angles [deg]
-FLY.head    = FLY.head - mean(FLY.head); % head angles [deg]
+% FLY.head    = FLY.head - mean(FLY.head); % head angles [deg]
 FLY.lwing   = rad2deg(hampel(FLY.time,benifly_data.LWing)); % left wing angles [deg]
 FLY.rwing   = rad2deg(hampel(FLY.time,benifly_data.RWing)); % right wing angles [deg]
 FLY.lwing   = filtfilt(b,a,FLY.lwing); % left wing angles [deg]

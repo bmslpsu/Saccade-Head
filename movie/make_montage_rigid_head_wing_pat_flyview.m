@@ -103,7 +103,7 @@ FLY.rwing   = filtfilt(b,a,FLY.rwing); % right wing angles [deg]
 FLY.wba     = FLY.lwing - FLY.rwing; % delta wing-beat-amplitude [deg]
 [b,a]       = butter(2,20/(FLY.Fs/2),'low'); % make lpf
 FLY.wba     = filtfilt(b,a,FLY.wba); % delta wing-beat-amplitude [deg]
-FLY.wba     = FLY.wba - mean(FLY.wba); % delta wing-beat-amplitude [deg]
+% FLY.wba     = FLY.wba - mean(FLY.wba); % delta wing-beat-amplitude [deg]
 
 % Normalize fly kinematics for experimental window
 FLY.int_time    = TRIG.time_sync_exp; % video time

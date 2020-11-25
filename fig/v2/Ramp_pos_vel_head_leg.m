@@ -29,8 +29,8 @@ leg_class_filt = logical(ceil(medfilt2(double(leg_class),[100,1])));
 
 stable_head = head_data;
 land_head = head_data;
-stable_head(~leg_class_filt) = nan;
-land_head(leg_class_filt) = nan;
+stable_head(leg_class_filt) = nan;
+land_head(~leg_class_filt) = nan;
 
 stable_head_vel = cell(n_vel,1);
 land_head_vel = cell(n_vel,1);
@@ -64,7 +64,7 @@ G = [ones(size(stable_head_all)) ; 2*ones(size(land_head_all))];
 
 %% Stats
 % [p,tbl,stats] = anova1(comb_data, G);
-[p,tbl,stats]  = kruskalwallis(comb_data, G);
+[p,tbl,stats] = kruskalwallis(comb_data, G);
 [p,stats] = vartestn(comb_data, G);
 
 %% Skewness
@@ -102,12 +102,12 @@ bins = -300:5:300;
 bins = -25:1:25;
 ax = subplot(1,1,1); hold on
     h_stable = histogram(stable_head_all, bins, 'Normalization', 'probability', ...
-        'FaceColor', 'k', 'FaceAlpha', 0.5, 'EdgeColor', 'none');
+        'FaceColor', 'm', 'FaceAlpha', 0.5, 'EdgeColor', 'none');
     h_land = histogram(land_head_all, bins, 'Normalization', 'probability', ...
-        'FaceColor', 'r', 'FaceAlpha', 0.5, 'EdgeColor', 'none');
+        'FaceColor', 'k', 'FaceAlpha', 0.5, 'EdgeColor', 'none');
     
-    xline(mean(stable_head_all), 'Color', 'k')
-    xline(mean(land_head_all), 'Color', 'r')
+    xline(mean(stable_head_all), 'Color', 'm')
+    xline(mean(land_head_all), 'Color', 'k')
 
     xlabel('Position (°)')
     xlabel('Velocity (°/s)')
@@ -117,7 +117,7 @@ ax = subplot(1,1,1); hold on
     %xlim(25*[-1 1])
     %xticks([-25:5:25])
     
-    %legend('Landing State', 'Stabilizing State')
+    legend([h_stable h_land], 'Stabilizing State', 'Landing State')
 
 set(ax, 'LineWidth', 1.5, 'Box', 'on', 'YLim', [-0.005 1.1*ax(1).YLim(2)])
 
