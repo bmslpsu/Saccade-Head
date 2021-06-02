@@ -1053,6 +1053,9 @@ classdef saccade_all
                 dir = ones(obj.count,1);
             end
             
+            if isempty(new_signal)
+               new_signal = obj.position; 
+            end
             assert(obj.n == length(new_signal), 'Signal must be same length as saccade object''s signal')
             scd_winI = round(obj.Fs * scd_win); % saccade window size in samples
             int_winI = round(obj.Fs * int_win); % interval window size in samples

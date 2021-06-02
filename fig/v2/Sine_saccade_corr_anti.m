@@ -1,6 +1,6 @@
 function [] = Sine_saccade_corr_anti()
 %% Sine_saccade_corr_anti:
-root = 'H:\DATA\Rigid_Data\Saccade\processed';
+root = 'E:\DATA\Rigid_Data\Saccade\processed';
 [FILE,PATH] = uigetfile({'*.mat'},'Select sinusoid datasets', root, 'MultiSelect','on');
 FILE = cellstr(FILE);
 
@@ -27,7 +27,7 @@ end
 
 %% Save combined sine data
 fname = 'Sine_all';
-savedir = 'H:\DATA\Rigid_Data\Saccade\combined';
+savedir = 'E:\DATA\Rigid_Data\Saccade\combined';
 save(fullfile(savedir, [fname '.mat']), 'ALL_amp', 'ALL_amp_fly','Scd_amp');
 
 %% Position All
@@ -117,7 +117,8 @@ ax(ww) = subplot(1,1,1) ; cla ; hold on
 set(ax, 'LineWidth', 1, 'Box', 'off')
 
 %% Correlation saccade rate vs head position by fly
-x = ALL_amp_fly.OR;
+% x = ALL_amp_fly.OR;
+x = ALL_amp_fly.stim_vel;
 y = ALL_amp_fly.anti_count ./ 10;
 [P] = polyfit(x, y, 1);
 [rho,pval] = corr(x, y);

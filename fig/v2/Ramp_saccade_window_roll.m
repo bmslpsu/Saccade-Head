@@ -1,6 +1,6 @@
 function [] = Ramp_saccade_window_roll()
 %% Ramp_saccade_window_roll:
-root = 'H:\DATA\Rigid_Data\Saccade';
+root = 'E:\DATA\Rigid_Data\Saccade';
 [FILE,PATH] = uigetfile({'*.mat'},'Select data file', root, 'MultiSelect','off');
 load(fullfile(PATH,FILE),'U','N','SACCADE')
 
@@ -44,7 +44,7 @@ end
 Head.vel_stats = structfun(@(x) cellfun(@(y) basic_stats(y,2), x, 'UniformOutput', true), ...
     Head.fly_mean, 'UniformOutput', false);
 
-%% Plot Yaw vs Roll
+%% Plot Yaw vs Roll saccades
 clc
 fig = figure (1) ; clf
 set(fig, 'Color', 'w', 'Units', 'inches')

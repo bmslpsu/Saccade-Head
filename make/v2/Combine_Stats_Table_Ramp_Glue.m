@@ -1,10 +1,10 @@
-function [] = Combine_Stats_Table_Ramp(root)
-%% Combine_Stats_Table:
+function [] = Combine_Stats_Table_Ramp_Glue(root)
+%% Combine_Stats_Table_Ramp_Glue:
 root = 'E:\DATA\Rigid_Data\Saccade';
 cmb_dir = fullfile(root,'combined');
 mkdir(cmb_dir)
 
-[FILE,PATH] = uigetfile({'*.mat','files'},'Select files',root,'MultiSelect','on');
+[FILE,PATH] = uigetfile({'*.mat'}, root, 'MultiSelect','on');
 FILE = cellstr(FILE);
 n_file = length(FILE);
 
@@ -37,7 +37,7 @@ for n = 1:n_file
     flyI = tbl.fly(end);
     
     n_speed = T{n}.N.vel/2;
-    velI = T{n}.SACCADE.vel;
+    velI = findgroups(T{n}.SACCADE.vel);
     velI(velI > n_speed) = velI(velI > n_speed) - n_speed;
     pos = cellfun(@(x) x.position .* sign(mean(x.stimlus_velocity)), ...
         T{n}.SACCADE.head_saccade, 'UniformOutput', false);
@@ -51,7 +51,7 @@ for n = 1:n_file
 end
 
 %% Save
-fname = 'Ramp_All_Stats';
+fname = 'Ramp_Glue_All_Stats';
 save(fullfile(cmb_dir, [fname '.mat']), 'All_Stats', 'Count_Stats', 'Data');
 
 end

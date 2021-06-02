@@ -1,6 +1,6 @@
 function [] = Ramp_wing_trigger_left_right()
 %% Ramp_wing_trigger_left_right:
-root = 'H:\DATA\Rigid_Data\Saccade';
+root = 'E:\DATA\Rigid_Data\Saccade';
 
 [FILE,PATH] = uigetfile({'*.mat'},'Select data file', root, 'MultiSelect','off');
 

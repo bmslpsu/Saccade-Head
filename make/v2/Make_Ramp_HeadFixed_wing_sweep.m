@@ -1,7 +1,8 @@
-function [] = Make_Ramp_HeadFixed_wing()
-%% Make_Ramp_HeadFixed_wing:
+function [] = Make_Ramp_HeadFixed_wing_sweep(wing,tag)
+%% Make_Ramp_HeadFixed_wing_sweep:
 %   INPUTS:
-%       wave    :   spatial wavelength of data
+%       wing    : wing saccade detetcion parameters
+%       tag     : last part of file name
 %
 %   OUTPUTS:
 %       -
@@ -28,24 +29,24 @@ disp('Loading...')
 Fs = 100; % sampling frequency [s]
 tintrp = (0:(1/Fs):(10 - 1/Fs))'; % time vector for interpolation
 
-% WING saccade detection parameters
-wing.showplot = true;
-wing.Fc_detect = [5 nan];
-wing.Fc_ss = [5 nan];
-wing.amp_cut = 4;
-wing.dur_cut = inf;
-% wing.thresh = [10, 2, 1, 0];
-wing.thresh = [50, 2, 0, 0];
-wing.true_thresh = 70;
-wing.sacd_length = nan;
-wing.pks = [];
-wing.min_pkdist = 0.3;
-wing.min_pkwidth = 0.03;
-wing.min_pkprom = 20;
-wing.min_pkthresh = 0;
-wing.boundThresh = 0.35;
-wing.Fc = 8;
-[wing.b, wing.a] = butter(3, wing.Fc / (Fs/2) ,'low');
+% % WING saccade detection parameters
+% wing.showplot = false;
+% wing.Fc_detect = [5 nan];
+% wing.Fc_ss = [5 nan];
+% wing.amp_cut = 3;
+% wing.dur_cut = inf;
+% wing.thresh = [0, 2, 1.25, 0];
+% wing.true_thresh = 100;
+% wing.sacd_length = nan;
+% wing.pks = [];
+% wing.min_pkdist = 0.3;
+% wing.min_pkwidth = 0.03;
+% wing.min_pkprom = 20;
+% wing.min_pkthresh = 0;
+% wing.boundThresh = 0.35;
+% wing.Fc = 20;
+% [wing.b, wing.a] = butter(3, wing.Fc / (Fs/2) ,'low');
+
 wing_carry.Fc = 40;
 [wing_carry.b, wing_carry.a] = butter(3, wing_carry.Fc / (Fs/2) ,'low');
 
@@ -66,10 +67,13 @@ for kk = 1:N.file
 	[trig,~] = sync_pattern_trigger(t_p, data(:,2), 10, data(:,1), true, [], false, false);
     
   	% Get wing data
-    wing.left       = hampel(trig.time_sync, benifly.LWing);
-    wing.right      = hampel(trig.time_sync, benifly.RWing);
-    wing.left       = rad2deg(interp1(trig.time, wing.left, tintrp, 'pchip'));
-    wing.right      = rad2deg(interp1(trig.time, wing.right, tintrp, 'pchip'));
+    n_detrend = 2;
+    wing.left       = rad2deg(benifly.LWing);
+    wing.right      = rad2deg(benifly.RWing);
+    wing.left       = hampel(trig.time_sync, wing.left);
+    wing.right      = hampel(trig.time_sync, wing.right);
+    wing.left       = detrend(interp1(trig.time, wing.left, tintrp, 'pchip'), n_detrend);
+    wing.right      = detrend(interp1(trig.time, wing.right, tintrp, 'pchip'), n_detrend);
     wing.dwba       = wing.left - wing.right;
     wing.dwba       = filtfilt(wing_carry.b, wing_carry.a, wing.dwba);
     wing.dwba_vel   = diff(wing.dwba) * Fs;
@@ -77,6 +81,7 @@ for kk = 1:N.file
     wing.left_filt	= filtfilt(wing.b, wing.a, wing.left);
     wing.right_filt	= filtfilt(wing.b, wing.a, wing.right);
     wing.dwba_filt	= wing.left_filt - wing.right_filt;
+    
     
     wing.dwba_filt = detrend(wing.dwba_filt,3);
 
@@ -107,10 +112,25 @@ for kk = 1:N.file
     end
 end
 
-%% SAVE %%
+%% Test
+clc
+% clear Saccade
+% keepI = cellfun(@(x) isstruct(x) | isobject(x), SACCADE.wing_saccade);
+% Saccade = SACCADE(keepI,:);
+% wing_rate = cellfun(@(x) x.rate, Saccade.wing_saccade);
+% 
+% close all
+% figure (10) ; clf
+% subplot(1,1,1)
+%     boxplot(wing_rate, Saccade.vel)
+
+%% SAVE
 disp('Saving...')
-save(['H:\DATA\Rigid_Data\Saccade\' filename '_' datestr(now,'mm-dd-yyyy') '.mat'],...
+% save(['E:\DATA\Rigid_Data\Saccade\sweep\' filename '_' tag '.mat'],...
+%       'PATH','SACCADE','WING_SACCADE_STATS',...
+%       'Stim','D','I','U','N','T','-v7.3')
+save(['E:\DATA\Rigid_Data\Saccade\sweep\' filename '_' tag '.mat'],...
       'PATH','SACCADE','WING_SACCADE_STATS',...
-      'Stim','D','I','U','N','T','-v7.3')
+      'Stim','D','I','U','N','T','wing','-v7.3')
 disp('SAVING DONE')
 end

@@ -1,6 +1,6 @@
 function [] = Process_Interval_Ramp()
 %% Interval_Gain:
-root = 'H:\DATA\Rigid_Data\Saccade';
+root = 'E:\DATA\Rigid_Data\Saccade';
 [FILE,PATH] = uigetfile({'*.mat'},'Select data file', root, 'MultiSelect','off');
 load(fullfile(PATH,FILE),'U','N','SACCADE','Stim')
 

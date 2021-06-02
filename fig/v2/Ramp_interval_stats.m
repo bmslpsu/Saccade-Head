@@ -1,6 +1,6 @@
 function [] = Ramp_interval_stats()
 %% Ramp_interval_stats:
-root = 'H:\DATA\Rigid_Data\Saccade\processed';
+root = 'E:\DATA\Rigid_Data\Saccade\processed';
 
 [FILE,PATH] = uigetfile({'*.mat'},'Select data file', root, 'MultiSelect','on');
 FILE = cellstr(FILE);
@@ -169,6 +169,17 @@ for kk = 1:n_plot
 end
 set(ax, 'LineWidth', 1, 'Box', 'off')
 
+%% Stats
+% [p,tb,stats] = anovan(int_stats.vel_error_end, G, 'varnames', {'Speed'});
+% [p,tb,stats] = anovan(int_stats.int_vel_error_end, G, 'varnames', {'Speed'});
+% [c,m] = multcompare(stats);
+
+% % Kruskalwallis
+% data = int_stats.peak_time;
+% data = reshap(data, )
+[p,tb,stats] = kruskalwallis(int_stats.pos_amp);
+[c,m] = multcompare(stats, 'Alpha', 0.001);
+
 %% Error Stats
 stat_names = ["pos_error_end","vel_error_end","int_pos_error_end","int_vel_error_end"];
 n_plot = length(stat_names);
@@ -219,14 +230,14 @@ for kk = 1:n_plot
 end
 set(ax, 'LineWidth', 1, 'Box', 'off')
 
-%% Anova
+%% Stats
 % [p,tb,stats] = anovan(int_stats.vel_error_end, G, 'varnames', {'Speed'});
 % [p,tb,stats] = anovan(int_stats.int_vel_error_end, G, 'varnames', {'Speed'});
 % [c,m] = multcompare(stats);
 
 % % Kruskalwallis
 [p,tb,stats] = kruskalwallis(int_stats.int_vel_error_end, G);
-[c,m] = multcompare(stats);
+[c,m] = multcompare(stats, 'Alpha', 0.001);
 
 %% Interval Times Histogram
 fig = figure (6); clf
@@ -376,7 +387,13 @@ ax(kk) = subplot(1,1,kk) ; hold on
 
 set(ax, 'LineWidth', 1, 'Box', 'off')
 
-%% Error
+%% Stats
+% [p,tb,stats] = anovan(int_stats.vel_error_end, G, 'varnames', {'Speed'});
+% [p,tb,stats] = anovan(int_stats.int_vel_error_end, G, 'varnames', {'Speed'});
+% [c,m] = multcompare(stats);
 
+% % Kruskalwallis
+[p,tb,stats] = kruskalwallis(int_amp_fly);
+[c,m] = multcompare(stats, 'Alpha', 0.001);
 
 end

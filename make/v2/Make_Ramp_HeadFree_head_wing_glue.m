@@ -1,4 +1,4 @@
-function [] = Make_Ramp_HeadFree_head_wing_leg(wave)
+function [] = Make_Ramp_HeadFree_head_wing_glue()
 %% Make_Ramp_HeadFree_head_wing_leg:
 %   INPUTS:
 %       wave    :   spatial wavelength of data
@@ -8,25 +8,22 @@ function [] = Make_Ramp_HeadFree_head_wing_leg(wave)
 %
 warning('off', 'signal:findpeaks:largeMinPeakHeight')
 
-wave = 30;
-
 % Data location
-rootdir = ['E:\EXPERIMENTS\RIGID\Experiment_Asymmetry_Control_Verification\HighContrast\' num2str(wave)];
-rootdlc = 'Q:\Google Drive PSU\Experiment_Data';
+rootdir = 'E:\EXPERIMENTS\RIGID\Experiment_ramp_glue';
+% rootdir = 'E:\EXPERIMENTS\RIGID\Experiment_ramp_glue_head\tracked_head';
 
 % Output file name
-filename = ['Ramp_HeadFree_head_wing_leg_Wave_vel_60_=' num2str(wave)];
+filename = 'Ramp_HeadFree_head_wing_glue';
 
 % Setup Directories
-PATH.daq  = rootdir; % DAQ data location
-PATH.vid  = fullfile(PATH.daq,'Vid'); % video data location
-PATH.head = fullfile(PATH.vid,'tracked_head'); % tracked kinematic data location
-PATH.wing = fullfile(PATH.vid,'wing_filt', 'tracked_head_wing'); % tracked kinematic data location
-PATH.dlc  = rootdlc; % DLC data location
+PATH.daq  = rootdir;
+PATH.vid  = fullfile(PATH.daq,'');
+PATH.head = fullfile(PATH.vid,'tracked_head_tip');
+PATH.wing = fullfile(PATH.vid,'filt', 'tracked_head_wing');
 
 % Select files
-% [D,I,N,U,T,~,~,basename] = GetFileData(PATH.head,'*.mat',false,'fly','trial','vel','wave');
-[D,I,N,U,T,~,~,basename] = GetFileData(PATH.wing,'*.csv',false,'fly','trial','vel','wave');
+[D,I,N,U,T,~,~,basename] = GetFileData(PATH.head,'*.mat',false,'fly','trial','vel','wave');
+% [D,I,N,U,T,~,~,basename] = GetFileData(PATH.wing,'*.csv',false,'fly','trial','vel','wave');
 
 %% Get Data %%
 clc
@@ -75,34 +72,24 @@ wing_carry.Fc = 40;
 
 Vel = U.vel{1}; % velocities
 Stim = (Vel*tintrp')'; % stimuli
-SACCADE = [I , splitvars(table(num2cell(zeros(N.file,10))))]; % store saccade objects
+SACCADE = [D , splitvars(table(num2cell(zeros(N.file,10))))]; % store saccade objects
 SACCADE.Properties.VariableNames(5:14) = {'head_saccade','head_scd_pos','head_scd_vel', 'head_scd_accel','scd_time', ...
                                           'wing_saccade', 'wing_scd_pos', 'wing_scd_vel','head2wing','leg'};
 HEAD_DATA = cell(N.fly,N.vel);
 HEAD_SACCADE_STATS = [];
 WING_SACCADE_STATS = [];
-for kk = 161:N.file
+for kk = 1:N.file
     disp(kk)
-    %basename{kk}
+    % basename{kk}
     % Load HEAD & DAQ data
 	load(fullfile(PATH.daq, [basename{kk} '.mat']),'data','t_p'); % load head angles % time arrays
-    load(fullfile(PATH.head, [basename{kk} '.mat']),'hAngles'); % load head angles % time arrays
+    load(fullfile(PATH.head, [basename{kk} '.mat']),'head_data'); % load head angles % time arrays
  
   	% Sync frames and get pattern data
-	[trig,pat] = sync_pattern_trigger(t_p, data(:,2), 10, data(:,1), true, 1, true, false);
-
-    % DLC data
-    if wave == 30
-        dlc_file        = dir(PATH.dlc);
-        dlc_file    	= string({dlc_file.name}');
-        dlc_file        = start_end_string(dlc_file, basename{kk}, '.csv');
-        dlc_data        = readDLC(fullfile(PATH.dlc,dlc_file)); % load DLC data
-        leg_prob        = [dlc_data.front_leg_left_prob , dlc_data.front_leg_right_prob];
-        SACCADE.leg(kk) = {leg_prob};
-    end
+	[trig,pat] = sync_pattern_trigger(t_p, data(:,2), 10, data(:,1), true, 1, false, false);
 
     % Get head data
-    head.pos = interp1(trig.time_sync, hAngles, tintrp, 'pchip');
+    head.pos = interp1(trig.time_sync, head_data.angle, tintrp, 'pchip');
     
 	% Head with filter
  	head.pos_filt = filtfilt(head_carry.b, head_carry.a, head.pos);
@@ -116,6 +103,10 @@ for kk = 161:N.file
     head_saccade = stimSaccade(head_saccade, Stim(:,I.vel(kk)), false); % with approximate pattern position
     SACCADE.head_saccade(kk) = {head_saccade}; % store data in cell
 
+    if any(head_saccade.peaks.velocity > 1200)
+       disp('here') 
+    end
+    
     if head_saccade.count == 0
         rep = 1;
     else
@@ -140,13 +131,6 @@ for kk = 161:N.file
         pause
         close all
     end
-    
-%     if any(head_saccade.SACD.Duration > 0.1)
-%         plotSaccade(head_saccade)
-%         plotInterval(head_saccade)
-%         pause
-%         close all
-%     end
     
 	% Load WING data if avialable
     wfile = fullfile(PATH.wing, [basename{kk} '.csv']);
@@ -217,10 +201,6 @@ for kk = 161:N.file
             SACCADE.wing_scd_pos(kk) = {cat(2,scds{:})};
             [scds,~,~,~] = getSaccade(head_saccade, wing.dwba_vel, 0.5, 0.5, true);
             SACCADE.wing_scd_vel(kk) = {cat(2,scds{:})};
-            
-            head2wing = head_wing_saccade_cc(head_saccade, wing_saccade, 0.15, 0.5, 0.5, false, false);
-        	SACCADE.head2wing(kk) = {head2wing};
-            %pause
         end
     end
 end
@@ -276,6 +256,85 @@ for kk = 1:nfield % for each field in saccade structure
         end
     end
 end
+
+%% Rate by fly
+scd_rate = cellfun(@(x) x.rate, SACCADE.head_saccade);
+DATA = [SACCADE , table(num2cell(scd_rate), 'VariableNames', {'rate'})];
+[stats] = table_fly_stats(DATA, 3, 15, false);
+
+stat_name = 'rate';
+n_speed = N.vel/2;
+vel = U.vel{1};
+
+fig = figure (1) ; clf
+set(fig, 'Color', 'w', 'Units', 'inches', 'Position', 1*[2 2 N.fly*2 3])
+movegui(fig, 'center')
+ax = gobjects(n_speed,N.fly);
+b = gobjects(n_speed,N.fly);
+pp = 1;
+for v = 1:n_speed
+    for n = 1:N.fly
+        ax(v,n) = subplot(n_speed,N.fly,pp); cla ; hold on
+        y = [stats.(stat_name){n,v} , stats.(stat_name){n,v+n_speed}];
+        G = [vel(v)*ones(size(stats.(stat_name){n,v})) , ...
+            vel(v+n_speed)*ones(size(stats.(stat_name){n,v+n_speed}))];
+        
+        b(v,n) = boxchart(categorical(G), y, 'LineWidth', 1, 'MarkerStyle', '.', ...
+            'JitterOutliers', 'on', 'Notch', 'off');
+        
+        pp = pp + 1;
+    end
+end
+linkaxes(ax, 'y')
+set(ax, 'Color', 'none', 'LineWidth', 1, 'XColor', 'none')
+% set(ax, 'YLim', [-0.1 2])
+set(ax(:,2:end), 'YColor', 'none')
+
+set(b(1,:), 'BoxFaceColor', 'r')
+set(b(2,:), 'BoxFaceColor', 'b')
+
+YLabelHC = get(ax(:,1), 'YLabel');
+set([YLabelHC{:}], 'String', stat_name)
+
+%% Dynamics by fly
+[stats] = table_fly_stats(HEAD_SACCADE_STATS, 5, [6 7 8 18 20 22], false);
+
+stat_name = 'StartPos';
+n_speed = N.vel/2;
+vel = U.vel{1};
+
+fig = figure (2) ; clf
+set(fig, 'Color', 'w', 'Units', 'inches', 'Position', 1*[2 2 N.fly*2 3])
+movegui(fig, 'center')
+ax = gobjects(n_speed,N.fly);
+b = gobjects(n_speed,N.fly);
+pp = 1;
+for v = 1:n_speed
+    for n = 1:N.fly
+        ax(v,n) = subplot(n_speed,N.fly,pp); cla ; hold on
+        y = [stats.(stat_name){n,v} , stats.(stat_name){n,v+n_speed}];
+        dir = -[stats.Direction{n,v} , stats.Direction{n,v+n_speed}];
+        
+        z = y .* dir;
+        G = [vel(v)*ones(size(stats.(stat_name){n,v})) , ...
+            vel(v+n_speed)*ones(size(stats.(stat_name){n,v+n_speed}))];
+        
+        b(v,n) = boxchart(categorical(G), z, 'LineWidth', 1, 'MarkerStyle', '.', ...
+            'JitterOutliers', 'on', 'Notch', 'off');
+        
+        pp = pp + 1;
+    end
+end
+linkaxes(ax, 'y')
+set(ax, 'Color', 'none', 'LineWidth', 1, 'XColor', 'none')
+% set(ax, 'YLim', [-0.1 2])
+set(ax(:,2:end), 'YColor', 'none')
+
+set(b(1,:), 'BoxFaceColor', 'r')
+set(b(2,:), 'BoxFaceColor', 'b')
+
+YLabelHC = get(ax(:,1), 'YLabel');
+set([YLabelHC{:}], 'String', stat_name)
 
 %% SAVE %%
 disp('Saving...')

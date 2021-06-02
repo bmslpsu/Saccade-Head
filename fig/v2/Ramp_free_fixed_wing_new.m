@@ -1,5 +1,5 @@
-function [] = Ramp_free_fixed_wing()
-%% Ramp_free_fixed_wing:
+function [] = Ramp_free_fixed_wing_new()
+%% Ramp_free_fixed_wing_new:
 root = 'E:\DATA\Rigid_Data\Saccade';
 
 [Free,FreePath] = uigetfile({'*.mat'},'Select free data', root, 'MultiSelect','off');
@@ -12,7 +12,8 @@ Fixed = load(fullfile(FixedPath,Fixed),'SACCADE','U','N','D');
 clearvars -except SACCADE U N D Free Fixed root
 
 head_color = [0 0 1];
-free_color = [1 0 0];
+free_color_30 = [1 0 0];
+free_color_60 = [0.1 0.8 0.3];
 fixed_color = [0 0 0];
 
 norm = true;
@@ -20,9 +21,10 @@ head_prop = 'head_saccade';
 wing_prop = 'wing_saccade';
 Fc = []; % high-pass filter cutoff frequency [Hz]
 detrend_n = [];
-[Head,~] = get_data(Free, head_prop, norm, [], []);
-[WBA_Free,time_free] = get_data(Free, wing_prop, norm, Fc, detrend_n);
-[WBA_Fixed,time_fixed] = get_data(Fixed, wing_prop, norm, Fc, detrend_n);
+[Head,~] = get_data(Free, head_prop, norm, [], [], [1 3]);
+[WBA_Free_30,time_free_30] = get_data(Free, wing_prop, norm, Fc, detrend_n, [1 3]);
+[WBA_Free_60,time_free_60] = get_data(Free, wing_prop, norm, Fc, detrend_n, [2 4]);
+[WBA_Fixed,time_fixed] = get_data(Fixed, wing_prop, norm, Fc, detrend_n, [1 2]);
 
 %% Free vs Fixed time series
 fig = figure (10) ; clf
@@ -39,56 +41,59 @@ ax(1) = subplot(1,1,1) ; cla ; hold on
 %     [~] = PlotPatch(WBA_Free.all_mean{1}, WBA_Free.all_std{1}, time_free, 1, 1, free_color, free_color, 0.3, 3);
 %     [~] = PlotPatch(WBA_Fixed.all_mean{1}, WBA_Fixed.all_std{1}, time_fixed, 1, 1, fixed_color, fixed_color, 0.3, 3);
     
-    %plot(time_free, Head.fly_mean_all {1}, 'Color', [head_color 0.5], 'LineWidth', 1)
+    %plot(time_free_30, WBA_Free_30.fly_mean_all {1}, 'Color', [free_color_30 0.7], 'LineWidth', 0.5)
+  	%plot(time_free_60, WBA_Free_60.fly_mean_all {1}, 'Color', [free_color_60 0.7], 'LineWidth', 0.5)
     %plot(time_fixed, WBA_Fixed.fly_mean_all {1}, 'Color', [fixed_color 0.7], 'LineWidth', 0.5)
-    %plot(time_free, WBA_Free.fly_mean_all {1}, 'Color', [free_color 0.7], 'LineWidth', 0.5)
-    
- 	[~,h.mean(1)] = PlotPatch(WBA_Free.grand_mean{1}, WBA_Free.grand_std{1}, time_free, ...
-        1, 1, free_color, free_color, 0.3, 2);
-    [~,h.mean(2)] = PlotPatch(WBA_Fixed.grand_mean{1}, WBA_Fixed.grand_std{1}, time_fixed, ...
+    %plot(time_free, Head.fly_mean_all {1}, 'Color', [head_color 0.5], 'LineWidth', 1)
+   
+ 	[~,h.mean(1)] = PlotPatch(WBA_Free_30.grand_mean{1}, WBA_Free_30.grand_std{1}, time_free_30, ...
+        1, 1, free_color_30, free_color_30, 0.3, 2);
+ 	[~,h.mean(2)] = PlotPatch(WBA_Free_60.grand_mean{1}, WBA_Free_60.grand_std{1}, time_free_30, ...
+        1, 1, free_color_60, free_color_60, 0.3, 2);
+    [~,h.mean(3)] = PlotPatch(WBA_Fixed.grand_mean{1}, WBA_Fixed.grand_std{1}, time_fixed, ...
         1, 1, fixed_color, fixed_color, 0.3, 2);
-
-  	[~,h.mean(3)] = PlotPatch(Head.grand_mean{1}, Head.grand_std{1}, time_free, ...
-        1, 1, head_color, head_color, 0.3, 2);
+%   	[~,h.mean(3)] = PlotPatch(Head.grand_mean{1}, Head.grand_std{1}, time_free_30, ...
+%         1, 1, head_color, head_color, 0.3, 2);
     
     xlabel('Time (s)')
-    ylabel('\DeltaWBA (°)')
+    ylabel('\DeltaWBA (Â°)')
     ylim(30*[-1 1])
+    xlim([-0.2 10])
     xticks(0:10)
     
-%     uistack(h.mean, 'top')
+    uistack(h.mean, 'top')
     
 set(ax, 'LineWidth', 1)
 
 %% Mean & variance distribution in time
-ALL.mean = [ cat(2,Head.fly_mean_time {:})' ; cat(2,WBA_Free.fly_mean_time{:})' ; ...
+ALL.mean = [ cat(2,Head.fly_mean_time {:})' ; cat(2,WBA_Free_30.fly_mean_time{:})' ; ...
                     cat(2,WBA_Fixed.fly_mean_time{:})' ];
                 
-ALL.std = [ cat(2,Head.fly_std_time {:})' ; cat(2,WBA_Free.fly_std_time{:})' ; ...
+ALL.std = [ cat(2,Head.fly_std_time {:})' ; cat(2,WBA_Free_30.fly_std_time{:})' ; ...
                     cat(2,WBA_Fixed.fly_std_time{:})' ];
 
-ALL.range = [ cat(2,Head.fly_range_time{:})' ; cat(2,WBA_Free.fly_range_time{:})' ; ...
+ALL.range = [ cat(2,Head.fly_range_time{:})' ; cat(2,WBA_Free_30.fly_range_time{:})' ; ...
                     cat(2,WBA_Fixed.fly_range_time{:})' ];
                             
-ALL.group = [ ones(size(cat(2,WBA_Free.fly_mean_time{:})')) ; ...
-                    2*ones(size(cat(2,WBA_Free.fly_mean_time{:})')) ; ...
+ALL.group = [ ones(size(cat(2,WBA_Free_30.fly_mean_time{:})')) ; ...
+                    2*ones(size(cat(2,WBA_Free_30.fly_mean_time{:})')) ; ...
                     3*ones(size(cat(2,WBA_Fixed.fly_mean_time{:})')) ];
                 
 fig = figure (12) ; clf
 set(fig, 'Color', 'w', 'Units', 'inches', 'Position', [2 2 6 1.5])
 movegui(fig, 'center')
 clear ax b
-ax(1) = subplot(1,3,1) ; cla ; hold on ; ylabel('Mean (°)')
+ax(1) = subplot(1,3,1) ; cla ; hold on ; ylabel('Mean (Â°)')
     ylim(50*[-1 1])
     yticks(-50:25:50)
     b(1) = boxchart(ALL.group, ALL.mean);
 
-ax(2) = subplot(1,3,2) ; cla ; hold on ; ylabel('STD (°)') ; 
+ax(2) = subplot(1,3,2) ; cla ; hold on ; ylabel('STD (Â°)') ; 
     ylim([-1 25])
     yticks(0:5:25)
     b(2) = boxchart(ALL.group, ALL.std);
     
-ax(3) = subplot(1,3,3) ; cla ; hold on ; ylabel('Range (°)') ; 
+ax(3) = subplot(1,3,3) ; cla ; hold on ; ylabel('Range (Â°)') ; 
 %     ylim([-1 50])
 %     yticks(0:10:50)
     b(3) = boxchart(ALL.group, ALL.range);
@@ -114,12 +119,17 @@ save(fullfile(savedir, [fname '.mat']), 'Fc', 'detrend_n', 'WBA_Free', 'WBA_Fixe
 end
 
 %% Function to get wing data from stucture
-function [DATA,tt] = get_data(WingStruct, prop, norm, Fc, detrend_n)
+function [DATA,tt] = get_data(WingStruct, prop, norm, Fc, detrend_n, velI)
     % Get wing saccade objects
     n_speed = WingStruct.N.vel/2;
     keepI = cellfun(@(x) isstruct(x) | isobject(x), WingStruct.SACCADE.wing_saccade);
     Saccade = WingStruct.SACCADE(keepI,:);
     %Saccade = Saccade(1:102,:);
+    
+    if any(velI)
+        keepI = any(Saccade.vel == velI, 2);
+        Saccade = WingStruct.SACCADE(keepI,:);
+    end
 
     % Pull out wba and time
   	tt = Saccade.(prop){1}.time;

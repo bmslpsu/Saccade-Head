@@ -25,7 +25,7 @@ PATH.head = fullfile(PATH.reg,'tracked_head_tip');
 [D,I,N,U,T,~,~,basename] = GetFileData(PATH.head,'*.mat',false,'fly','trial','vel');
 % [D,I,N,U,T,~,~,basename] = GetFileData(PATH.wing,'*.csv',false,'fly','trial','vel','wave');
 
-%% Get Data %%
+%% Get Data
 clc
 close all
 disp('Loading...')
@@ -47,11 +47,11 @@ head.min_pkwidth = 0.02;
 head.min_pkprom = 50;
 head.min_pkthresh = 0;
 head.boundThresh = [0.2 60];
-head_carry.Fc = 40;
+head_carry.Fc = 20;
 [head_carry.b, head_carry.a] = butter(3, head_carry.Fc / (Fs/2) ,'low');
 
 % BODY saccade detection parameters
-body.showplot = true;
+body.showplot = false;
 body.Fc_detect = [10 nan];
 body.Fc_ss = [30 nan];
 body.amp_cut = 7;
@@ -65,7 +65,7 @@ body.min_pkwidth = 0.02;
 body.min_pkprom = 50;
 body.min_pkthresh = 0;
 body.boundThresh = [0.2 60];
-body_carry.Fc = 40;
+body_carry.Fc = 20;
 [body_carry.b, body_carry.a] = butter(3, body_carry.Fc / (Fs/2) ,'low');
 
 Vel = 3.75*U.vel{1}; % velocities
@@ -120,20 +120,20 @@ for kk = 1:N.file
   	[Fv, mag , Phs , FREQ] = FFT(tintrp, head.pos_filt);
     Mag{velI(kk)}(:,end+1) = mag;
     
-    figure (200) 
-    subplot(2,1,1) ; hold on ; title(round(D.vel(kk)*3.75))
-    yyaxis left ; cla
-   	plot(tintrp, detrend(body_saccade.position,0), 'b', 'LineWidth', 1)
-    yyaxis right ; cla
-    plot(tintrp, head_saccade.position, 'r', 'LineWidth', 1)
-    
-    subplot(2,1,2) ; hold on ; title(D.vel(kk)) ; cla
-    plot(Fv, mag, 'b', 'LineWidth', 1)
-    
-    [R,P] = corr(detrend(body_saccade.position,1), head_saccade.position)
-
-    pause
-    clc
+%     figure (200) 
+%     subplot(2,1,1) ; hold on ; title(round(D.vel(kk)*3.75))
+%     yyaxis left ; cla
+%    	plot(tintrp, detrend(body_saccade.position,0), 'b', 'LineWidth', 1)
+%     yyaxis right ; cla
+%     plot(tintrp, head_saccade.position, 'r', 'LineWidth', 1)
+%     
+%     subplot(2,1,2) ; hold on ; title(D.vel(kk)) ; cla
+%     plot(Fv, mag, 'b', 'LineWidth', 1)
+%     
+%     [R,P] = corr(detrend(body_saccade.position,1), head_saccade.position)
+% 
+%     pause
+%     clc
     
 
     
@@ -181,6 +181,34 @@ for kk = 1:N.file
     end
 end
 disp('Done')
+
+%% Example trial
+nI = 1;
+
+fig = figure (1) ; clf
+set(fig, 'Color', 'w','Units', 'inches', 'Position', 1.5*[2 2 4 2.5])
+movegui(fig,'center')
+clear ax h
+ax(1) = subplot(2,1,1) ; hold on ; title(['Stimulus: ' num2str(3.75*D.vel(nI)) ' (°/s)'])
+    ylabel('Body (°)')
+    plot(SACCADE.body_saccade{nI}.time, Stim(:,I.vel(nI)), 'k--')
+    plot(SACCADE.body_saccade{nI}.time, SACCADE.body_saccade{nI}.position, 'k', 'LineWidth', 0.5)
+    for n = 1:SACCADE.body_saccade{nI}.count
+        plot(SACCADE.body_saccade{nI}.saccades{n}.Time, ...
+            SACCADE.body_saccade{nI}.saccades{n}.Position, 'r', 'LineWidth', 1)
+    end
+ax(2) = subplot(2,1,2) ; hold on
+    ylabel('Head (°)')
+    plot(SACCADE.head_saccade{nI}.time, 2.5+SACCADE.head_saccade{nI}.position, 'k', 'LineWidth', 0.5)
+    for n = 1:SACCADE.head_saccade{nI}.count
+        plot(SACCADE.head_saccade{nI}.saccades{n}.Time, ...
+            2.5+SACCADE.head_saccade{nI}.saccades{n}.Position, 'r', 'LineWidth', 1)
+    end
+    
+    xlabel('Time (s)')
+    
+set(ax, 'Color', 'none', 'LineWidth', 1, 'XLim', [-0.2 15])
+set(ax(2), 'YLim', 10*[-1 1])
 
 %%
 name = 'head2body';

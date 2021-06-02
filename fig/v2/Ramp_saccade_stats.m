@@ -1,6 +1,6 @@
 function [] = Ramp_saccade_stats()
 %% Ramp_saccade_stats:
-load('H:\DATA\Rigid_Data\Saccade\combined\Ramp_All_Stats.mat')
+load('E:\DATA\Rigid_Data\Saccade\processed\Ramp_All_Stats.mat')
 
 %% Saccade Statistics by velocity
 wave_group_all = All_Stats.wave;
@@ -18,7 +18,7 @@ CC = repmat(hsv(n_speed),2,1);
 vel_group_all(vel_group_all > n_speed) = vel_group_all(vel_group_all > n_speed) - n_speed;
 
 [fly_vel_group, vel_group, fly_group] = findgroups(vel_group_all, fly_group_all);
-[wave_vel_group, ~, wave_group] = findgroups(vel_group_all, wave_group_all);
+% [wave_vel_group, ~, wave_group] = findgroups(vel_group_all, wave_group_all);
 % vel_group(vel_group > n_speed) = vel_group(vel_group > n_speed) - n_speed;
 
 stat_names = ["PeakVel", "Amplitude", "Duration", "Skew", "StartPos", "EndPos"];
@@ -31,6 +31,7 @@ FIG.Color = 'w';
 FIG.Units = 'inches';
 FIG.Position = [2 2 (n_plot+1)*2 2];
 ax = gobjects(n_plot+1,1);
+Y = [];
 for ww = 1:n_plot
     ax(ww) = subplot(1,n_plot+1,ww);  axis tight
     data = All_Stats.(stat_names(ww));
@@ -38,9 +39,10 @@ for ww = 1:n_plot
         data = data .* All_Stats.Direction;
     end
     fly_mean = splitapply(@(x) nanmean(x,1), data, fly_vel_group);
+    Y.fly.(stat_names(ww)) = fly_mean;
     
-    bx = boxplot(data, vel_group_all, 'Labels', {Speed}, 'Width', 0.5, 'Symbol', '', 'Whisker', 2);
-    %bx = boxplot(fly_mean, vel_group, 'Labels', {Speed}, 'Width', 0.5, 'Symbol', '', 'Whisker', 2);
+%     bx = boxplot(data, vel_group_all, 'Labels', {Speed}, 'Width', 0.5, 'Symbol', '', 'Whisker', 2);
+    bx = boxplot(fly_mean, vel_group, 'Labels', {Speed}, 'Width', 0.5, 'Symbol', '', 'Whisker', 2);
     xlabel('Stimulus Speed (°/s)')
     ylabel(ylabel_names(ww))
 
@@ -56,6 +58,7 @@ for ww = 1:n_plot
     ax(ww).Children = ax(ww).Children([end 1:end-1]);
     ylim(ylim_list{ww})
 end
+% set(ax, 'Box', 'off', 'Color', 'none', 'XColor', 'none')
 
 %% Stats
 data = All_Stats.StartPos .* All_Stats.Direction;
@@ -63,6 +66,19 @@ data = All_Stats.StartPos .* All_Stats.Direction;
 [p,tbl,stats] = anovan(data, {vel_group_all, All_Stats.wave}, 'interaction');
 
 [c,m] = multcompare(stats);
+
+%% Fly stats
+clc
+stat_name = 'Skew';
+G = vel_group;
+speedI = [1:5];
+keepI = any(G==speedI,2);
+G_speedI = G(keepI);
+temp = Y.fly.(stat_name)(keepI);
+[p,tbl,stats] = anova1(temp, G_speedI);
+% [p,tbl,stats] = kruskalwallis(temp, G_speedI);
+c = multcompare(stats, 'alpha', 0.01);
+M = splitapply(@(x) mean(x), temp, G_speedI)
 
 %% Saccade Count/Rate
 fly_group = Count_Stats.fly;
@@ -76,8 +92,8 @@ count_vel_fly_mean = splitapply(@(x) nanmean(x,1), count, fly_vel_group);
 ww = length(ax);
 ax(ww) = subplot(1,n_plot+1,ww); hold on
 
-bx = boxplot(count./10, vel_group_all, 'Labels', {Speed}, 'Width', 0.5, 'Symbol', '', 'Whisker', 2);
-% bx = boxplot(count_vel_fly_mean./10, vel_group, 'Labels', {Speed}, 'Width', 0.5, 'Symbol', '', 'Whisker', 2);
+% bx = boxplot(count./10, vel_group_all, 'Labels', {Speed}, 'Width', 0.5, 'Symbol', '', 'Whisker', 2);
+bx = boxplot(count_vel_fly_mean./10, vel_group, 'Labels', {Speed}, 'Width', 0.5, 'Symbol', '', 'Whisker', 2);
 xlabel('Stimulus Speed (°/s)')
 ylabel('Frequency (Hz)')
 
@@ -94,6 +110,18 @@ ax(ww).Children = ax(ww).Children([end 1:end-1]);
 ylim(ylim_list{ww})
 
 set(ax, 'LineWidth', 0.75, 'Box', 'off')
+
+%% Fly stats
+clc
+G = vel_group;
+speedI = [1:5];
+keepI = any(G==speedI,2);
+G_speedI = G(keepI);
+temp = count_vel_fly_mean(keepI);
+[p,tbl,stats] = anova1(temp, G_speedI);
+% [p,tbl,stats] = kruskalwallis(temp, G_speedI);
+c = multcompare(stats, 'alpha', 0.05);
+M = splitapply(@(x) mean(x), temp, G_speedI)
 
 %% By Wavelength
 cc_wave = parula(length(wave));
@@ -156,7 +184,8 @@ set(h,'EdgeColor','none')
 set(ax,'FontSize',8);
 set(ax,'Color','w');
 set(ax,'ThetaLim',[-20 20]);
-set(ax,'RLim',[0 0.1]);
+set(ax,'RLim',[0 0.12]);
+set(ax,'RTick',[0:0.02:0.12]);
 set(ax,'ThetaDir','clockwise')
 set(ax,'ThetaTick',-20:10:20);
 set(ax,'ThetaZeroLocation','top');

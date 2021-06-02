@@ -1,5 +1,5 @@
-function [MOV] = make_montage_rigid_head_wing(rootdir,rootpat,vidFs,export)
-%% make_montage_rigid_head_wing: makes movie for fly in rigid tether
+function [MOV] = make_montage_rigid_head_wing_glue_arrow(rootdir,rootpat,vidFs,export)
+%% make_montage_rigid_head_wing_glue_arrow: makes movie for fly in rigid tether
 %
 % 	Includes fly video, head tracking, wing tracking, pattern position
 %
@@ -13,13 +13,11 @@ function [MOV] = make_montage_rigid_head_wing(rootdir,rootpat,vidFs,export)
 %       MOV         : structure containing movie 
 %
 
-% Example Input %
-clear ; clc ; close all 
+% Example Input
+clear ; clc ; close all
 export = true;
 vidFs = 50;
-% rootdir = 'H:\EXPERIMENTS\RIGID\Experiment_Static_Wave';
-rootdir = 'H:\EXPERIMENTS\RIGID\Experiment_Asymmetry_Control_Verification\HighContrast\30';
-% rootdir = 'H:\EXPERIMENTS\RIGID\Experiment_Sinusoid\3.75';
+rootdir = 'E:\EXPERIMENTS\RIGID\Experiment_ramp_glue_head';
 rootpat = 'C:\Users\BC\Box\Git\Arena\Patterns';
 pat_ypos = 5;
 
@@ -41,9 +39,9 @@ end
 
 % Create data paths
 PATH.raw            = rootdir;
-PATH.vid            = fullfile(PATH.raw,'Vid');
+PATH.vid            = fullfile(PATH.raw,'');
 PATH.head_track     = fullfile(PATH.vid,'tracked_head');
-PATH.beninfly_track	= fullfile(PATH.vid,'vid_filt','tracked_head_wing');
+PATH.beninfly_track	= fullfile(PATH.vid,'filt','tracked_head_wing');
 PATH.mask           = fullfile(PATH.beninfly_track,'mask');
 
 if dirflag
@@ -61,7 +59,7 @@ mkdir(PATH.mov) % create directory for export images
 % Set file names
 [~,FILE.basename,~] = fileparts(FILE.raw);
 FILE.benifly   	= [FILE.basename '.csv'];
-FILE.montage    = [FILE.basename '_Montage_new.mp4'];
+FILE.montage    = [FILE.basename '_Montage_arrow.mp4'];
 FILE.mask       = [FILE.basename '.json'];
 
 % Load data
@@ -80,7 +78,7 @@ disp('DONE')
 pattern_total_time = 10; % [s]
 reg = true; % use interp times
 start_idx = nan; % use first frame
-add1 = true; % add 1st frame
+add1 = false; % add 1st frame
 debug = false;
 
 [TRIG,PAT] = sync_pattern_trigger(raw_data.t_p, raw_data.data(:,2), pattern_total_time, ... 
@@ -99,7 +97,7 @@ FLY.rwing   = rad2deg(hampel(FLY.time,benifly_data.RWing)); % right wing angles 
 FLY.lwing   = filtfilt(b,a,FLY.lwing); % left wing angles [deg]
 FLY.rwing   = filtfilt(b,a,FLY.rwing); % right wing angles [deg]
 FLY.wba     = FLY.lwing - FLY.rwing; % delta wing-beat-amplitude [deg]
-[b,a]       = butter(2,20/(FLY.Fs/2),'low'); % make lpf
+[b,a]       = butter(2,12/(FLY.Fs/2),'low'); % make lpf
 FLY.wba     = filtfilt(b,a,FLY.wba); % delta wing-beat-amplitude [deg]
 % FLY.wba     = FLY.wba - mean(FLY.wba); % delta wing-beat-amplitude [deg]
 
@@ -129,18 +127,42 @@ str = char(raw');
 fclose(fid); 
 params = jsondecode(str);
 
+FLY.body_reg = -90 - rad2deg(atan2(params.gui.head.hinge.y - params.gui.abdomen.hinge.y, ...
+                            params.gui.head.hinge.x - params.gui.abdomen.hinge.x));
+
 FLY.wing_length = 150;
 
 FLY.lwing_hinge = [params.gui.left.hinge.x  , params.gui.left.hinge.y];
 FLY.rwing_hinge = [params.gui.right.hinge.x , params.gui.right.hinge.y];
-
-FLY.lwing_tip = FLY.lwing_hinge - FLY.wing_length*[cosd(FLY.int_lwing),  sind(FLY.int_lwing)];
-FLY.rwing_tip = FLY.rwing_hinge + FLY.wing_length*[cosd(FLY.int_rwing), -sind(FLY.int_rwing)];
+FLY.lwing_tip = FLY.lwing_hinge - FLY.wing_length*[cosd(FLY.int_lwing - FLY.body_reg),  ...
+                                                   sind(FLY.int_lwing - FLY.body_reg)];
+FLY.rwing_tip = FLY.rwing_hinge + FLY.wing_length*[cosd(FLY.int_rwing - FLY.body_reg), ...
+                                                  -sind(FLY.int_rwing - FLY.body_reg)];
 
 FLY.head_length = 40;
 % FLY.head_hinge = [head_data.cPoint.X  , head_data.cPoint.Y];
 FLY.head_hinge = [params.gui.head.hinge.x  , params.gui.head.hinge.y];
 FLY.head_tip = FLY.head_hinge + FLY.head_length*[sind(FLY.int_head) , -cosd(FLY.int_head)];
+
+%% Arrow
+figure (600) ; clf
+imshow(FLY.raw(:,:,1))
+hold on
+roi = drawline;
+
+p1 = roi.Position(1,:);
+p2 = roi.Position(2,:);
+dp = p2-p1;
+
+delete(roi)
+%%
+clf
+imshow(FLY.raw(:,:,1))
+hold on
+quiver(p1(1), p1(2), dp(1) ,dp(2), 0, 'Color', 'm', 'LineWidth', 1, 'MaxHeadSize', 2)
+text(p1(1) - 50, p1(2) - 15, 'hard stop', 'Color', 'm', 'FontSize', 12)
+% text(p2(1),p2(2), sprintf('(%.0f,%.0f)',p2))
+
 
 %% Make Movie
 % Create structure to store frames
@@ -219,6 +241,9 @@ for jj = 1:FLY.nframe % for each frame
             
             plot(FLY.lwing_hinge(1), FLY.lwing_hinge(2), 'r.', 'MarkerSize',20)
             plot(FLY.rwing_hinge(1), FLY.rwing_hinge(2), 'r.', 'MarkerSize',20)
+            
+            quiver(p1(1), p1(2), dp(1) ,dp(2), 0, 'Color', 'm', 'LineWidth', 1, 'MaxHeadSize', 2)
+            text(p1(1) - 50, p1(2) - 15, 'hard stop', 'Color', 'm', 'FontSize', 12)      
             
             % Make pattern ring
             ax_pat = axes; axis image

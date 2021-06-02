@@ -1,6 +1,6 @@
 function [] = Ramp_Static_head_wing_sync()
 %% Ramp_Static_head_wing_sync:
-root = 'H:\DATA\Rigid_Data\Saccade';
+root = 'E:\DATA\Rigid_Data\Saccade';
 [FILE,PATH] = uigetfile({'*.mat', 'DAQ-files'}, ...
     'Select head angle trials', root, 'MultiSelect','off');
 load(fullfile(PATH,FILE),'SACCADE','U','N')

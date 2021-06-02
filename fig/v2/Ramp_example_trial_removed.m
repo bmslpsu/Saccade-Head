@@ -1,5 +1,5 @@
-function [] = Saccade_ExampleTrial_Removed()
-%% Saccade_ExampleTrials_Removed:
+function [] = Ramp_example_trial_removed()
+%% Ramp_example_trial_removed:
 root = 'E:\DATA\Rigid_Data\';
 
 [FILE,PATH] = uigetfile({'*.mat'},'Select head angle trials', root, 'MultiSelect','off');
@@ -21,7 +21,7 @@ FIG.Color = 'w';
 clear ax h
 sacd_color = [0.5 0.5 0.5];
 
-idx = 1; % 6-9, 2-58
+idx = 4; % 6-9, 2-58
 trial = SACCADE.head_saccade{idx};
 trial_wing = SACCADE.wing_saccade{idx};
 

@@ -1,11 +1,11 @@
 function [] = Static_saccade_stats()
 %% Static_saccade_stats:
-load('H:\DATA\Rigid_Data\Saccade\processed\Static_All_Stats.mat')
+load('E:\DATA\Rigid_Data\Saccade\processed\Static_All_Stats.mat')
 
 %% Pick wavelengths & whether to combine
 comb = true;
-waveI = [2 3 4 6];
-waveI = [1 5];
+waveI = [2 3 4];
+% waveI = [1 5];
 % waveI = 1:6;
 
 %% Saccade Statistics
@@ -34,6 +34,7 @@ FIG.Color = 'w';
 FIG.Units = 'inches';
 FIG.Position = [2 2 (n_plot+1)*1 1.5];
 ax = gobjects(n_plot+1,1);
+Y = [];
 for ww = 1:n_plot
     ax(ww) = subplot(1,n_plot+1,ww);  axis tight
     data = All_Stats.(stat_names(ww));
@@ -41,7 +42,7 @@ for ww = 1:n_plot
         data = data .* All_Stats.Direction;
     end
     fly_mean = splitapply(@(x) nanmean(x,1), data, fly_wave_group);
-    
+    Y.fly_mean.(stat_names(ww)) = fly_mean;
     bx = boxplot(data, wave_group_all, 'Labels', {Wave}, 'Width', 0.5, 'Symbol', '', 'Whisker', 2);
     xlabel('Wavelength (°)')
     ylabel(ylabel_names(ww))
@@ -101,11 +102,11 @@ movegui(FIG,'center')
 FIG.Color = 'w';
 clear ax h
 
-edges = deg2rad(-20:1:20);
+edges = deg2rad(-25:1:25);
 
 ax(1) = subplot(1,1,1,polaraxes); grid off ; axis tight
-    Trig_Positive = All_Stats.StartPos .* All_Stats.Direction;
-    Trig_Negative = All_Stats.EndPos .* All_Stats.Direction;
+    Trig_Positive = -All_Stats.StartPos .* All_Stats.Direction;
+    Trig_Negative = -All_Stats.EndPos .* All_Stats.Direction;
     h(1) = polarhistogram(deg2rad(Trig_Positive),edges,...
         'FaceColor','g','FaceAlpha',0.5,'Normalization','Probability'); hold on
     h(2) = polarhistogram(deg2rad(Trig_Negative),'BinEdges', edges, ...

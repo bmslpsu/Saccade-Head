@@ -1,6 +1,6 @@
 function [] = Saccade_ExampleTrials()
 %% Saccade_ExampleTrials:
-root = 'H:\DATA\Rigid_Data\';
+root = 'E:\DATA\Rigid_Data\';
 
 [FILE,PATH] = uigetfile({'*.mat'},'Select head angle trials', root, 'MultiSelect','off');
 

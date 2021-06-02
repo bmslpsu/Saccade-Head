@@ -106,11 +106,14 @@ wsacd.time = nan(2*span_wing+1,head_saccade.count);
 wsacd.pos  = nan(2*span_wing+1,head_saccade.count);
 wsacd.vel  = nan(2*span_wing+1,head_saccade.count);
 
-% Desyncchronized head/wing saccades
+% Desynchronized head/wing saccades
 hsacd.pos_desync  = nan(2*span_head+1,head_saccade.count);
 hsacd.vel_desync  = nan(2*span_head+1,head_saccade.count);
 wsacd.pos_desync  = nan(2*span_wing+1,head_saccade.count);
 wsacd.vel_desync  = nan(2*span_wing+1,head_saccade.count);
+
+% Head synchronization rates
+n_sync_head = 0;
 
 % Find time difference based on start, peak, & end times when head & wing saccades occur within window
 for s = 1:head_saccade.count
@@ -129,6 +132,7 @@ for s = 1:head_saccade.count
     
     % Pull out time difference and dynamics
     if length(wpeak) == 1 % wing saccade found in window around head saccade
+        n_sync_head = n_sync_head + 1;
         TD(s,1) = head_saccade.SACD.StartTime(s) - wing_saccade.SACD.StartTime(wpeak);
         TD(s,2) = head_saccade.SACD.PeakTime(s) - wing_saccade.SACD.PeakTime(wpeak);
         TD(s,3) = head_saccade.SACD.EndTime(s) - wing_saccade.SACD.EndTime(wpeak);
@@ -189,6 +193,8 @@ for s = 1:head_saccade.count
 end
 hsacd.stats = structfun(@(x) basic_stats(x,2), hsacd, 'UniformOutput', false);
 wsacd.stats = structfun(@(x) basic_stats(x,2), wsacd, 'UniformOutput', false);
+sync_head_rate = n_sync_head / head_saccade.count;
+sync_wing_rate = (wing_saccade.count - n_sync_head) / wing_saccade.count;
 
 % Assign output properties
 head2wing.hint          = hint;
@@ -216,6 +222,9 @@ head2wing.PeakVel     	= PkVel;
 head2wing.hsacd         = hsacd;
 head2wing.wsacd         = wsacd;
 
+head2wing.sync_head_rate = sync_head_rate;
+head2wing.sync_wing_rate = sync_wing_rate;
+
 if showplot && all(~isnan(sync))
     fig = figure (10);
     set(fig, 'Color', 'w')
@@ -229,7 +238,7 @@ if showplot && all(~isnan(sync))
                 end
 %              	plot(time(sync), head(sync), '.b', ...
 %                     'LineWidth', 1, 'MarkerSize', 20, 'MarkerEdgeColor', head_color, 'MarkerFaceColor', 'none')
-                
+                ylim(25*[-1 1])
                 %ylim(max(abs(ax(1).YLim))*[-1 1])
             yyaxis right ; hold on ; cla ; ylabel('\DeltaWBA (°)')
                 plot(time, wing_saccade.extra.dwba, '-', 'Color', [0.5 0.5 0.5 0.5], 'LineWidth', 0.5)
@@ -240,6 +249,7 @@ if showplot && all(~isnan(sync))
                 end
 %                 plot(wing_saccade.SACD.PeakTime, wing_saccade.SACD.PeakPos, '.r', ...
 %                     'LineWidth', 1,  'MarkerSize', 20, 'MarkerEdgeColor', wing_color, 'MarkerFaceColor', 'none')
+                ylim(25*[-1 1])    
                 %ylim(max(abs(ax(1).YLim))*[-1 1])
                 xlabel('Time (s)')
             ax(1).YAxis(1).Color = head_color;
@@ -269,11 +279,13 @@ if showplot && all(~isnan(sync))
                 plot(hsacd.time, hsacd.pos, '-','Color', [0.7*head_color 0.5])
                 plot(hsacd.stats.time.mean, hsacd.stats.pos.mean, ...
                      '-', 'Color', head_color, 'LineWidth', 2)
+              	ylim(25*[-1 1])
 
          	yyaxis right ; hold on ; cla ; ylabel('\DeltaWBA (°)')
                 plot(wsacd.time, wsacd.pos, '-','Color', [0.7*wing_color 0.5])
                 plot(wsacd.stats.time.mean, wsacd.stats.pos.mean, ...
                      '-', 'Color', wing_color, 'LineWidth', 2)
+             	ylim(25*[-1 1])
           	
           	ax(2).YAxis(1).Color = head_color;
             ax(2).YAxis(2).Color = wing_color;

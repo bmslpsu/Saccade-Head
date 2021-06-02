@@ -1,27 +1,29 @@
-function [] = All_stats_wing()
-%% All_stats_wing:
+function [] = All_stats_wing_new()
+%% All_stats_wing_new:
 root = 'E:\DATA\Rigid_Data\Saccade';
 
 [Free,FreePath] = uigetfile({'*.mat'},'Select free data', root, 'MultiSelect','off');
+[Fixed30,FixedPath30] = uigetfile({'*.mat'},'Select fixed 30 data', root, 'MultiSelect','off');
+[Fixed60,FixedPath60] = uigetfile({'*.mat'},'Select fixed 60 data', root, 'MultiSelect','off');
 [Static,StaticPath] = uigetfile({'*.mat'},'Select static data', root, 'MultiSelect','off');
-[Fixed,FixedPath] = uigetfile({'*.mat'},'Select free data', root, 'MultiSelect','off');
 
 Free = load(fullfile(FreePath,Free),'SACCADE','U','N','D');
+Fixed30 = load(fullfile(FixedPath30,Fixed30),'SACCADE','U','N','D');
+Fixed60 = load(fullfile(FixedPath60,Fixed60),'SACCADE','U','N','D');
 Static = load(fullfile(StaticPath,Static),'SACCADE','U','N','D');
-Fixed = load(fullfile(FixedPath,Fixed),'SACCADE','U','N','D');
 
 %% Saccade Frequency
-clearvars -except Free Static Fixed root
+clearvars -except Free Static Fixed30 Fixed60 root
 clc
 
 % Get saccade frequencies
 all.head_free_30    = get_count(Free.SACCADE, [], [1 3], 1);
 all.head_free_60    = get_count(Free.SACCADE, [], [2 4], 1);
-all.head_static     = get_count(Static.SACCADE, [2 3 4 6], [], 1);
 all.wing_free_30    = get_count(Free.SACCADE, [], [1 3], 2);
 all.wing_free_60    = get_count(Free.SACCADE, [], [2 4], 2);
-all.wing_static  	= get_count(Static.SACCADE, [2 3 4 6], [], 2);
-all.wing_fixed_30   = get_count(Fixed.SACCADE, [], [], 2);
+all.wing_fixed_30   = get_count(Fixed30.SACCADE, [], [], 2);
+all.wing_fixed_60   = get_count(Fixed60.SACCADE, [], [], 2);
+all.head_static     = get_count(Static.SACCADE, [2 3 4], [], 1);
 
 all_count = struct2cell( structfun(@(x) x.count(:,1), all, 'UniformOutput', false) );
 % all_count = struct2cell( structfun(@(x) x.count_vel_fly_mean(:,1), all, 'UniformOutput', false) );
@@ -43,12 +45,34 @@ ax(1) = subplot(1,1,1); hold on ; ylim([-0.1 2])
     
     legend(labels, 'Interpreter', 'none', 'Box', 'off')
     
-set(ax, 'LineWidth', 1)
+set(ax, 'Color', 'none', 'LineWidth', 0.75, 'XColor', 'none')
 
 %% Stats
 [p,tbl,stats] = anova1(all_count, all_group);
-% [p,tbl,stats] = kruskalwallis(data, ALL.group);
+% [p,tbl,stats] = kruskalwallis(all_count, ALL.group);
 c = multcompare(stats, 'alpha', 0.001);
+
+%% T-test
+% close all
+clc
+g1 = 6;
+g2 = 7;
+
+G = all_group;
+% G = findgroups(G_count);
+
+G1 = G == g1;
+Y1 = all_count(G1);
+G1 = G(G1);
+G2 = G == g2;
+Y2 = all_count(G2);
+G2 = G(G2);
+
+figure (100)
+boxplot([Y1;Y2], [G1;G2])
+
+[~,p] = ttest2(Y1,Y2)
+
 
 %% Head-wing sync
 keepI = cellfun(@(x) isstruct(x) | isobject(x), Free.SACCADE.head2wing);
