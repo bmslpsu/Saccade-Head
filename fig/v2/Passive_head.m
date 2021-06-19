@@ -1,17 +1,18 @@
 function [] = Passive_head()
 %% Passive_head_window:
-root = 'H:\DATA\Rigid_Data\Saccade';
+root = 'E:\DATA\Rigid_Data\Saccade';
 [FILE,PATH] = uigetfile({'*.mat'},'Select data file', root, 'MultiSelect','off');
 load(fullfile(PATH,FILE),'U','N','DATA')
 
-Ramp = load("H:\DATA\Rigid_Data\Saccade\processed\Ramp_saccade_window_wave=30.mat");
-Static = load("H:\DATA\Rigid_Data\Saccade\processed\Static_saccade_window_head_wing.mat");
+Ramp = load("E:\DATA\Rigid_Data\Saccade\processed\Ramp_saccade_window_wave=30.mat");
+Static = load("E:\DATA\Rigid_Data\Saccade\processed\Static_saccade_window_head_wing.mat");
 
 %% Get windows around saccades
 clc
 clearvars -except DATA U N Ramp Static
-Data = DATA(DATA.init_pos > -20,:);
-Data = DATA(DATA.init_pos > -100,:);
+Data = DATA;
+% Data = DATA(DATA.init_pos > -20,:);
+% Data = DATA(DATA.init_pos > -100,:);
 fly_group = findgroups(Data.Fly);
 
 Head.time   = splitapply(@(x) {cat(2,x{:})}, Data.time, fly_group);
@@ -49,7 +50,7 @@ Head_intrp_actv = structfun(@(x) interp1(Ramp.Head.vel_stats.time(speedI).mean +
 
 Head_intrp_static = structfun(@(x) x.mean, Static.Scd.vel_stats(1), 'UniformOutput', false);
 fnames = fields(Head_intrp_static);
-Head_intrp_static = rmfield(Head_intrp_static, fnames(1));
+Head_intrp_static = rmfield(Head_intrp_static, fnames([1,4:end]));
 Head_intrp_static = structfun(@(x) interp1(Ramp.Head.vel_stats.time(speedI).mean + 0.02, x, tintrp, 'pchip'), ...
     Head_intrp_static, 'UniformOutput', false);
 

@@ -1,10 +1,10 @@
 function [] = Passive_vs_Saccade_time_constant()
 %% Passive_vs_Saccade_time_constant:
-root = 'H:\DATA\Rigid_Data\Saccade';
+root = 'E:\DATA\Rigid_Data\Saccade';
 [FILE,PATH] = uigetfile({'*.mat'},'Select data file', root, 'MultiSelect','off');
 Passive = load(fullfile(PATH,FILE),'U','N','DATA');
 
-Ramp = load("H:\DATA\Rigid_Data\Saccade\processed\Ramp_time_constant_wave=30.mat");
+Ramp = load("E:\DATA\Rigid_Data\Saccade\processed\Ramp_time_constant_wave=30.mat");
 
 %% Make table
 ramp_table = Ramp.Saccade_Table(Ramp.Saccade_Table.r2 > 0.8, 4:5);
@@ -13,7 +13,8 @@ B = [table(2*ones(size(ramp_table,1),1),'VariableNames', {'class'}) , ramp_table
 C = [A ; B];
 
 %% Anova
-[p,tb,stats] = anova1(C.tau, C.class, 'varnames', {'passive', 'active'});
+% [p,tb,stats] = anova1(C.tau, C.class, 'varnames', {'passive', 'active'});
+[p,tbl,stats] = kruskalwallis(C.tau, C.class);
 % [h, p] = ttest2(A.tau, B.tau)
 [c,m] = multcompare(stats);
 

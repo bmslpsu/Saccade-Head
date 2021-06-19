@@ -13,7 +13,7 @@ warning('off', 'signal:findpeaks:largeMinPeakHeight')
 rootdir = 'E:\EXPERIMENTS\RIGID\Experiment_ramp_glue_head';
 
 % Output file name
-filename = 'Ramp_HeadFree_head_glue';
+filename = 'Ramp_HeadFree_head_wing_iron';
 
 % Setup Directories
 PATH.daq  = rootdir;
@@ -33,7 +33,7 @@ Fs = 200; % sampling frequency [s]
 tintrp = (0:(1/Fs):(10 - 1/Fs))'; % time vector for interpolation
 
 % HEAD saccade detection parameters
-head.showplot = true;
+head.showplot = false;
 head.Fc_detect = [10 nan];
 head.Fc_ss = [nan nan];
 head.amp_cut = 4;
@@ -56,8 +56,8 @@ wing.Fc_detect = [5 nan];
 wing.Fc_ss = [5 nan];
 wing.amp_cut = 4;
 wing.dur_cut = inf;
-wing.thresh = [50, 2, 0, 0];
-wing.true_thresh = 70;
+wing.thresh = [0, 2, 1.25, 0];
+wing.true_thresh = 100;
 wing.sacd_length = nan;
 wing.pks = [];
 wing.min_pkdist = 0.3;
@@ -80,7 +80,7 @@ HEAD_SACCADE_STATS = [];
 WING_SACCADE_STATS = [];
 for kk = 1:N.file
     disp(kk)
-    basename{kk}
+    %basename{kk}
     % Load HEAD & DAQ data
 	load(fullfile(PATH.daq, [basename{kk} '.mat']),'data','t_p');
     %load(fullfile(PATH.head, [basename{kk} '.mat']),'head_data');
@@ -159,7 +159,7 @@ for kk = 1:N.file
 %         cla ; hold on
 %             plot(tintrp, head.pos_filt, 'k', 'LineWidth', 1)
 %             %plot(tintrp, wing.dwba, 'Color', [0.5 0.5 0.5], 'LineWidth', 0.5)
-%             plot(tintrp, wing.dwba_filt - mean(wing.dwba_filt), 'r', 'LineWidth', 1)
+%             plot(tintrp, detrend(wing.dwba_filt - mean(wing.dwba_filt)), 'r', 'LineWidth', 1)
 %             ylim(20*[-1 1])
 %             disp(basename{kk})
 %             pause
@@ -257,6 +257,11 @@ for kk = 1:nfield % for each field in saccade structure
         end
     end
 end
+
+%% Wing saccade
+scd_rate = cellfun(@(x) x.rate, SACCADE.wing_saccade);
+DATA = [SACCADE , table(num2cell(scd_rate), 'VariableNames', {'rate'})];
+[stats] = table_fly_stats(DATA, 3, 15, false);
 
 %% Distributions
 head_pos = cellfun(@(x) x.position, SACCADE.head_saccade, 'UniformOutput', false);

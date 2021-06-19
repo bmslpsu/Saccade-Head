@@ -65,7 +65,7 @@ G = [ones(size(stable_head_all)) ; 2*ones(size(land_head_all))];
 %% Stats
 % [p,tbl,stats] = anova1(comb_data, G);
 [p,tbl,stats] = kruskalwallis(comb_data, G);
-[p,stats] = vartestn(comb_data, G);
+% [p,stats] = vartestn(comb_data, G);
 
 %% Skewness
 stable_skew = skewness(stable_head_all);

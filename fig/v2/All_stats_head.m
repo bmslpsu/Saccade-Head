@@ -14,7 +14,7 @@ n_speed = 5;
 ramp_vel_group_all = Ramp.All_Stats.vel;
 ramp_vel_group_all(ramp_vel_group_all > n_speed) = ...
     ramp_vel_group_all(ramp_vel_group_all > n_speed) - n_speed;
-% ramp_vel_group_all = ones(size(ramp_vel_group_all));
+ramp_vel_group_all = ones(size(ramp_vel_group_all));
 vel_group_all = [0*Static.All_Stats.vel ; ramp_vel_group_all];
 
 [ramp_fly_vel_group,ramp_vel_group,ramp_fly_group] = ...
@@ -71,7 +71,7 @@ set(ax, 'LineWidth', 1, 'Color', 'none', 'XColor', 'none')
 %% Stats
 clc
 stat_name = 'Duration';
-speedI = [1:5];
+speedI = [0:1];
 keepI = any(G==speedI,2);
 G_speedI = G(keepI);
 temp = Y.(stat_name)(keepI);
@@ -116,7 +116,7 @@ G_no_static = G_count(G_count~=0);
 temp = Count(G_count~=0);
 % [p,tbl,stats] = anova1(Count, G_count);
 [p,tbl,stats] = kruskalwallis(temp, G_no_static);
-c = multcompare(stats, 'alpha', 0.01);
+c = multcompare(stats, 'alpha', 0.001);
 
 %% Save
 fname = 'Head_all_stats';

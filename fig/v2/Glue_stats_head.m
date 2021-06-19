@@ -3,9 +3,10 @@ function [] = Glue_stats_head()
 Ramp = load('E:\DATA\Rigid_Data\Saccade\processed\Ramp_All_Stats.mat');
 Static = load('E:\DATA\Rigid_Data\Saccade\processed\Static_All_Stats.mat');
 Glue = load('E:\DATA\Rigid_Data\Saccade\processed\Ramp_Glue_All_Stats.mat');
+Glue_wing = load('E:\DATA\Rigid_Data\Saccade\processed\Ramp_Glue_All_Stats_wing.mat');
 
 %% Head saccade stats
-clearvars -except Ramp Static Glue
+clearvars -except Ramp Static Glue Glue_wing
 clc
 
 n_speed = 5;
@@ -64,16 +65,18 @@ Ramp_temp = Ramp.Count_Stats(velI_keep,:);
 vel_group_all = Ramp_temp.vel;
 n_speed = 5;
 vel_group_all(vel_group_all > n_speed) = vel_group_all(vel_group_all > n_speed) - n_speed;
-vel_group_all = [0*Static.Count_Stats.vel ; vel_group_all ; findgroups(Glue.Count_Stats.vel) + 10];
+vel_group_all = [0*Static.Count_Stats.vel ; vel_group_all ; findgroups(Glue.Count_Stats.vel) + 10 ; ...
+    findgroups(Glue_wing.Count_Stats.vel) + 20];
 
 fig = figure (1) ; clf
-set(fig, 'Color', 'w', 'Units', 'inches', 'Position', 1*[2 2 2 2])
+set(fig, 'Color', 'w', 'Units', 'inches', 'Position', 1*[2 2 4 2])
 movegui(fig, 'center')
 clear ax
 ax(1) = subplot(1,1,1); hold on ; 
     ylim([0 2])
     ylabel('Frequency (Hz)')
-    Count = [Static.Count_Stats.count ; Ramp_temp.count ; Glue.Count_Stats.count] ./ 10;
+    Count = [Static.Count_Stats.count ; Ramp_temp.count ; ...
+        Glue.Count_Stats.count ; Glue_wing.Count_Stats.count] ./ 10;
     G_count = vel_group_all;
     boxchart(Count, 'GroupByColor', G_count, ...
         'LineWidth', 0.5, 'MarkerStyle', 'none', 'JitterOutliers', 'on', 'Notch', 'off');
@@ -89,8 +92,8 @@ c = multcompare(stats, 'alpha', 0.473);
 %% T-test
 % close all
 clc
-g1 = 0;
-g2 = [11 12];
+g1 = [12];
+g2 = [22];
 
 G = G_count;
 % G = findgroups(G_count);
@@ -106,6 +109,7 @@ figure (100)
 boxplot([Y1;Y2], [1*ones(size(G1)); 2*ones(size(G2))])
 
 [~,p] = ttest2(Y1,Y2)
+p = ranksum(Y1,Y2)
 
 % anova1([Y1;Y2], [G1;G2])
 
