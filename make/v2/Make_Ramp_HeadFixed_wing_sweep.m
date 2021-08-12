@@ -23,29 +23,11 @@ PATH.wing = fullfile(PATH.vid,'wing_filt', 'tracked_wing_new');
 % Select files
 [D,I,N,U,T,~,~,basename] = GetFileData(PATH.wing,'*.csv',false,'fly','trial','vel');
 
-%% Get Data %%
+%% Get Data
 clc
 disp('Loading...')
 Fs = 100; % sampling frequency [s]
 tintrp = (0:(1/Fs):(10 - 1/Fs))'; % time vector for interpolation
-
-% % WING saccade detection parameters
-% wing.showplot = false;
-% wing.Fc_detect = [5 nan];
-% wing.Fc_ss = [5 nan];
-% wing.amp_cut = 3;
-% wing.dur_cut = inf;
-% wing.thresh = [0, 2, 1.25, 0];
-% wing.true_thresh = 100;
-% wing.sacd_length = nan;
-% wing.pks = [];
-% wing.min_pkdist = 0.3;
-% wing.min_pkwidth = 0.03;
-% wing.min_pkprom = 20;
-% wing.min_pkthresh = 0;
-% wing.boundThresh = 0.35;
-% wing.Fc = 20;
-% [wing.b, wing.a] = butter(3, wing.Fc / (Fs/2) ,'low');
 
 wing_carry.Fc = 40;
 [wing_carry.b, wing_carry.a] = butter(3, wing_carry.Fc / (Fs/2) ,'low');
@@ -112,24 +94,9 @@ for kk = 1:N.file
     end
 end
 
-%% Test
-clc
-% clear Saccade
-% keepI = cellfun(@(x) isstruct(x) | isobject(x), SACCADE.wing_saccade);
-% Saccade = SACCADE(keepI,:);
-% wing_rate = cellfun(@(x) x.rate, Saccade.wing_saccade);
-% 
-% close all
-% figure (10) ; clf
-% subplot(1,1,1)
-%     boxplot(wing_rate, Saccade.vel)
-
 %% SAVE
 disp('Saving...')
-% save(['E:\DATA\Rigid_Data\Saccade\sweep\' filename '_' tag '.mat'],...
-%       'PATH','SACCADE','WING_SACCADE_STATS',...
-%       'Stim','D','I','U','N','T','-v7.3')
-save(['E:\DATA\Rigid_Data\Saccade\sweep\' filename '_' tag '.mat'],...
+save(fullfile(root, 'dataset', [filename '_' tag '.mat']),...
       'PATH','SACCADE','WING_SACCADE_STATS',...
       'Stim','D','I','U','N','T','wing','-v7.3')
 disp('SAVING DONE')

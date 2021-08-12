@@ -19,9 +19,9 @@ function [MOV] = make_montage_rigid_head_wing_fixed_yyaxis(root_free,rootpat,vid
 clear ; clc ; close all
 export = true;
 vidFs = 50;
-root_free = 'H:\EXPERIMENTS\RIGID\Experiment_Asymmetry_Control_Verification\HighContrast\30';
-root_fixed = 'H:\EXPERIMENTS\RIGID\Experiment_Ramp_30_HeadFixed';
-rootpat = 'C:\Users\BC\Box\Git\Arena\Patterns';
+root_free = 'E:\EXPERIMENTS\RIGID\Experiment_Asymmetry_Control_Verification\HighContrast\30';
+root_fixed = 'E:\EXPERIMENTS\RIGID\Experiment_Ramp_30_HeadFixed';
+rootpat = 'Q:\OneDrive - PSU\OneDrive - The Pennsylvania State University\Git\Arena\Patterns';
 pat_ypos = 5;
 
 % Select pattern file
@@ -58,7 +58,7 @@ FILE.benifly_fixed = [FILE.basename_fixed '.csv'];
 FILE.mask_free 	= [FILE.basename_free '.json'];
 FILE.mask_fixed = [FILE.basename_fixed '.json'];
 
-FILE.montage  = ['Free=' FILE.basename_free '_Fxed=' FILE.basename_fixed '_yy_Montage.mp4'];
+FILE.montage  = ['Free=' FILE.basename_free '_Fxed=' FILE.basename_fixed '_yy_Montage_text.mp4'];
 
 % Load data
 disp('Loading Data ...')
@@ -210,7 +210,7 @@ set(FIG, 'Color', 'k', 'Renderer', 'OpenGL', 'Units', 'inches', ...
 % set(FIG, 'Visible','off');
 movegui(FIG, 'center')
 linewidth = 1.25; % displayed line width
-fontsize = 12;
+fontsize = 18;
 max_y = 5*ceil(max(abs([FLY.int_wba_free;FLY.int_wba_fixed]))/5);
 
 gs = pattern_data.pattern.gs_val + 1;
@@ -237,7 +237,7 @@ ax(5) = subplot(2,4,[7:8]) ; cla; hold on  ; title('Head Fixed', 'Color', 'w', '
     	xlabel('Time (s)','Color','w','FontSize',fontsize)
         h.wba_fixed = animatedline('Color','m','LineWidth',linewidth); % for dWBA angle fixed
 
-set(ax(3:end), 'FontSize', 12, 'Color', 'k', 'XColor', 'w', 'FontWeight', 'bold',...
+set(ax(3:end), 'FontSize', 16, 'Color', 'k', 'XColor', 'w', 'FontWeight', 'bold',...
     'LineWidth', 1.5, 'XLim', [0 round(FLY.int_time_free(end))])
 set(ax(end),'XTick', 0:2:round(FLY.time_free(end)))
 set(ax(3), 'XTickLabel', [], 'XColor', 'none')

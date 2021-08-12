@@ -9,11 +9,11 @@ function [] = Make_Sine_HeadFree_head(amp)
 %
 warning('off', 'signal:findpeaks:largeMinPeakHeight')
 
-amp = 18.75;
+amp = 11.25;
 direction = 0; % get saccades in all directions
 
 % Data location
-rootdir = ['H:\EXPERIMENTS\RIGID\Experiment_Sinusoid\' num2str(amp)];
+rootdir = ['E:\EXPERIMENTS\RIGID\Experiment_Sinusoid\' num2str(amp)];
 
 % Output file name
 filename = ['Sine_HeadFree_Amp=' num2str(amp)];
@@ -90,10 +90,10 @@ for kk = 1:N.file
     head_saccade = stimSaccade(head_saccade, pat.pos, false); % with approximate pattern position
     SACCADE{kk,5} = {head_saccade};
 
-%     cla ; hold on
-%     plot(tintrp, pat.pos, 'k')
-%     plot(tintrp, head.pos_filt, 'b')
-%     pause
+    cla ; hold on
+    plot(tintrp, pat.pos, 'k')
+    plot(tintrp, head.pos_filt, 'b')
+    pause
 
 %     if head_saccade.count > 5
 %         plotSaccade(head_saccade)

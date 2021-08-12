@@ -1,6 +1,6 @@
 function [] = Ramp_saccade_head_window()
 %% Ramp_saccade_head_window:
-root = 'H:\DATA\Rigid_Data\Saccade';
+root = 'E:\DATA\Rigid_Data\Saccade';
 [FILE,PATH] = uigetfile({'*.mat'},'Select data file', root, 'MultiSelect','off');
 load(fullfile(PATH,FILE),'U','N','SACCADE')
 

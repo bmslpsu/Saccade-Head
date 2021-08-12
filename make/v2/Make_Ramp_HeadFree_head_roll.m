@@ -8,7 +8,7 @@ function [] = Make_Ramp_HeadFree_head_roll()
 warning('off', 'signal:findpeaks:largeMinPeakHeight')
 
 % Data location
-rootdir = 'H:\EXPERIMENTS\RIGID\Experiment_Ramp_forRoll';
+rootdir = 'E:\EXPERIMENTS\RIGID\Experiment_Ramp_forRoll';
 
 % Output file name
 filename = 'Ramp_HeadFree_head_roll';
@@ -54,7 +54,7 @@ HEAD_SACCADE_STATS = [];
 hampel_dx = 5;
 scd_win = 0.5;
 roll_cal = 70;
-for kk = 16:N.file
+for kk = 1:N.file
     disp(kk)
     %disp(basename{kk})
     % Load HEAD & DAQ data

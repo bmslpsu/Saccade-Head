@@ -60,8 +60,8 @@ for f = 1:n_freq
         H_all(a,f) = histogram(pos, edges);
      	%H_starts(a,f) = histogram(starts, edges);
         %H_ends(a,f) = histogram(ends, edges);
-        xline(head_pos(f,a), '--b');
-        xline(-head_pos(f,a), '--b');
+        xline(head_pos(f,a), '--g');
+        xline(-head_pos(f,a), '--g');
         
         xlabel({2*head_pos(f,a), scd_rate(f,a)})
         
@@ -117,8 +117,8 @@ ax(ww) = subplot(1,1,1) ; cla ; hold on
 set(ax, 'LineWidth', 1, 'Box', 'off')
 
 %% Correlation saccade rate vs head position by fly
-% x = ALL_amp_fly.OR;
-x = ALL_amp_fly.stim_vel;
+x = ALL_amp_fly.OR;
+% x = ALL_amp_fly.stim_vel;
 y = ALL_amp_fly.anti_count ./ 10;
 [P] = polyfit(x, y, 1);
 [rho,pval] = corr(x, y);
